@@ -8,3 +8,6 @@ export * from "./generation-types";
 export * from "./engine";
 export * from "./prompts";
 export * from "./generator";
+export * from "./integration";
+export * from "./interaction";
+export * from "./personalization";

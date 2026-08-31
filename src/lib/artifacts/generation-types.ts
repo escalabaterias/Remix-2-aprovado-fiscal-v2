@@ -5,6 +5,7 @@
 import type { ArtifactDecision, ArtifactKind } from "./types";
 import type { LegalSource } from "../legal/types";
 import type { DecisionResult } from "../decision/types";
+import type { ArtifactPresentationProfile } from "./personalization";
 
 export interface ArtifactGenerationContext {
   userId: string;
@@ -12,6 +13,7 @@ export interface ArtifactGenerationContext {
   topicName: string;
   artifactDecision?: ArtifactDecision;
   decisionResult?: DecisionResult;
+  presentationProfile?: ArtifactPresentationProfile;
   availableMinutes?: number;
   legalSources?: LegalSource[];
   studyNotes?: string;
@@ -69,6 +71,7 @@ export interface GeneratedArtifact {
     errorCountUsed: number;
   };
   grounded: boolean;
+  presentationProfile?: ArtifactPresentationProfile;
   groundingDetails?: {
     unfoundCitations: string[];
     groundingScore: number;

@@ -16,6 +16,7 @@ import type {
   GeneratedArtifactContent,
 } from "./generation-types";
 import { validateLegalGrounding } from "../legal/grounding";
+import { deriveArtifactPresentationProfile } from "./personalization";
 
 /**
  * Constrói o artefato determinístico seguro de fallback quando a IA falha ou contexto é insuficiente.
@@ -136,6 +137,15 @@ export function buildDeterministicFallbackArtifact(
       break;
   }
 
+  const presentationProfile =
+    context.presentationProfile ??
+    deriveArtifactPresentationProfile({
+      userId: context.userId,
+      topicId: context.topicId,
+      artifactKind,
+      legalSourcesCount: context.legalSources?.length ?? 0,
+    });
+
   return {
     artifactId: `art-fallback-${topicId}-${Date.now()}`,
     artifactKind,
@@ -148,6 +158,7 @@ export function buildDeterministicFallbackArtifact(
       errorCountUsed: context.knownErrorsSummary ? 1 : 0,
     },
     grounded: true,
+    presentationProfile,
     dataConfidence: 0.5,
     generatedAt: new Date().toISOString(),
   };
@@ -232,6 +243,16 @@ export async function generateStudyArtifact(
 
   const selectedKind: ArtifactKind = artifactDecision.primaryArtifact;
 
+  const presentationProfile =
+    context.presentationProfile ??
+    deriveArtifactPresentationProfile({
+      userId,
+      topicId,
+      artifactKind: selectedKind,
+      pedagogicalAction: artifactDecision.pedagogicalAction,
+      legalSourcesCount: legalSources.length,
+    });
+
   // 2. Montar prompt do usuário
   const userPromptPayload = {
     userId,
@@ -246,6 +267,7 @@ export async function generateStudyArtifact(
     })),
     knownErrorsSummary: context.knownErrorsSummary ?? "Nenhum erro reportado.",
     studyNotes: context.studyNotes ?? "",
+    presentationProfile,
   };
 
   const userPrompt = `
@@ -255,6 +277,14 @@ INSTRUÇÕES DE AUTORIDADE:
 - Tipo de Artefato EXIGIDO: '${selectedKind}' (NÃO ALTERAR)
 - Tópico: ${topicName}
 - Tempo Disponível: ${availableMinutes} minutos
+
+PERFIL DE APRESENTAÇÃO EXIGIDO (FORMATO E APRESENTAÇÃO):
+- Complexidade: ${presentationProfile.complexity}
+- Densidade: ${presentationProfile.density}
+- Estrutura Visual: ${presentationProfile.visualStructure}
+- Nível de Exemplos: ${presentationProfile.exampleLevel}
+- Intensidade de Recall: ${presentationProfile.recallIntensity}
+- Detalhamento Jurídico: ${presentationProfile.legalDetailLevel}
 
 FONTES JURÍDICAS DISPONÍVEIS NO CONTEXTO:
 ${JSON.stringify(userPromptPayload.legalSourcesSummary, null, 2)}
@@ -343,6 +373,7 @@ Crie a resposta estritamente no formato JSON estruturado com o campo 'title' e o
         errorCountUsed: context.knownErrorsSummary ? 1 : 0,
       },
       grounded: isGrounded,
+      presentationProfile,
       groundingDetails,
       dataConfidence: artifactDecision.dataConfidence,
       generatedAt: new Date().toISOString(),
