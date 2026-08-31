@@ -1,6 +1,6 @@
 {
-  "name": "Remix Remix fiscal-mastermind",
-  "description": "Imported from GitHub: escalabaterias/fiscal-mastermind",
+  "name": "Aprovado Fiscal",
+  "description": "Plataforma de preparação orientada por dados para concursos fiscais.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

@@ -12,6 +12,7 @@ import {
 import { submitAnswer, type SubmitAnswerInput } from "@/lib/questions/attempt-service";
 import { normalizeTrueFalseAnswer } from "@/lib/questions/engine";
 import type { QuestionBankItem, QuestionFilter, FilterOptions } from "@/lib/questions/types";
+import { ProfessorFiscalSocraticTutor } from "@/components/study/ProfessorFiscalSocraticTutor";
 import { AppShell } from "@/components/layout/AppShell";
 import { EmptyState } from "@/components/common/EmptyState";
 import { Badge } from "@/components/ui/badge";
@@ -836,6 +837,19 @@ function QuestionView({
             )}
           </CardContent>
         </Card>
+
+        {/* Tutor Socrático — Professor Fiscal */}
+        <ProfessorFiscalSocraticTutor
+          topicId={question.topicId || "topico_geral"}
+          topicName={question.subjectName || "Direito Tributário"}
+          subjectName={question.subjectName}
+          questionContext={{
+            questionId: question.questionId,
+            statement: question.statement,
+            options: alternatives.map((a) => `${a.label}) ${a.text}`),
+            correctAnswer: question.correctAnswer,
+          }}
+        />
 
         {/* Resultado / Feedback */}
         {hasResult && (

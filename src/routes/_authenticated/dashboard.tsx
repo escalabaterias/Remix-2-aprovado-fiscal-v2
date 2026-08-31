@@ -18,6 +18,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/layout/AppShell";
 import { WhatToStudyNowCard } from "@/components/study/WhatToStudyNowCard";
+import { CoachGuidanceCard } from "@/components/coach/CoachGuidanceCard";
 import { EmptyState } from "@/components/common/EmptyState";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -373,6 +374,9 @@ function CommandCenterPage() {
             </Button>
           </div>
         ) : null}
+
+        {/* ── COACH DE IA PROATIVO (PROFESSOR FISCAL) ─────────────────────────── */}
+        <CoachGuidanceCard />
 
         {/* ── GRID SUPERIOR: CONCURSO ATIVO + META SEMANAL ────────────────────── */}
         <div className="grid gap-6 md:grid-cols-2">
