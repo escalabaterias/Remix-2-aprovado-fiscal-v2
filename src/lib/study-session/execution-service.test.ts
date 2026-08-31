@@ -64,6 +64,21 @@ vi.mock("@/integrations/supabase/client", () => ({
     },
     from: (table: string) => {
       track("from", table);
+      if (table === "user_topic_knowledge") {
+        return {
+          select: () => ({
+            eq: () => ({
+              eq: () => ({
+                maybeSingle: async () => ({ data: null, error: null }),
+              }),
+            }),
+          }),
+          update: () => ({
+            eq: async () => ({ data: null, error: null }),
+          }),
+          insert: async () => ({ data: null, error: null }),
+        };
+      }
       return { select: (...a: unknown[]) => createSelectChain().select(...a) };
     },
   },

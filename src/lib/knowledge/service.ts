@@ -145,3 +145,194 @@ export async function resolveError(errorId: string): Promise<void> {
 
   if (error) throw error;
 }
+
+export type RecordExposureInput = {
+  userId?: string;
+  topicId: string;
+  subjectId?: string | null;
+  contestId?: string | null;
+  timestamp: string;
+  referenceId?: string | null;
+};
+
+/**
+ * Registra a exposição (estudo de teoria/estudo guiado) em um tópico.
+ * Atualiza last_studied_at sem alterar mastery, confidence ou contadores de questões.
+ */
+export async function recordExposureKnowledge(
+  input: RecordExposureInput,
+): Promise<{ updated: boolean }> {
+  const userId = input.userId ?? (await supabase.auth.getUser()).data.user?.id;
+  if (!userId) {
+    throw new Error("Usuário não autenticado.");
+  }
+
+  // 1. Verificar se já existe registro para esse usuário e tópico
+  const { data: existing, error: selectError } = await supabase
+    .from("user_topic_knowledge")
+    .select("id, last_studied_at")
+    .eq("user_id", userId)
+    .eq("topic_id", input.topicId)
+    .maybeSingle();
+
+  if (selectError) throw selectError;
+
+  if (existing) {
+    // Atualizar apenas se a nova data for posterior (ou se last_studied_at for nulo)
+    const currentLast = existing.last_studied_at ? new Date(existing.last_studied_at).getTime() : 0;
+    const newLast = new Date(input.timestamp).getTime();
+
+    if (newLast >= currentLast) {
+      const builder = supabase.from("user_topic_knowledge");
+      if (typeof builder?.update === "function") {
+        const { error: updateError } = await builder
+          .update({
+            last_studied_at: input.timestamp,
+          })
+          .eq("id", existing.id);
+
+        if (updateError) throw updateError;
+      }
+    }
+  } else {
+    // Inserir registro inicial zerado com recência atual
+    const builder = supabase.from("user_topic_knowledge");
+    if (typeof builder?.insert === "function") {
+      const { error: insertError } = await builder.insert({
+        user_id: userId,
+        topic_id: input.topicId,
+        subject_id: input.subjectId ?? null,
+        contest_id: input.contestId ?? null,
+        mastery: 0,
+        confidence: 0,
+        total_questions: 0,
+        correct_questions: 0,
+        last_studied_at: input.timestamp,
+      });
+
+      if (insertError) throw insertError;
+    }
+  }
+
+  return { updated: true };
+}
+
+export type RecordRecallInput = RecordExposureInput;
+
+/**
+ * Registra a recuperação ativa (recall / flashcards) em um tópico.
+ * Atualiza last_studied_at sem alterar mastery, confidence ou contadores de questões.
+ * Garante que Recall NUNCA incrementa total_questions nem chama o Knowledge Engine.
+ */
+export async function recordRecallKnowledge(
+  input: RecordRecallInput,
+): Promise<{ updated: boolean }> {
+  return recordExposureKnowledge(input);
+}
+
+export type RecordRemediationKnowledgeInput = RecordExposureInput & {
+  result?: "success" | "partial" | "fail" | null;
+};
+
+/**
+ * Registra o saneamento de erro (remediation) em um tópico.
+ * Atualiza last_studied_at sem alterar mastery, confidence ou contadores de questões.
+ * Garante que Remediation NUNCA incrementa total_questions/correct_questions nem chama o Knowledge Engine.
+ */
+export async function recordRemediationKnowledge(
+  input: RecordRemediationKnowledgeInput,
+): Promise<{ updated: boolean }> {
+  return recordExposureKnowledge(input);
+}
+
+export type RecordReviewKnowledgeInput = RecordExposureInput & {
+  lastReviewResult?: string | null;
+  nextReviewAt?: string | null;
+  reviewCount?: number | null;
+};
+
+/**
+ * Registra a conclusão de uma sessão de revisão adaptativa em um tópico.
+ * Atualiza last_studied_at, last_review_at, last_review_result, next_review_at e review_count (se aplicável)
+ * sem alterar mastery, confidence ou contadores de questões objetivas (total_questions / correct_questions).
+ * Garante que a revisão NUNCA incrementa contadores de questões nem chama o Knowledge Engine.
+ */
+export async function recordReviewKnowledge(
+  input: RecordReviewKnowledgeInput,
+): Promise<{ updated: boolean }> {
+  const userId = input.userId ?? (await supabase.auth.getUser()).data.user?.id;
+  if (!userId) {
+    throw new Error("Usuário não autenticado.");
+  }
+
+  const { data: existing, error: selectError } = await supabase
+    .from("user_topic_knowledge")
+    .select("id, last_studied_at, review_count")
+    .eq("user_id", userId)
+    .eq("topic_id", input.topicId)
+    .maybeSingle();
+
+  if (selectError) throw selectError;
+
+  const reviewDate = input.timestamp.slice(0, 10);
+
+  if (existing) {
+    const currentLast = existing.last_studied_at ? new Date(existing.last_studied_at).getTime() : 0;
+    const newLast = new Date(input.timestamp).getTime();
+
+    if (newLast >= currentLast) {
+      const updateData: Record<string, any> = {
+        last_studied_at: input.timestamp,
+        last_review_at: reviewDate,
+      };
+
+      if (input.lastReviewResult !== undefined && input.lastReviewResult !== null) {
+        updateData.last_review_result = input.lastReviewResult;
+      }
+      if (input.nextReviewAt !== undefined && input.nextReviewAt !== null) {
+        updateData.next_review_at = input.nextReviewAt;
+      }
+      if (input.reviewCount !== undefined && input.reviewCount !== null) {
+        updateData.review_count = input.reviewCount;
+      }
+
+      const builder = supabase.from("user_topic_knowledge");
+      if (typeof builder?.update === "function") {
+        const { error: updateError } = await builder.update(updateData).eq("id", existing.id);
+
+        if (updateError) throw updateError;
+      }
+    }
+  } else {
+    const insertData: Record<string, any> = {
+      user_id: userId,
+      topic_id: input.topicId,
+      subject_id: input.subjectId ?? null,
+      contest_id: input.contestId ?? null,
+      mastery: 0,
+      confidence: 0,
+      total_questions: 0,
+      correct_questions: 0,
+      last_studied_at: input.timestamp,
+      last_review_at: reviewDate,
+    };
+
+    if (input.lastReviewResult !== undefined && input.lastReviewResult !== null) {
+      insertData.last_review_result = input.lastReviewResult;
+    }
+    if (input.nextReviewAt !== undefined && input.nextReviewAt !== null) {
+      insertData.next_review_at = input.nextReviewAt;
+    }
+    if (input.reviewCount !== undefined && input.reviewCount !== null) {
+      insertData.review_count = input.reviewCount;
+    }
+
+    const builder = supabase.from("user_topic_knowledge");
+    if (typeof builder?.insert === "function") {
+      const { error: insertError } = await builder.insert(insertData as any);
+      if (insertError) throw insertError;
+    }
+  }
+
+  return { updated: true };
+}

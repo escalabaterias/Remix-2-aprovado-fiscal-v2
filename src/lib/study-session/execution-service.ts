@@ -45,6 +45,7 @@ import { submitAnswer } from "../questions/attempt-service";
 import type { AttemptMode } from "../questions/types";
 import { getTopicReviewDecision, recordReviewEvent } from "../review/service";
 import { completeActivity } from "./session-service";
+import { recordCognitiveEvidence } from "@/lib/evidence/service";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TIPOS
@@ -306,6 +307,22 @@ export async function executeActivityCompletion(
     // SRS de flashcards não pertence a esta fase: o tipo é preservado
     // e apenas a conclusão da atividade é registrada.
     warnings.push("flashcards_sem_srs_nesta_fase");
+  } else if (kind === "study") {
+    if (row.topic_id) {
+      await recordCognitiveEvidence({
+        userId,
+        topicId: row.topic_id,
+        subjectId: row.subject_id ?? null,
+        contestId: input.contestId ?? null,
+        kind: "exposure",
+        source: "planner_task",
+        durationSeconds: actualMinutes * 60,
+        referenceId: taskId,
+        timestamp: new Date().toISOString(),
+      });
+    } else {
+      warnings.push("estudo_sem_topico");
+    }
   }
 
   // 5. Conclusão da atividade (persistência existente, idempotente)

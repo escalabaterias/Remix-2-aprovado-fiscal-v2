@@ -30,6 +30,8 @@ import { diagnoseTopic } from "@/lib/diagnosis/engine";
 import { computeReviewDecision } from "./engine";
 import type { TopicReviewInput, TopicReviewDecision } from "./types";
 import type { KnowledgeState } from "@/lib/knowledge/engine";
+import { recordCognitiveEvidence } from "@/lib/evidence/service";
+import { normalizeReviewResultToScore } from "@/lib/evidence/engine";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TIPOS INTERNOS
@@ -298,6 +300,7 @@ export type RecordReviewInput = {
   taskId?: string | null;
   notes?: string | null;
   reviewedAt?: string | null;
+  declaredConfidence?: 1 | 2 | 3 | 4 | 5 | null;
 };
 
 export type RecordReviewResult = {
@@ -432,7 +435,29 @@ export async function recordReviewEvent(input: RecordReviewInput): Promise<Recor
 
   if (eventError) throw eventError;
 
-  // 3. Atualizar user_topic_knowledge
+  // 3. Emitir evidência cognitiva unificada (kind: "review") — Failure Isolation
+  try {
+    const score = normalizeReviewResultToScore(input.result);
+    await recordCognitiveEvidence({
+      userId,
+      topicId: input.topicId,
+      subjectId: input.subjectId ?? null,
+      contestId: null,
+      kind: "review",
+      source: "review_session",
+      timestamp: reviewedAt,
+      score,
+      declaredConfidence: input.declaredConfidence ?? null,
+      referenceId: eventData.id,
+    });
+  } catch (cognitiveErr) {
+    console.error(
+      "Erro ao registrar evidência cognitiva de revisão (não-bloqueante):",
+      cognitiveErr,
+    );
+  }
+
+  // 4. Atualizar user_topic_knowledge
   // NÃO altera mastery — responsabilidade do Knowledge Engine
   if (kData) {
     const { error: updateError } = await supabase

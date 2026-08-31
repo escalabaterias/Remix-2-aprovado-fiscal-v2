@@ -35,6 +35,9 @@ import {
 } from "./engine";
 import type { ErrorRecord } from "@/lib/knowledge/errors";
 import type { KnowledgeState } from "@/lib/knowledge/engine";
+import { normalizeRemediationResultToScore } from "@/lib/evidence/engine";
+import { recordCognitiveEvidence } from "@/lib/evidence/service";
+import type { DeclaredConfidence } from "@/lib/evidence/types";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TIPOS INTERNOS (rows do banco)
@@ -383,4 +386,111 @@ export async function resolveErrorEntry(errorId: string): Promise<void> {
     .eq("id", errorId);
 
   if (error) throw error;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 5. remediateErrorEntry (Saneamento Cognitivo de Erro)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type RecordRemediationInput = {
+  errorEntryId: string;
+  topicId?: string | null;
+  subjectId?: string | null;
+  result: "success" | "partial" | "fail";
+  declaredConfidence?: DeclaredConfidence | null;
+  timestamp?: string;
+  durationSeconds?: number;
+  verificationAttemptId?: string | null;
+};
+
+export type RecordRemediationResult = {
+  success: boolean;
+  errorEntryId: string;
+  isResolved: boolean;
+  evidenceProcessed?: boolean;
+};
+
+/**
+ * Executa o saneamento cognitivo de um erro na Central de Erros (Remediation).
+ *
+ * RESPONSABILIDADES:
+ * 1. Requer usuário autenticado (auth.uid() == user_id)
+ * 2. Verifica existência do error_entry
+ * 3. Se result == "success", atualiza is_resolved = true no banco (Error Central)
+ * 4. Emite evento de evidência cognitiva (kind: "remediation") com Failure Isolation
+ * 5. Garante resiliência e não alteração das estatísticas objetivas de prática
+ */
+export async function remediateErrorEntry(
+  input: RecordRemediationInput,
+): Promise<RecordRemediationResult> {
+  const userId = await requireUser();
+
+  if (!input.errorEntryId || typeof input.errorEntryId !== "string" || !input.errorEntryId.trim()) {
+    throw new Error("errorEntryId é obrigatório.");
+  }
+
+  const { data: errorRow, error: fetchError } = await supabase
+    .from("error_entries")
+    .select("id, user_id, topic_id, subject_id, is_resolved")
+    .eq("id", input.errorEntryId)
+    .maybeSingle();
+
+  if (fetchError) throw fetchError;
+  if (!errorRow) {
+    throw new Error("Erro não encontrado.");
+  }
+
+  if (errorRow.user_id !== userId) {
+    throw new Error("Acesso negado.");
+  }
+
+  const topicId = input.topicId || errorRow.topic_id;
+  if (!topicId) {
+    throw new Error("topic_id do erro é obrigatório.");
+  }
+
+  const subjectId = input.subjectId || errorRow.subject_id;
+  const score = normalizeRemediationResultToScore(input.result);
+  const nowIso = input.timestamp || new Date().toISOString();
+
+  let isResolved = errorRow.is_resolved;
+
+  if (input.result === "success" && !errorRow.is_resolved) {
+    const { error: updateError } = await supabase
+      .from("error_entries")
+      .update({
+        is_resolved: true,
+        resolved_at: nowIso,
+      })
+      .eq("id", input.errorEntryId);
+
+    if (updateError) throw updateError;
+    isResolved = true;
+  }
+
+  let evidenceProcessed = false;
+  try {
+    const evResult = await recordCognitiveEvidence({
+      userId,
+      topicId,
+      subjectId,
+      kind: "remediation",
+      source: "error_central",
+      timestamp: nowIso,
+      durationSeconds: input.durationSeconds ?? 0,
+      score,
+      declaredConfidence: input.declaredConfidence ?? null,
+      referenceId: input.errorEntryId,
+    });
+    evidenceProcessed = evResult.processed;
+  } catch (err) {
+    console.error("Erro ao registrar evidência de remediação:", err);
+  }
+
+  return {
+    success: true,
+    errorEntryId: input.errorEntryId,
+    isResolved,
+    evidenceProcessed,
+  };
 }

@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
+import { remediateErrorEntry, resolveErrorEntry } from "@/lib/error-central/service";
 import { AppShell } from "@/components/layout/AppShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -78,16 +79,34 @@ function ErrorDetailPage() {
 
   const resolveMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase
-        .from("error_entries")
-        .update({ is_resolved: true, resolved_at: new Date().toISOString() })
-        .eq("id", errorId);
-      if (error) throw error;
+      await resolveErrorEntry(errorId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["error-detail", errorId] });
       queryClient.invalidateQueries({ queryKey: ["central-erros"] });
-      toast.success("Erro marcado como resolvido.");
+      toast.success("Erro marcado como resolvido (Administrativo).");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const remediateMutation = useMutation({
+    mutationFn: async (result: "success" | "partial" | "fail") => {
+      if (!data?.error) throw new Error("Dados do erro não carregados.");
+      return remediateErrorEntry({
+        errorEntryId: errorId,
+        topicId: data.error.topic_id,
+        subjectId: data.error.subject_id,
+        result,
+      });
+    },
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["error-detail", errorId] });
+      queryClient.invalidateQueries({ queryKey: ["central-erros"] });
+      if (res.isResolved) {
+        toast.success("Saneamento cognitivo concluído! Erro resolvido e evidência registrada.");
+      } else {
+        toast.info("Evidência de saneamento registrada. Continue revisando para sanar o erro.");
+      }
     },
     onError: (err: Error) => toast.error(err.message),
   });

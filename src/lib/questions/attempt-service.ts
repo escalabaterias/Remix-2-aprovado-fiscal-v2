@@ -34,10 +34,16 @@
  */
 
 import { supabase } from "@/integrations/supabase/client";
-import { computeAttemptFeedback, type AttemptFeedbackInput } from "./engine";
+import {
+  computeAttemptFeedback,
+  mapDifficultyToKnowledge,
+  type AttemptFeedbackInput,
+} from "./engine";
 import { toQuestionStats } from "./service";
 import { createErrorFromAttempt } from "./error-integration";
 import { updateKnowledgeFromAttempt } from "./knowledge-integration";
+import { recordCognitiveEvidence } from "@/lib/evidence/service";
+import type { CognitiveEvidenceSource, DeclaredConfidence } from "@/lib/evidence/types";
 import type { AttemptFeedback, QuestionStats, AttemptMode } from "./types";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -117,6 +123,24 @@ type AttemptRow = {
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPERS
 // ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Mapeia o modo da tentativa (AttemptMode) para a origem da evidência cognitiva (CognitiveEvidenceSource).
+ */
+function mapAttemptModeToEvidenceSource(mode: AttemptMode): CognitiveEvidenceSource {
+  switch (mode) {
+    case "revisao":
+      return "review_session";
+    case "flashcard":
+      return "flashcard_deck";
+    case "estudo":
+    case "simulado":
+    case "diagnostico":
+    case "outro":
+    default:
+      return "question_bank";
+  }
+}
 
 async function requireUser(): Promise<string> {
   const { data, error } = await supabase.auth.getUser();
@@ -413,7 +437,36 @@ export async function submitAnswer(input: SubmitAnswerInput): Promise<SubmitAnsw
     errorEntryId = errorResult.errorEntryId;
   }
 
-  // 9. Atualizar Knowledge Engine se topicId presente (Fase 5)
+  // 9. Emissão de evidência cognitiva (Etapa 6.18 - Prática)
+  if (feedback.topicId !== null) {
+    try {
+      const validDeclaredConfidence =
+        input.declaredConfidence !== undefined &&
+        input.declaredConfidence !== null &&
+        [1, 2, 3, 4, 5].includes(input.declaredConfidence)
+          ? (input.declaredConfidence as DeclaredConfidence)
+          : null;
+
+      await recordCognitiveEvidence({
+        userId,
+        topicId: feedback.topicId,
+        subjectId: feedback.subjectId,
+        contestId: input.contestId ?? null,
+        kind: "practice",
+        source: mapAttemptModeToEvidenceSource(input.mode),
+        timestamp,
+        durationSeconds: input.timeSpentSeconds ?? undefined,
+        score: input.isCorrect ? 1.0 : 0.0,
+        difficulty: mapDifficultyToKnowledge(questionMeta.difficulty),
+        declaredConfidence: validDeclaredConfidence,
+        referenceId: attemptRow.id,
+      });
+    } catch {
+      // Falha secundária na emissão de evidência não bloqueia o registro da tentativa
+    }
+  }
+
+  // 10. Atualizar Knowledge Engine se topicId presente (Fase 5)
   let knowledgeUpdated = false;
 
   if (feedback.topicId !== null) {

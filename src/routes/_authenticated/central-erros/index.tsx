@@ -184,7 +184,7 @@ function CentralErrosPage() {
   });
 
   // Filtros locais sobre o resultado (matéria, tópico, categoria)
-  const allErrors = prioritizedErrors ?? [];
+  const allErrors = useMemo(() => prioritizedErrors ?? [], [prioritizedErrors]);
 
   const filtered = useMemo(() => {
     return allErrors.filter((pe) => {
