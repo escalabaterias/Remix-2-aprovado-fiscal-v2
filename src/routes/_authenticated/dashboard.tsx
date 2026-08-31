@@ -19,6 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/layout/AppShell";
 import { WhatToStudyNowCard } from "@/components/study/WhatToStudyNowCard";
 import { CoachGuidanceCard } from "@/components/coach/CoachGuidanceCard";
+import { CognitiveTelemetryDashboardPanel } from "@/components/dashboard/CognitiveTelemetryDashboardPanel";
 import { EmptyState } from "@/components/common/EmptyState";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -510,6 +511,9 @@ function CommandCenterPage() {
           contestId={data.activeContest?.id}
           onStartTask={(taskId) => startTaskMutation.mutate(taskId)}
         />
+
+        {/* ── PAINEL DE OBSERVABILIDADE DO CICLO COGNITIVO (FASE 7.8) ───────────── */}
+        <CognitiveTelemetryDashboardPanel />
 
         {/* ── LISTA DE TAREFAS DE HOJE ────────────────────────────────────────── */}
         <section className="panel p-5">

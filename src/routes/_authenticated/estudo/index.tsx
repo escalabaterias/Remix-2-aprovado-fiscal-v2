@@ -19,6 +19,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ACTIVITY_LABELS } from "@/lib/domain";
+import { CognitiveCycleInteractiveView } from "@/components/study/CognitiveCycleInteractiveView";
+import { orchestrateCognitiveCycleStep } from "@/lib/cognitive-cycle/engine";
 import {
   createStudySession,
   startSession,
@@ -402,6 +404,26 @@ function ActiveSessionView({
   const progressPercent = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
   const allDone = completedCount === totalCount && totalCount > 0;
 
+  // ── Orquestração Unificada do Ciclo Cognitivo para a atividade ativa (Fase 8) ──
+  const { data: stepPlan, isLoading: loadingStepPlan } = useQuery({
+    queryKey: ["cognitive-cycle-step", currentActivity?.topicId, currentActivity?.taskId],
+    enabled: Boolean(currentActivity?.topicId),
+    queryFn: async () => {
+      if (!currentActivity?.topicId) return null;
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData.user?.id || "anonymous-student";
+      return orchestrateCognitiveCycleStep({
+        userId,
+        topicId: currentActivity.topicId,
+        topicName: currentActivity.topicName,
+        subjectId: currentActivity.subjectId,
+        subjectName: currentActivity.subjectName,
+        taskId: currentActivity.taskId,
+        sessionId,
+      });
+    },
+  });
+
   const completeAct = useMutation({
     mutationFn: async (taskId: string) => {
       const activity = activities.find((a) => a.taskId === taskId);
@@ -531,53 +553,73 @@ function ActiveSessionView({
 
         {/* Current activity */}
         {currentActivity && !allDone ? (
-          <section className="panel border-primary/30 px-5 py-5">
-            <p className="label-eyebrow text-primary">Atividade atual</p>
-            <h2 className="mt-2 font-display text-xl font-semibold text-foreground">
-              {currentActivity.topicName}
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">{currentActivity.subjectName}</p>
+          <div className="space-y-4">
+            {stepPlan ? (
+              <CognitiveCycleInteractiveView
+                stepPlan={stepPlan}
+                isLoading={loadingStepPlan}
+                onInteractionComplete={() => {
+                  completeAct.mutate(currentActivity.taskId);
+                }}
+                onContinue={() => {
+                  const nextIdx = activities.findIndex(
+                    (a, i) =>
+                      i > currentIndex && (a.status === "pendente" || a.status === "em_andamento"),
+                  );
+                  if (nextIdx >= 0) setCurrentIndex(nextIdx);
+                }}
+              />
+            ) : (
+              <section className="panel border-primary/30 px-5 py-5">
+                <p className="label-eyebrow text-primary">Atividade atual</p>
+                <h2 className="mt-2 font-display text-xl font-semibold text-foreground">
+                  {currentActivity.topicName}
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">{currentActivity.subjectName}</p>
 
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Badge>{activityLabel(currentActivity.activity)}</Badge>
-              <Badge variant="outline">{formatMinutes(currentActivity.allocatedMinutes)}</Badge>
-              <Badge variant="outline">{sourceLabel(currentActivity.source)}</Badge>
-              {currentActivity.priorityScore > 0 ? (
-                <Badge variant="outline">
-                  Prioridade {currentActivity.priorityScore.toFixed(1)}
-                </Badge>
-              ) : null}
-            </div>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Badge>{activityLabel(currentActivity.activity)}</Badge>
+                  <Badge variant="outline">{formatMinutes(currentActivity.allocatedMinutes)}</Badge>
+                  <Badge variant="outline">{sourceLabel(currentActivity.source)}</Badge>
+                  {currentActivity.priorityScore > 0 ? (
+                    <Badge variant="outline">
+                      Prioridade {currentActivity.priorityScore.toFixed(1)}
+                    </Badge>
+                  ) : null}
+                </div>
 
-            {currentActivity.priorityReason ? (
-              <p className="mt-3 text-sm text-muted-foreground">{currentActivity.priorityReason}</p>
-            ) : null}
+                {currentActivity.priorityReason ? (
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    {currentActivity.priorityReason}
+                  </p>
+                ) : null}
 
-            <div className="mt-5 flex gap-2">
-              <Button
-                onClick={() => completeAct.mutate(currentActivity.taskId)}
-                disabled={completeAct.isPending}
-              >
-                {completeAct.isPending ? "Concluindo…" : "Concluir atividade"}
-              </Button>
-              {currentIndex < totalCount - 1 ? (
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    // Skip to next — mark current as still pending, move index
-                    const nextIdx = activities.findIndex(
-                      (a, i) =>
-                        i > currentIndex &&
-                        (a.status === "pendente" || a.status === "em_andamento"),
-                    );
-                    if (nextIdx >= 0) setCurrentIndex(nextIdx);
-                  }}
-                >
-                  Pular para próxima
-                </Button>
-              ) : null}
-            </div>
-          </section>
+                <div className="mt-5 flex gap-2">
+                  <Button
+                    onClick={() => completeAct.mutate(currentActivity.taskId)}
+                    disabled={completeAct.isPending}
+                  >
+                    {completeAct.isPending ? "Concluindo…" : "Concluir atividade"}
+                  </Button>
+                  {currentIndex < totalCount - 1 ? (
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        const nextIdx = activities.findIndex(
+                          (a, i) =>
+                            i > currentIndex &&
+                            (a.status === "pendente" || a.status === "em_andamento"),
+                        );
+                        if (nextIdx >= 0) setCurrentIndex(nextIdx);
+                      }}
+                    >
+                      Pular para próxima
+                    </Button>
+                  ) : null}
+                </div>
+              </section>
+            )}
+          </div>
         ) : null}
 
         {/* Activities list */}

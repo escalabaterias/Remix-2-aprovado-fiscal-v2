@@ -30,6 +30,29 @@ import type {
 /**
  * Prepara o contexto de recuperação jurídica a partir dos dados da sessão socrática.
  */
+export function getLegalContextForSocratic(
+  topicId: string,
+  topicName: string,
+  subjectName: string,
+  targetConcept?: string,
+): SocraticLegalContext {
+  const retrievalCtx: LegalRetrievalContext = {
+    topicId,
+    topicName,
+    subjectName,
+    targetConcept: targetConcept || topicName,
+  };
+  const sources = retrieveLegalSources(retrievalCtx);
+  return {
+    relevantLegalSources: sources,
+    targetLegalConcept: targetConcept || topicName,
+    legalRetrievalMethod: sources.length > 0 ? "topic_match" : "fallback",
+  };
+}
+
+/**
+ * Prepara o contexto de recuperação jurídica a partir dos dados da sessão socrática.
+ */
 export function prepareLegalRetrievalContext(
   socraticContext: SocraticSessionContext,
   extra?: Partial<LegalRetrievalContext>,

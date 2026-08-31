@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { decideStudyArtifact, calculateArtifactDataConfidence } from "./index";
 import type { ArtifactContext } from "./types";
 import { decidePedagogicalAction } from "../decision/engine";
@@ -6,6 +6,15 @@ import { decidePedagogicalAction } from "../decision/engine";
 describe("Fase 7.6.1 — Adaptive Memory & Study Artifacts Engine", () => {
   const userId = "user-artifact-test";
   const topicId = "top-art-123";
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-31T12:00:00.000Z"));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
 
   // 1. REMEDIATION + ERRO DE MEMORIZAÇÃO -> MNEMONIC
   it("seleciona MNEMONIC para REMEDIATION com erro de memorização", () => {
