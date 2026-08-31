@@ -12,6 +12,7 @@ import {
   loadSocraticSession,
   calculateSocraticCognitiveScore,
   emitSocraticCognitiveEvidence,
+  clearSocraticMemoryCache,
 } from "./socratic-persistence";
 import { SOCRATIC_EVIDENCE_KINDS } from "./types";
 import type { SocraticSessionContext } from "./types";
@@ -20,9 +21,72 @@ import * as errorCentralModule from "@/lib/error-central/service";
 import * as knowledgeServiceModule from "@/lib/knowledge/service";
 import { supabase } from "@/integrations/supabase/client";
 
+// Armazenamento em memória isolado para simular o banco nos testes
+const mockAiResultsStore = new Map<string, any>();
+
+vi.mock("@/integrations/supabase/client", () => {
+  return {
+    supabase: {
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: { user: { id: "user-test-734" } },
+          error: null,
+        }),
+      },
+      from: vi.fn().mockImplementation((table: string) => {
+        if (table === "ai_results") {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockImplementation((col1: string, val1: string) => ({
+                eq: vi.fn().mockImplementation((col2: string, val2: string) => ({
+                  limit: vi.fn().mockReturnValue({
+                    maybeSingle: vi.fn().mockImplementation(async () => {
+                      const key = `${val1}:${val2}`;
+                      const item = mockAiResultsStore.get(key);
+                      return {
+                        data: item ? { id: item.id, output: item.output } : null,
+                        error: null,
+                      };
+                    }),
+                  }),
+                })),
+              })),
+            }),
+            insert: vi.fn().mockImplementation(async (payload: any) => {
+              const key = `${payload.task_type}:${payload.input_hash}`;
+              mockAiResultsStore.set(key, { id: `air-${Date.now()}`, ...payload });
+              return { data: null, error: null };
+            }),
+            update: vi.fn().mockImplementation((payload: any) => ({
+              eq: vi.fn().mockImplementation(async (_col: string, idVal: string) => {
+                for (const [k, v] of mockAiResultsStore.entries()) {
+                  if (v.id === idVal) {
+                    mockAiResultsStore.set(k, { ...v, ...payload });
+                  }
+                }
+                return { data: null, error: null };
+              }),
+            })),
+          };
+        }
+
+        return {
+          select: vi.fn().mockReturnThis(),
+          insert: vi.fn().mockResolvedValue({ data: null, error: null }),
+          update: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+        };
+      }),
+    },
+  };
+});
+
 describe("Persistência Cognitiva do Professor Fiscal — Fase 7.3.4", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    mockAiResultsStore.clear();
+    clearSocraticMemoryCache();
   });
 
   describe("1. Sanitização de Metadados e Segurança", () => {

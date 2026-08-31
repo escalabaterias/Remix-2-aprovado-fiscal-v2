@@ -33,6 +33,14 @@ const recordedIdempotencyKeys = new Set<string>();
 const sessionCache = new Map<string, SocraticSessionContext>();
 
 /**
+ * Limpa os caches em memória de sessões e idempotência (útil para isolamento de testes e reset de sessão).
+ */
+export function clearSocraticMemoryCache(): void {
+  recordedIdempotencyKeys.clear();
+  sessionCache.clear();
+}
+
+/**
  * Sanitiza metadados para garantir que nenhuma chave de API, token de autorização,
  * JWT, senha ou prompt privado completo seja persistido ou exposto.
  */
@@ -249,7 +257,11 @@ export function calculateSocraticCognitiveScore(params: {
     return 0.3;
   }
 
-  if (classification === "CORRECT" || currentState === "CONSOLIDATING" || currentState === "COMPLETED") {
+  if (
+    classification === "CORRECT" ||
+    currentState === "CONSOLIDATING" ||
+    currentState === "COMPLETED"
+  ) {
     if (hintLevel === 0) return 1.0;
     if (hintLevel === 1) return 0.8;
     if (hintLevel === 2) return 0.6;
@@ -285,8 +297,7 @@ export async function emitSocraticCognitiveEvidence(
 ): Promise<EmitSocraticEvidenceResult> {
   const { socraticContext, lastTurn, socraticResponse, legalEvidenceMetadata } = params;
 
-  const targetUserId =
-    params.userId || (await supabase.auth.getUser()).data.user?.id;
+  const targetUserId = params.userId || (await supabase.auth.getUser()).data.user?.id;
 
   if (!targetUserId) {
     return {
@@ -300,7 +311,8 @@ export async function emitSocraticCognitiveEvidence(
 
   const turnNumber = lastTurn?.turnNumber || socraticContext.currentTurnNumber;
   const hintLevel = lastTurn?.hintLevel ?? socraticContext.hintLevel ?? 0;
-  const classification = lastTurn?.evaluationClassification || socraticResponse?.evaluation?.classification;
+  const classification =
+    lastTurn?.evaluationClassification || socraticResponse?.evaluation?.classification;
   const pedagogicalMode = socraticContext.pedagogicalMode;
 
   const score = calculateSocraticCognitiveScore({
@@ -316,7 +328,8 @@ export async function emitSocraticCognitiveEvidence(
     pedagogicalMode,
     currentState: socraticContext.currentState,
     hintLevel,
-    targetConcept: socraticContext.currentQuestion?.targetConcept || socraticContext.pedagogicalGoal,
+    targetConcept:
+      socraticContext.currentQuestion?.targetConcept || socraticContext.pedagogicalGoal,
     questionId: socraticContext.currentQuestion?.questionId || socraticContext.currentQuestion?.id,
     classification,
     reasoningQuality: socraticResponse?.evaluation?.reasoningQuality,
@@ -431,8 +444,7 @@ export async function emitSocraticCognitiveEvidence(
 
   // 3. Orquestração com a Central de Erros quando há sucesso na remediação
   const errorContext = socraticContext.contextMetadata?.errorContext as
-    | { errorEntryId?: string }
-    | undefined;
+    { errorEntryId?: string } | undefined;
 
   if (errorContext?.errorEntryId && isSuccess) {
     try {
