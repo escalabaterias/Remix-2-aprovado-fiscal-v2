@@ -9,6 +9,8 @@ import {
   REFERENCE_FISCAL_CONTESTS,
   type ReferenceFiscalContest,
 } from "@/lib/concursos/fiscalReferenceContests";
+import { cloneOfficialFiscalContest } from "@/lib/concursos/fiscalSyncService";
+import { cleanupLegacyMockContests } from "@/lib/concursos/dbCleanupService";
 import { AppShell } from "@/components/layout/AppShell";
 import { EmptyState } from "@/components/common/EmptyState";
 import { Button } from "@/components/ui/button";
@@ -74,6 +76,9 @@ function ContestsPage() {
   const { data: contests, isLoading } = useQuery({
     queryKey: ["contests"],
     queryFn: async () => {
+      // Limpeza automática de dados e mocks legados
+      await cleanupLegacyMockContests();
+
       const { data, error } = await supabase
         .from("contests")
         .select("id, name, organization, role_title, exam_board, area, exam_date, status")
@@ -115,21 +120,18 @@ function ContestsPage() {
     mutationFn: async (ref: ReferenceFiscalContest) => {
       const { data: auth } = await supabase.auth.getUser();
       if (!auth.user) throw new Error("Sessão expirada.");
-      const { error } = await supabase.from("contests").insert({
-        user_id: auth.user.id,
-        name: ref.name,
-        organization: ref.organization,
-        role_title: ref.roleTitle,
-        area: ref.area,
-        exam_board: ref.examBoard,
-        status: ref.status as ContestStatus,
-        description: `Importado do catálogo de referência fiscal. ${ref.highlights.join(". ")}`,
-      });
-      if (error) throw error;
+
+      // Clona e auto-provisiona a árvore completa de matérias e tópicos fiscais
+      const res = await cloneOfficialFiscalContest(ref.id, auth.user.id);
+      return res;
     },
-    onSuccess: () => {
-      toast.success("Edital fiscal de referência importado para seus concursos!");
+    onSuccess: (res) => {
+      toast.success(
+        `Edital ${res.contestName} importado com sucesso! ${res.subjectsCount} matérias e ${res.contestTopicsCount} tópicos sincronizados.`,
+      );
       queryClient.invalidateQueries({ queryKey: ["contests"] });
+      queryClient.invalidateQueries({ queryKey: ["subjects"] });
+      queryClient.invalidateQueries({ queryKey: ["topics"] });
     },
     onError: (error: Error) => toast.error(error.message),
   });

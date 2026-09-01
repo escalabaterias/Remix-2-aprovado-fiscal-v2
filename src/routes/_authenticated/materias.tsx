@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { Sparkles, Download, BookOpen, Check } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/layout/AppShell";
@@ -28,6 +29,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TOPIC_KIND_LABELS, type TopicKind } from "@/lib/domain";
+import {
+  OFFICIAL_FISCAL_CONTESTS,
+  type OfficialFiscalContest,
+} from "@/lib/concursos/fiscalKnowledgeBase";
+import { cloneOfficialFiscalContest } from "@/lib/concursos/fiscalSyncService";
 
 export const Route = createFileRoute("/_authenticated/materias")({
   head: () => ({
@@ -184,19 +190,39 @@ function SubjectsPage() {
     <AppShell
       title="Matérias e Tópicos"
       description="O catálogo existe independentemente dos concursos: o mesmo tópico serve a vários editais, sem duplicar conhecimento."
-      actions={<NewSubjectDialog onSubmit={(p) => createSubject.mutate(p)} />}
+      actions={
+        <div className="flex flex-wrap items-center gap-2">
+          <ImportOfficialContestDialog
+            onSuccess={() => {
+              queryClient.invalidateQueries({ queryKey: ["subjects"] });
+              queryClient.invalidateQueries({ queryKey: ["topics"] });
+            }}
+          />
+          <NewSubjectDialog onSubmit={(p) => createSubject.mutate(p)} />
+        </div>
+      }
     >
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Carregando…</p>
       ) : !subjects?.length ? (
-        <EmptyState
-          title="Nenhuma matéria cadastrada"
-          description="Cadastre matérias como Direito Tributário ou Raciocínio Lógico-Matemático para começar a estruturar tópicos."
-        />
+        <div className="space-y-4">
+          <EmptyState
+            title="Nenhuma matéria cadastrada"
+            description="Você pode importar a árvore completa de editais fiscais oficiais com 1 clique ou cadastrar manualmente."
+          />
+          <div className="flex justify-center">
+            <ImportOfficialContestDialog
+              onSuccess={() => {
+                queryClient.invalidateQueries({ queryKey: ["subjects"] });
+                queryClient.invalidateQueries({ queryKey: ["topics"] });
+              }}
+            />
+          </div>
+        </div>
       ) : (
         <div className="grid gap-6 lg:grid-cols-[18rem_1fr]">
           <aside className="panel h-fit px-3 py-3">
-            <p className="label-eyebrow px-2 pb-2">Matérias</p>
+            <p className="label-eyebrow px-2 pb-2">Matérias ({subjects.length})</p>
             <ul className="space-y-0.5">
               {subjects.map((subject) => (
                 <li key={subject.id}>
@@ -316,6 +342,97 @@ function TopicTree({
   );
 }
 
+function ImportOfficialContestDialog({ onSuccess }: { onSuccess: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState<string>("sefaz-sp-afre");
+  const [loading, setLoading] = useState(false);
+
+  const handleImport = async () => {
+    try {
+      setLoading(true);
+      const res = await cloneOfficialFiscalContest(selectedId);
+      toast.success(
+        `Árvore importada: ${res.subjectsCount} disciplinas e ${res.topicsCount} tópicos cadastrados com sucesso!`,
+      );
+      setOpen(false);
+      onSuccess();
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao importar edital.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button
+          variant="outline"
+          size="sm"
+          className="border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/10"
+        >
+          <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+          Sincronizar Edital Fiscal
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <BookOpen className="h-5 w-5 text-emerald-400" />
+            Importar Árvore Oficial de Matérias
+          </DialogTitle>
+          <DialogDescription>
+            Importe disciplinas, tópicos e pesagens de um dos editais fiscais reais
+            pré-configurados.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-3 py-2 max-h-[350px] overflow-y-auto pr-1">
+          {OFFICIAL_FISCAL_CONTESTS.map((c) => {
+            const isSelected = selectedId === c.id;
+            return (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => setSelectedId(c.id)}
+                className={`w-full p-3 text-left rounded-lg border transition-all ${
+                  isSelected
+                    ? "border-emerald-500 bg-emerald-950/20 text-foreground"
+                    : "border-border hover:bg-muted/40 text-muted-foreground"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="font-semibold text-sm text-foreground">{c.name}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Banca {c.examBoard} · {c.roleTitle}
+                    </p>
+                  </div>
+                  {isSelected && <Check className="h-4 w-4 text-emerald-400 shrink-0" />}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => setOpen(false)}>
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleImport}
+            disabled={loading}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5"
+          >
+            {loading ? "Importando..." : "Importar Grade Completa"}
+            <Download className="h-4 w-4" />
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function NewSubjectDialog({
   onSubmit,
 }: {
@@ -329,7 +446,7 @@ function NewSubjectDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>Nova matéria</Button>
+        <Button size="sm">Nova matéria</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
@@ -360,7 +477,7 @@ function NewSubjectDialog({
             <Label htmlFor="subject-area">Área</Label>
             <Input
               id="subject-area"
-              placeholder="Ex.: Direito, Exatas, Linguagens"
+              placeholder="Ex.: Jurídica, Contábil, Exatas"
               value={area}
               onChange={(e) => setArea(e.target.value)}
             />
@@ -397,7 +514,7 @@ function NewTopicDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" disabled={disabled}>
+        <Button variant="outline" size="sm" disabled={disabled}>
           Novo tópico
         </Button>
       </DialogTrigger>
@@ -484,7 +601,7 @@ function NewPrereqDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" disabled={disabled}>
+        <Button variant="outline" size="sm" disabled={disabled}>
           Novo pré-requisito
         </Button>
       </DialogTrigger>

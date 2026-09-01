@@ -10,10 +10,11 @@ import {
   Target,
   BookOpen,
   Calendar,
-  Layers,
-  Award,
   Clock,
   Zap,
+  Building2,
+  ShieldCheck,
+  Award,
 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -22,10 +23,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { addDays, todayISO } from "@/lib/planner/availability";
-import { DEFAULT_BLOCK_MINUTES, DEFAULT_MAX_DAILY_MINUTES } from "@/lib/planner/service";
+import {
+  DEFAULT_BLOCK_MINUTES,
+  DEFAULT_MAX_DAILY_MINUTES,
+  generatePlanTasks,
+} from "@/lib/planner/service";
+import {
+  OFFICIAL_FISCAL_CONTESTS,
+  type OfficialFiscalContest,
+} from "@/lib/concursos/fiscalKnowledgeBase";
+import { cloneOfficialFiscalContest } from "@/lib/concursos/fiscalSyncService";
 
 export function PlanoWizard({ onCancel }: { onCancel?: () => void }) {
   const queryClient = useQueryClient();
@@ -33,9 +42,10 @@ export function PlanoWizard({ onCancel }: { onCancel?: () => void }) {
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
-  // Step 1: Concurso e Cargo
+  // Step 1: Concurso Fiscal Alvo
+  const [selectedOfficialId, setSelectedOfficialId] = useState<string>("sefaz-sp-afre");
   const [contestId, setContestId] = useState<string>("");
-  const [name, setName] = useState("");
+  const [name, setName] = useState("Ciclo Reta Final — SEFAZ-SP AFRE");
 
   // Step 2: Matérias e Domínio Inicial
   const [selectedTopics, setSelectedTopics] = useState<
@@ -47,9 +57,10 @@ export function PlanoWizard({ onCancel }: { onCancel?: () => void }) {
   const [endDate, setEndDate] = useState(addDays(todayISO(), 27));
   const [blockMinutes, setBlockMinutes] = useState(String(DEFAULT_BLOCK_MINUTES));
   const [maxDaily, setMaxDaily] = useState(String(DEFAULT_MAX_DAILY_MINUTES / 60));
+  const [isCloning, setIsCloning] = useState(false);
 
-  // Query contests
-  const { data: contests, isLoading: loadingContests } = useQuery({
+  // Query concursos já cadastrados no Supabase
+  const { data: dbContests, isLoading: loadingContests } = useQuery({
     queryKey: ["contests-for-wizard"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -61,14 +72,18 @@ export function PlanoWizard({ onCancel }: { onCancel?: () => void }) {
     },
   });
 
-  // Query topics for selected contest
-  const { data: contestTopics, isLoading: loadingTopics } = useQuery({
+  // Query tópicos para o concurso selecionado
+  const {
+    data: contestTopics,
+    isLoading: loadingTopics,
+    refetch: refetchTopics,
+  } = useQuery({
     queryKey: ["contest-topics-wizard", contestId],
     enabled: Boolean(contestId),
     queryFn: async () => {
       const { data, error } = await supabase
         .from("contest_topics")
-        .select("id, priority, subjects(id, name), topics(id, name)")
+        .select("id, priority, weight, relevance_score, subjects(id, name), topics(id, name)")
         .eq("contest_id", contestId)
         .order("priority", { ascending: false });
       if (error) throw error;
@@ -76,10 +91,29 @@ export function PlanoWizard({ onCancel }: { onCancel?: () => void }) {
     },
   });
 
-  const handleSelectContest = (id: string, defaultName: string) => {
-    setContestId(id);
-    if (!name) {
-      setName(`Plano Reta Final — ${defaultName}`);
+  const handleSelectOfficialContest = (official: OfficialFiscalContest) => {
+    setSelectedOfficialId(official.id);
+    setName(`Plano de Alta Performance — ${official.name}`);
+  };
+
+  const handleProceedToTopics = async () => {
+    try {
+      setIsCloning(true);
+      // Provisiona e clona a árvore do edital oficial em lote (bulk insert)
+      const sync = await cloneOfficialFiscalContest(selectedOfficialId);
+      setContestId(sync.contestId);
+      await queryClient.invalidateQueries({ queryKey: ["contest-topics-wizard"] });
+      await queryClient.invalidateQueries({ queryKey: ["contests"] });
+      await queryClient.invalidateQueries({ queryKey: ["contests-for-wizard"] });
+      await refetchTopics();
+      setStep(2);
+      toast.success(
+        `Árvore oficial sincronizada: ${sync.subjectsCount} matérias e ${sync.contestTopicsCount} tópicos carregados com sucesso!`,
+      );
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao sincronizar edital fiscal.");
+    } finally {
+      setIsCloning(false);
     }
   };
 
@@ -103,7 +137,8 @@ export function PlanoWizard({ onCancel }: { onCancel?: () => void }) {
       const selectedTopicIds = Object.keys(selectedTopics);
       const domainMap = selectedTopics;
 
-      const { data, error } = await supabase
+      // 1. Criar o plano
+      const { data: newPlan, error: planError } = await supabase
         .from("study_plans")
         .insert({
           user_id: auth.user.id,
@@ -122,12 +157,21 @@ export function PlanoWizard({ onCancel }: { onCancel?: () => void }) {
         .select("id")
         .single();
 
-      if (error) throw error;
-      return data.id;
+      if (planError || !newPlan) throw planError || new Error("Erro ao criar plano");
+
+      // 2. Gerar tarefas no motor de planejamento cognitivo unificado
+      try {
+        await generatePlanTasks(newPlan.id);
+      } catch (err) {
+        console.warn("Plano criado. Erro ao pré-gerar tarefas automáticas:", err);
+      }
+
+      return newPlan.id;
     },
     onSuccess: (newPlanId) => {
-      toast.success("Plano de estudos criado com sucesso! O edital foi sincronizado.");
+      toast.success("Plano de estudos fiscal gerado e tarefas distribuídas com sucesso!");
       queryClient.invalidateQueries({ queryKey: ["study-plans"] });
+      queryClient.invalidateQueries({ queryKey: ["command-center"] });
       navigate({ to: "/plano/$planId", params: { planId: newPlanId } });
     },
     onError: (err: Error) => toast.error(err.message),
@@ -141,7 +185,7 @@ export function PlanoWizard({ onCancel }: { onCancel?: () => void }) {
           <div className="flex items-center justify-between mb-3 text-xs font-semibold">
             <span className="text-emerald-400 font-mono flex items-center gap-1.5">
               <Sparkles className="h-4 w-4" />
-              Wizard de Criação de Plano de Estudos
+              Onboarding & Planejador Fiscal
             </span>
             <span className="text-muted-foreground">Etapa {step} de 3</span>
           </div>
@@ -158,7 +202,7 @@ export function PlanoWizard({ onCancel }: { onCancel?: () => void }) {
                     : "border-border text-muted-foreground"
               }`}
             >
-              1. Concurso & Cargo
+              1. Edital Fiscal Alvo
             </div>
             <div
               className={`p-2 rounded-lg border text-xs transition-colors ${
@@ -169,7 +213,7 @@ export function PlanoWizard({ onCancel }: { onCancel?: () => void }) {
                     : "border-border text-muted-foreground"
               }`}
             >
-              2. Matérias & Domínio
+              2. Matérias & Nível Inicial
             </div>
             <div
               className={`p-2 rounded-lg border text-xs transition-colors ${
@@ -178,13 +222,13 @@ export function PlanoWizard({ onCancel }: { onCancel?: () => void }) {
                   : "border-border text-muted-foreground"
               }`}
             >
-              3. Disponibilidade Semanal
+              3. Ritmo & Disponibilidade
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* ETAPA 1: SELEÇÃO DO CONCURSO & CARGO */}
+      {/* ETAPA 1: SELEÇÃO DO EDITAL FISCAL REAL */}
       {step === 1 && (
         <Card className="border-border/60">
           <CardHeader>
@@ -197,71 +241,77 @@ export function PlanoWizard({ onCancel }: { onCancel?: () => void }) {
                 Etapa 1
               </Badge>
               <CardTitle className="text-xl font-bold font-display">
-                Escolha o Concurso Alvo e Cargo
+                Escolha o Edital Fiscal de Referência
               </CardTitle>
             </div>
             <CardDescription className="text-xs text-muted-foreground">
-              Selecione o concurso fiscal desejado. O Aprovado Fiscal importará automaticamente os
-              pesos das matérias do edital verticalizado.
+              Selecione o concurso fiscal desejado. O Aprovado Fiscal importará automaticamente toda
+              a árvore de matérias, tópicos, pesagens e incidências históricas da banca oficial.
             </CardDescription>
           </CardHeader>
 
           <CardContent className="space-y-6">
-            {loadingContests ? (
-              <p className="text-xs text-muted-foreground">Carregando concursos disponíveis...</p>
-            ) : !contests || contests.length === 0 ? (
-              <div className="p-4 rounded-lg border border-dashed text-center space-y-2">
-                <p className="text-sm font-semibold text-foreground">Nenhum concurso cadastrado.</p>
-                <p className="text-xs text-muted-foreground">
-                  Vá até a aba Concursos para cadastrar o edital alvo.
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {contests.map((c) => {
-                  const isSelected = contestId === c.id;
-                  return (
-                    <button
-                      key={c.id}
-                      type="button"
-                      onClick={() => handleSelectContest(c.id, c.name)}
-                      className={`panel p-4 text-left transition-all cursor-pointer flex flex-col justify-between space-y-3 ${
-                        isSelected
-                          ? "border-emerald-500/60 bg-emerald-950/20 ring-1 ring-emerald-500/40"
-                          : "hover:border-border/80 hover:bg-muted/30"
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <p className="font-bold text-base font-display text-foreground">
-                            {c.name}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {c.role_title || "Auditor Fiscal"}
-                          </p>
-                        </div>
-                        {isSelected && (
-                          <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0" />
-                        )}
-                      </div>
-
-                      <div className="flex flex-wrap items-center gap-2 text-[11px] pt-2 border-t border-border/40">
-                        {c.exam_board && <Badge variant="outline">{c.exam_board}</Badge>}
-                        {c.exam_date && (
-                          <Badge variant="secondary" className="font-mono">
-                            Prova: {c.exam_date}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+              {OFFICIAL_FISCAL_CONTESTS.map((official) => {
+                const isSelected = selectedOfficialId === official.id;
+                return (
+                  <button
+                    key={official.id}
+                    type="button"
+                    onClick={() => handleSelectOfficialContest(official)}
+                    className={`panel p-4 text-left transition-all cursor-pointer flex flex-col justify-between space-y-3 relative overflow-hidden ${
+                      isSelected
+                        ? "border-emerald-500/70 bg-emerald-950/30 ring-1 ring-emerald-500/50 shadow-sm"
+                        : "hover:border-border/80 hover:bg-muted/30"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-[10px] font-medium">
+                            {official.area}
                           </Badge>
-                        )}
+                          <Badge
+                            variant="secondary"
+                            className="text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                          >
+                            Banca {official.examBoard}
+                          </Badge>
+                        </div>
+                        <p className="font-bold text-base font-display text-foreground mt-1.5">
+                          {official.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
+                          {official.description}
+                        </p>
                       </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+                      {isSelected && (
+                        <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0 mt-0.5" />
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2 text-[11px] pt-2 border-t border-border/40 text-muted-foreground">
+                      <span>
+                        Vagas: <strong>{official.expectedVagas}</strong>
+                      </span>
+                      <span>·</span>
+                      <span>
+                        Inicial:{" "}
+                        <strong className="text-emerald-400">{official.salaryInitial}</strong>
+                      </span>
+                      <span>·</span>
+                      <span>
+                        Prova: <strong>{official.examDate}</strong>
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
 
             <div className="space-y-2 pt-2">
               <Label htmlFor="plan-name-input" className="text-xs font-semibold">
-                Nome Personalizado para o Plano
+                Nome do Plano de Estudos
               </Label>
               <Input
                 id="plan-name-input"
@@ -282,11 +332,11 @@ export function PlanoWizard({ onCancel }: { onCancel?: () => void }) {
               )}
 
               <Button
-                onClick={() => setStep(2)}
-                disabled={!contestId || !name.trim()}
+                onClick={handleProceedToTopics}
+                disabled={!selectedOfficialId || !name.trim() || isCloning}
                 className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
               >
-                Próxima Etapa: Matérias & Domínio
+                {isCloning ? "Sincronizando Árvore..." : "Próxima Etapa: Matérias & Domínio"}
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
@@ -307,25 +357,27 @@ export function PlanoWizard({ onCancel }: { onCancel?: () => void }) {
                 Etapa 2
               </Badge>
               <CardTitle className="text-xl font-bold font-display">
-                Seleção de Matérias e Domínio Inicial
+                Árvore do Edital & Nível de Domínio Inicial
               </CardTitle>
             </div>
             <CardDescription className="text-xs text-muted-foreground">
-              Defina o seu nível de facilidade em cada tópico do edital para o algoritmo otimizar a
-              frequência de teoria x questões.
+              A árvore oficial foi clonada com pesagens P5/P4 da banca. Indique sua afinidade em
+              cada tópico para o algoritmo calibrar o ciclo (iniciante = mais teoria/exemplos;
+              avançado = baterias de questões e revisões espaçadas).
             </CardDescription>
           </CardHeader>
 
           <CardContent className="space-y-6">
             {loadingTopics ? (
-              <p className="text-xs text-muted-foreground">Carregando matérias do concurso...</p>
+              <p className="text-xs text-muted-foreground">
+                Carregando matérias do edital fiscal...
+              </p>
             ) : !contestTopics || contestTopics.length === 0 ? (
               <p className="text-xs text-muted-foreground">
-                Nenhum tópico vinculado a este concurso. O plano incluirá todas as matérias gerais
-                por padrão.
+                Nenhum tópico encontrado. O plano incluirá a grade fiscal padrão.
               </p>
             ) : (
-              <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+              <div className="space-y-3 max-h-[440px] overflow-y-auto pr-2">
                 {contestTopics.map((item) => {
                   const subjectName = (item.subjects as { name: string } | null)?.name || "Matéria";
                   const topicName = (item.topics as { name: string } | null)?.name;
@@ -342,9 +394,17 @@ export function PlanoWizard({ onCancel }: { onCancel?: () => void }) {
                           <span className="font-semibold text-sm text-foreground truncate">
                             {label}
                           </span>
-                          <Badge variant="outline" className="text-[10px] font-mono">
+                          <Badge variant="outline" className="text-[10px] font-mono shrink-0">
                             Peso P{item.priority}
                           </Badge>
+                          {item.relevance_score && (
+                            <Badge
+                              variant="secondary"
+                              className="text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0"
+                            >
+                              Incidência {item.relevance_score}%
+                            </Badge>
+                          )}
                         </div>
                       </div>
 
@@ -420,12 +480,12 @@ export function PlanoWizard({ onCancel }: { onCancel?: () => void }) {
                 Etapa 3
               </Badge>
               <CardTitle className="text-xl font-bold font-display">
-                Configuração Rápida de Disponibilidade Semanal
+                Ritmo Diário & Disponibilidade Semanal
               </CardTitle>
             </div>
             <CardDescription className="text-xs text-muted-foreground">
               Ajuste as datas de vigência, a duração de cada bloco de estudo e o teto diário de
-              horas.
+              horas para a geração automática do ciclo cognitivo.
             </CardDescription>
           </CardHeader>
 
@@ -501,8 +561,9 @@ export function PlanoWizard({ onCancel }: { onCancel?: () => void }) {
               </p>
               <p className="text-xs text-muted-foreground leading-relaxed">
                 Ao clicar em <strong>"Gerar Plano & Sincronizar Edital"</strong>, o sistema
-                alimentará as sessões diárias com cálculo de tempo ideal por matéria, priorizando
-                lacunas de aprendizado registradas no seu Caderno de Erros.
+                distribuirá as tarefas cognitivas priorizando os tópicos de maior peso (P5/P4) e
+                incidência na banca oficial ({selectedOfficialId}), alocando teoria, questões e
+                revisões conforme seu domínio inicial.
               </p>
             </div>
 
@@ -518,7 +579,7 @@ export function PlanoWizard({ onCancel }: { onCancel?: () => void }) {
                 className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6"
               >
                 {createPlanMutation.isPending
-                  ? "Gerando Plano..."
+                  ? "Gerando Ciclo..."
                   : "Gerar Plano & Sincronizar Edital"}
                 <Sparkles className="h-4 w-4" />
               </Button>

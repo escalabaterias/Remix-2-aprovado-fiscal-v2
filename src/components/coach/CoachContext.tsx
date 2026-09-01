@@ -58,10 +58,15 @@ export function CoachProvider({ children }: { children: ReactNode }) {
   );
 }
 
+const defaultCoachContext: CoachContextType = {
+  isOpen: false,
+  contextData: null,
+  openCoach: () => {},
+  closeCoach: () => {},
+  toggleCoach: () => {},
+};
+
 export function useCoachDrawer() {
   const context = useContext(CoachDrawerContext);
-  if (!context) {
-    throw new Error("useCoachDrawer must be used within a CoachProvider");
-  }
-  return context;
+  return context ?? defaultCoachContext;
 }

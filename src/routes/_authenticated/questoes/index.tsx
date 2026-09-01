@@ -148,7 +148,7 @@ function QuestoesPage() {
   const setFilterParam = useCallback(
     (key: string, value: string) => {
       navigate({
-        search: (prev: Record<string, any>) => {
+        search: (prev: Record<string, string | undefined>) => {
           const next = { ...prev };
           if (!value || value === "all") {
             delete next[key];
@@ -159,7 +159,7 @@ function QuestoesPage() {
           if (key === "subject") {
             delete next["topic"];
           }
-          return next;
+          return next as any;
         },
         replace: true,
       });
@@ -168,7 +168,22 @@ function QuestoesPage() {
   );
 
   const handleClearFilters = useCallback(() => {
-    navigate({ search: {}, replace: true });
+    navigate({
+      search: () => ({
+        subject: undefined,
+        topic: undefined,
+        board: undefined,
+        year: undefined,
+        contest: undefined,
+        organization: undefined,
+        role: undefined,
+        type: undefined,
+        difficulty: undefined,
+        source: undefined,
+        tags: undefined,
+      }),
+      replace: true,
+    });
   }, [navigate]);
 
   // Questão aberta
@@ -661,13 +676,15 @@ function QuestoesPage() {
               const alts = parseAlternatives(q.alternatives);
               const wasAnswered = answeredIds.has(q.questionId);
               const metadataOrg =
-                (q.metadata?.organization as string) || q.contest?.organization || null;
-              const metadataRole =
-                (q.metadata?.position as string) ||
-                (q.metadata?.role_title as string) ||
-                q.contest?.roleTitle ||
+                (q.metadata?.["organization"] as string) ||
+                (q.metadata?.["orgao"] as string) ||
                 null;
-              const qNum = (q.metadata?.question_number as string | number) || null;
+              const metadataRole =
+                (q.metadata?.["position"] as string) ||
+                (q.metadata?.["role_title"] as string) ||
+                (q.metadata?.["cargo"] as string) ||
+                null;
+              const qNum = (q.metadata?.["question_number"] as string | number) || null;
 
               return (
                 <li key={q.questionId}>
@@ -793,14 +810,14 @@ function QuestionView({
     openCoach(
       `Coach, por favor analise as pegadinhas e distratores da banca ${
         question.examBoard || "FGV"
-      } nesta questão de ${question.subjectName || "Carreira Fiscal"}:\n\nEnunciado: ${
+      } nesta questão de ${question.subjectId || "Carreira Fiscal"}:\n\nEnunciado: ${
         question.statement
       }`,
       {
         questionId: question.questionId,
         statement: question.statement,
         examBoard: question.examBoard || undefined,
-        subjectName: question.subjectName || undefined,
+        subjectName: question.subjectId || undefined,
       },
     );
   };
@@ -933,13 +950,13 @@ function QuestionView({
         {/* Tutor Socrático — Professor Fiscal */}
         <ProfessorFiscalSocraticTutor
           topicId={question.topicId || "topico_geral"}
-          topicName={question.subjectName || "Direito Tributário"}
-          subjectName={question.subjectName}
+          topicName={question.subjectId || "Direito Tributário"}
+          subjectName={question.subjectId || undefined}
           questionContext={{
             questionId: question.questionId,
             statement: question.statement,
             options: alternatives.map((a) => `${a.label}) ${a.text}`),
-            correctAnswer: question.correctAnswer,
+            correctAnswer: question.correctAnswer || undefined,
           }}
         />
 

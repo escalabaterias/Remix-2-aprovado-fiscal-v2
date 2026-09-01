@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
+import { cleanupLegacyMockContests } from "@/lib/concursos/dbCleanupService";
 import { AppShell } from "@/components/layout/AppShell";
 import { WhatToStudyNowCard } from "@/components/study/WhatToStudyNowCard";
 import { CoachGuidanceCard } from "@/components/coach/CoachGuidanceCard";
@@ -126,6 +127,9 @@ function CommandCenterPage() {
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["command-center", today],
     queryFn: async () => {
+      // Limpeza de mocks/dados legados da conta
+      await cleanupLegacyMockContests();
+
       const [
         contestsRes,
         plansRes,
@@ -460,13 +464,23 @@ function CommandCenterPage() {
                 </div>
 
                 {!data.activeContest ? (
-                  <div className="mt-4">
+                  <div className="mt-4 space-y-3">
                     <p className="text-sm text-muted-foreground">
-                      Você ainda não possui um concurso cadastrado como ativo.
+                      Nenhum concurso fiscal ativo no momento.
                     </p>
-                    <Button asChild size="sm" variant="outline" className="mt-3">
-                      <Link to="/concursos">Cadastrar concurso</Link>
-                    </Button>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        asChild
+                        size="sm"
+                        variant="default"
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                      >
+                        <Link to="/concursos">
+                          <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                          Importar Edital Fiscal Oficial
+                        </Link>
+                      </Button>
+                    </div>
                   </div>
                 ) : (
                   <div className="mt-3 space-y-2">
@@ -495,15 +509,24 @@ function CommandCenterPage() {
                       {data.activeContest.exam_date ? (
                         <Badge
                           variant={
-                            daysToExam !== null && daysToExam <= 45 ? "destructive" : "default"
+                            daysToExam !== null && daysToExam > 0 && daysToExam <= 45
+                              ? "destructive"
+                              : "default"
                           }
+                          className="font-mono text-xs"
                         >
                           Prova em {data.activeContest.exam_date}
-                          {daysToExam !== null ? ` · ${daysToExam} dia(s)` : ""}
+                          {daysToExam !== null
+                            ? daysToExam > 0
+                              ? ` · ${daysToExam} dia(s)`
+                              : daysToExam === 0
+                                ? " · Prova HOJE!"
+                                : " · Prova realizada"
+                            : ""}
                         </Badge>
                       ) : (
                         <span className="text-xs text-muted-foreground">
-                          Data da prova não informada
+                          Data da prova prevista para 2026/2027
                         </span>
                       )}
                     </div>

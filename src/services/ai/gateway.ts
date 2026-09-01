@@ -104,26 +104,26 @@ export async function runAiTask<T = unknown>(task: AiTask): Promise<AiResult<T>>
   const inputHash = await hashInput(hashPayload);
 
   try {
-    const res = await serverExecuteAiTask({
+    const res: any = await serverExecuteAiTask({
       data: {
         taskType: task.type,
         tier: task.tier,
         inputHash,
         inputRef: task.inputRef,
         promptVersion,
-        systemPrompt: task.systemPrompt,
-        userPrompt: task.userPrompt,
-        forceRefresh: task.forceRefresh,
+        systemPrompt: task.systemPrompt || undefined,
+        userPrompt: task.userPrompt || undefined,
+        forceRefresh: task.forceRefresh || undefined,
       },
     });
 
     return {
-      output: (res.output as T) ?? null,
-      cached: res.cached,
-      status: res.status,
-      errorMessage: res.errorMessage,
-      model: res.model,
-      durationMs: res.durationMs,
+      output: (res?.output as T) ?? null,
+      cached: Boolean(res?.cached),
+      status: res?.status ?? "processado",
+      errorMessage: res?.errorMessage,
+      model: res?.model,
+      durationMs: res?.durationMs ?? 0,
     };
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : "Falha na comunicação com o AI Gateway.";

@@ -2,8 +2,13 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
+import { Sparkles, RefreshCw, BookOpen } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
+import {
+  autoProvisionContestIfEmpty,
+  cloneOfficialFiscalContest,
+} from "@/lib/concursos/fiscalSyncService";
 import { AppShell } from "@/components/layout/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -89,19 +94,56 @@ function ContestDetailPage() {
     },
   });
 
-  const { data: contestTopics } = useQuery({
+  const { data: contestTopics, isFetching: isSyncingTopics } = useQuery({
     queryKey: ["contest-topics", contestId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: initialData, error } = await supabase
         .from("contest_topics")
         .select(
           "id, priority, weight, in_edital, is_studied, notes, subject_id, topic_id, subjects(name), topics(name)",
         )
         .eq("contest_id", contestId)
-        .limit(200);
+        .limit(300);
       if (error) throw error;
+
+      let data = initialData;
+
+      // Se o concurso não possuir tópicos vinculados, auto-provisiona com o edital correspondente
+      if (!data || data.length === 0) {
+        const provisioned = await autoProvisionContestIfEmpty(contestId);
+        if (provisioned) {
+          const res = await supabase
+            .from("contest_topics")
+            .select(
+              "id, priority, weight, in_edital, is_studied, notes, subject_id, topic_id, subjects(name), topics(name)",
+            )
+            .eq("contest_id", contestId)
+            .limit(300);
+          data = res.data;
+        }
+      }
+
       return data;
     },
+  });
+
+  const syncOfficialTree = useMutation({
+    mutationFn: async () => {
+      if (!contest) return;
+      const res = await cloneOfficialFiscalContest(contest.name);
+      return res;
+    },
+    onSuccess: (res) => {
+      if (res) {
+        toast.success(
+          `Árvore sincronizada: ${res.subjectsCount} matérias e ${res.contestTopicsCount} tópicos carregados!`,
+        );
+        queryClient.invalidateQueries({ queryKey: ["contest-topics", contestId] });
+        queryClient.invalidateQueries({ queryKey: ["subjects"] });
+        queryClient.invalidateQueries({ queryKey: ["editais", contestId] });
+      }
+    },
+    onError: (err: Error) => toast.error(err.message),
   });
 
   const updateStatus = useMutation({
@@ -237,7 +279,19 @@ function ContestDetailPage() {
                 peso próprios.
               </p>
             </div>
-            <NewContestTopicDialog contestId={contestId} subjects={subjects ?? []} />
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 text-xs"
+                disabled={syncOfficialTree.isPending || isSyncingTopics}
+                onClick={() => syncOfficialTree.mutate()}
+              >
+                <Sparkles className="h-3.5 w-3.5 mr-1 text-emerald-400" />
+                {syncOfficialTree.isPending ? "Sincronizando..." : "Sincronizar Árvore Oficial"}
+              </Button>
+              <NewContestTopicDialog contestId={contestId} subjects={subjects ?? []} />
+            </div>
           </div>
 
           {!contestTopics?.length ? (

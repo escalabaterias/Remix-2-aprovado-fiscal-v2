@@ -164,22 +164,23 @@ export const serverExecuteAiTask = createServerFn({
           : "Erro desconhecido na rede.";
 
       // Tentar registrar falha no ai_results para observabilidade
-      await supabase
-        .from("ai_results")
-        .upsert(
+      try {
+        await supabase.from("ai_results").upsert(
           {
             user_id: userId,
             task_type: data.taskType,
             tier: data.tier,
             input_hash: data.inputHash,
-            input_ref: data.inputRef,
+            input_ref: data.inputRef as any,
             status: "erro",
             error_message: errorMsg,
             model,
           },
           { onConflict: "user_id,task_type,input_hash" },
-        )
-        .catch(() => {});
+        );
+      } catch {
+        // Ignora falha de log
+      }
 
       return {
         output: null,
@@ -204,22 +205,23 @@ export const serverExecuteAiTask = createServerFn({
         // Ignora parse de erro
       }
 
-      await supabase
-        .from("ai_results")
-        .upsert(
+      try {
+        await supabase.from("ai_results").upsert(
           {
             user_id: userId,
             task_type: data.taskType,
             tier: data.tier,
             input_hash: data.inputHash,
-            input_ref: data.inputRef,
+            input_ref: data.inputRef as any,
             status: "erro",
             error_message: errorMsg,
             model,
           },
           { onConflict: "user_id,task_type,input_hash" },
-        )
-        .catch(() => {});
+        );
+      } catch {
+        // Ignora falha de log
+      }
 
       return {
         output: null,
@@ -275,7 +277,7 @@ export const serverExecuteAiTask = createServerFn({
           task_type: data.taskType,
           tier: data.tier,
           input_hash: data.inputHash,
-          input_ref: data.inputRef,
+          input_ref: data.inputRef as any,
           output: parsedOutput as never,
           model,
           status: "processado",
