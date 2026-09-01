@@ -29,6 +29,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "Central de Erros", to: "/central-erros", group: "conhecimento" },
   { label: "Domínio", to: "/dominio", group: "conhecimento" },
   { label: "Revisões", to: "/revisao", group: "conhecimento" },
+  { label: "Fichas e Resumos", to: "/estudo/materiais", group: "conhecimento" },
   { label: "Flashcards", to: null, group: "conhecimento" },
 
   { label: "Coach IA", to: null, group: "inteligencia" },
