@@ -1,9 +1,11 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { BookOpen, Tag } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { remediateErrorEntry, resolveErrorEntry } from "@/lib/error-central/service";
+import { searchLawTags, getLawTags } from "@/lib/syllabus/lawTagService";
 import { AppShell } from "@/components/layout/AppShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,7 +34,7 @@ function ErrorDetailPage() {
   const { errorId } = useParams({ from: "/_authenticated/central-erros/$errorId" });
   const queryClient = useQueryClient();
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error } = useQuery({
     queryKey: ["error-detail", errorId],
     queryFn: async () => {
       const [errorRes, historyRes] = await Promise.all([
@@ -52,7 +54,7 @@ function ErrorDetailPage() {
       ]);
 
       if (errorRes.error) throw errorRes.error;
-      if (!errorRes.data) throw new Error("Erro não encontrado.");
+      if (!errorRes.data) throw new Error("Registro de erro não encontrado.");
 
       const mainError = errorRes.data;
       const allErrors = historyRes.data ?? [];
@@ -111,10 +113,27 @@ function ErrorDetailPage() {
     onError: (err: Error) => toast.error(err.message),
   });
 
-  if (isLoading || !data) {
+  if (isLoading) {
     return (
       <AppShell title="Detalhe do Erro">
         <p className="text-sm text-muted-foreground">Carregando…</p>
+      </AppShell>
+    );
+  }
+
+  if (isError || !data) {
+    return (
+      <AppShell title="Detalhe do Erro">
+        <div className="space-y-4 max-w-md py-8 text-center sm:text-left">
+          <p className="text-sm text-destructive font-medium">
+            {error instanceof Error
+              ? error.message
+              : "Não foi possível carregar os detalhes deste erro."}
+          </p>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/central-erros">Voltar para Central de Erros</Link>
+          </Button>
+        </div>
       </AppShell>
     );
   }
@@ -229,6 +248,76 @@ function ErrorDetailPage() {
             </CardContent>
           </Card>
         )}
+
+        {/* Vade Mecum & Fundamentação Legal (LawTags) */}
+        {(() => {
+          const subjectName = err.subjects?.name ?? "";
+          const topicName = err.topics?.name ?? "";
+          const matchedTags = searchLawTags(`${subjectName} ${topicName}`).slice(0, 4);
+          const displayTags = matchedTags.length > 0 ? matchedTags : getLawTags().slice(0, 3);
+
+          return (
+            <Card className="border-emerald-500/20 bg-emerald-950/10">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-bold flex items-center gap-2 text-foreground">
+                  <BookOpen className="h-4 w-4 text-emerald-400" />
+                  Vade Mecum & Fundamentação Legal (LawTags Relacionadas)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-xs text-muted-foreground">
+                  Dispositivos legais de alta incidência vinculados a esta matéria para saneamento
+                  do erro:
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {displayTags.map((tag) => (
+                    <div
+                      key={tag.id}
+                      className="bg-background/80 p-3 rounded-md border border-border/60 space-y-2 hover:border-emerald-500/40 transition-colors"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <Tag className="h-3.5 w-3.5 text-emerald-400" />
+                          <span className="font-mono font-bold text-xs text-foreground">
+                            {tag.lawName} {tag.articleNumber}
+                          </span>
+                        </div>
+                        <Badge
+                          variant="outline"
+                          className={`text-[9px] ${
+                            tag.importanceLevel === "high"
+                              ? "bg-red-500/10 text-red-400 border-red-500/20"
+                              : "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                          }`}
+                        >
+                          {tag.importanceLevel === "high" ? "Alta Relevância" : "Média"}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed">
+                        {tag.description}
+                      </p>
+                      {tag.subject && (
+                        <p className="text-[10px] text-emerald-400 font-medium">
+                          Matéria: {tag.subject}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <div className="pt-2 text-right">
+                  <Button
+                    asChild
+                    variant="ghost"
+                    size="sm"
+                    className="text-xs text-emerald-400 hover:text-emerald-300"
+                  >
+                    <Link to="/estudo/edital">Ir para Vade Mecum no Edital Verticalizado →</Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })()}
 
         <Separator />
 

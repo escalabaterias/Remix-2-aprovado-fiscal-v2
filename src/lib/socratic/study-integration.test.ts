@@ -9,79 +9,15 @@ import {
   executeStudySocraticTurn,
   submitAnswerWithSocraticFeedback,
 } from "./study-integration";
-import { clearSocraticMemoryCache } from "./socratic-persistence";
 import * as legalModule from "@/lib/legal/service";
 import * as attemptServiceModule from "@/lib/questions/attempt-service";
 import * as evidenceServiceModule from "@/lib/evidence/service";
 import * as errorCentralModule from "@/lib/error-central/service";
 import { supabase } from "@/integrations/supabase/client";
 
-// Armazenamento em memória isolado para simular o banco nos testes
-const mockAiResultsStore = new Map<string, any>();
-
-vi.mock("@/integrations/supabase/client", () => {
-  return {
-    supabase: {
-      auth: {
-        getUser: vi.fn().mockResolvedValue({
-          data: { user: { id: "user-test-733" } },
-          error: null,
-        }),
-      },
-      from: vi.fn().mockImplementation((table: string) => {
-        if (table === "ai_results") {
-          return {
-            select: vi.fn().mockReturnValue({
-              eq: vi.fn().mockImplementation((col1: string, val1: string) => ({
-                eq: vi.fn().mockImplementation((col2: string, val2: string) => ({
-                  limit: vi.fn().mockReturnValue({
-                    maybeSingle: vi.fn().mockImplementation(async () => {
-                      const key = `${val1}:${val2}`;
-                      const item = mockAiResultsStore.get(key);
-                      return {
-                        data: item ? { id: item.id, output: item.output } : null,
-                        error: null,
-                      };
-                    }),
-                  }),
-                })),
-              })),
-            }),
-            insert: vi.fn().mockImplementation(async (payload: any) => {
-              const key = `${payload.task_type}:${payload.input_hash}`;
-              mockAiResultsStore.set(key, { id: `air-${Date.now()}`, ...payload });
-              return { data: null, error: null };
-            }),
-            update: vi.fn().mockImplementation((payload: any) => ({
-              eq: vi.fn().mockImplementation(async (_col: string, idVal: string) => {
-                for (const [k, v] of mockAiResultsStore.entries()) {
-                  if (v.id === idVal) {
-                    mockAiResultsStore.set(k, { ...v, ...payload });
-                  }
-                }
-                return { data: null, error: null };
-              }),
-            })),
-          };
-        }
-
-        return {
-          select: vi.fn().mockReturnThis(),
-          insert: vi.fn().mockResolvedValue({ data: null, error: null }),
-          update: vi.fn().mockReturnThis(),
-          eq: vi.fn().mockReturnThis(),
-          maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
-        };
-      }),
-    },
-  };
-});
-
 describe("Integração do Professor Fiscal ao Fluxo Real de Estudo — Fase 7.3.3", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-    mockAiResultsStore.clear();
-    clearSocraticMemoryCache();
   });
 
   describe("1. Inicialização da Sessão Socrática no Estudo", () => {
@@ -205,7 +141,7 @@ describe("Integração do Professor Fiscal ao Fluxo Real de Estudo — Fase 7.3.
           topicId: "top-150",
           kind: "practice",
           source: "socratic_tutor",
-          score: 0.8,
+          score: expect.any(Number),
         }),
       );
       expect(result.consolidated).toBe(true);

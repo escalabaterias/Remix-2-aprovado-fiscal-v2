@@ -33,14 +33,6 @@ const recordedIdempotencyKeys = new Set<string>();
 const sessionCache = new Map<string, SocraticSessionContext>();
 
 /**
- * Limpa os caches em memória de sessões e idempotência (útil para isolamento de testes e reset de sessão).
- */
-export function clearSocraticMemoryCache(): void {
-  recordedIdempotencyKeys.clear();
-  sessionCache.clear();
-}
-
-/**
  * Sanitiza metadados para garantir que nenhuma chave de API, token de autorização,
  * JWT, senha ou prompt privado completo seja persistido ou exposto.
  */

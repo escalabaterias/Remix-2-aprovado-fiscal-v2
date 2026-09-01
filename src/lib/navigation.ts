@@ -23,17 +23,19 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "Importar Questão", to: "/questoes/importar", group: "estudo" },
   { label: "Concursos", to: "/concursos", group: "estudo" },
   { label: "Matérias", to: "/materias", group: "estudo" },
+  { label: "Edital Verticalizado", to: "/estudo/edital", group: "estudo" },
+  { label: "Discursivas & Peças", to: "/estudo/discursivas", group: "estudo" },
+  { label: "Prontidão Reta Final", to: "/estudo/prontidao", group: "estudo" },
   { label: "Plano de Estudos", to: "/plano", group: "estudo" },
   { label: "Disponibilidade", to: "/disponibilidade", group: "estudo" },
 
   { label: "Central de Erros", to: "/central-erros", group: "conhecimento" },
   { label: "Domínio", to: "/dominio", group: "conhecimento" },
   { label: "Revisões", to: "/revisao", group: "conhecimento" },
-  { label: "Fichas e Resumos", to: "/estudo/materiais", group: "conhecimento" },
   { label: "Flashcards", to: "/flashcards", group: "conhecimento" },
 
   { label: "Coach IA", to: "/coach", group: "inteligencia" },
-  { label: "Análise de Bancas", to: null, group: "inteligencia" },
+  { label: "Análise de Bancas", to: "/bancas", group: "inteligencia" },
 
   { label: "Configurações", to: "/configuracoes", group: "sistema" },
 ];

@@ -9,6 +9,8 @@ import {
   Calendar,
   CheckCircle2,
   Clock,
+  HelpCircle,
+  Info,
   Play,
   RotateCcw,
   Sparkles,
@@ -19,13 +21,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/layout/AppShell";
 import { WhatToStudyNowCard } from "@/components/study/WhatToStudyNowCard";
 import { CoachGuidanceCard } from "@/components/coach/CoachGuidanceCard";
-import { CognitiveTelemetryDashboardPanel } from "@/components/dashboard/CognitiveTelemetryDashboardPanel";
+import { CoachMotivationalWidget } from "@/components/coach/CoachMotivationalWidget";
+import {
+  GurujaCycleTasks,
+  type DayTask as GurujaDayTask,
+} from "@/components/dashboard/GurujaCycleTasks";
 import { EmptyState } from "@/components/common/EmptyState";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Dialog,
   DialogContent,
@@ -99,51 +106,8 @@ type DayTask = {
 
 type TaskFilter = "todas" | "pendentes" | "concluidas";
 
-const FISCAL_CONTESTS = [
-  {
-    id: "sefaz-sp",
-    name: "SEFAZ-SP",
-    role_title: "Auditor Fiscal da Receita Estadual",
-    exam_board: "FGV",
-    exam_date: "2026-12-13",
-    status: "ativo",
-    organization: "Secretaria da Fazenda de SP",
-  },
-  {
-    id: "receita-federal",
-    name: "Receita Federal",
-    role_title: "Auditor Fiscal da Receita Federal",
-    exam_board: "FGV",
-    exam_date: "2026-11-22",
-    status: "ativo",
-    organization: "Receita Federal do Brasil",
-  },
-  {
-    id: "iss-sp",
-    name: "ISS-SP",
-    role_title: "Auditor Fiscal Tributário Municipal",
-    exam_board: "FGV",
-    exam_date: "2026-10-25",
-    status: "ativo",
-    organization: "Prefeitura de São Paulo",
-  },
-];
-
 function CommandCenterPage() {
   const queryClient = useQueryClient();
-  const [selectedContestId, setSelectedContestId] = useState<string>(() => {
-    return localStorage.getItem("aprovado_fiscal_active_contest_id") ?? "sefaz-sp";
-  });
-
-  const activeContest =
-    FISCAL_CONTESTS.find((c) => c.id === selectedContestId) || FISCAL_CONTESTS[0];
-
-  const handleSelectContest = (id: string) => {
-    setSelectedContestId(id);
-    localStorage.setItem("aprovado_fiscal_active_contest_id", id);
-    toast.success(`Concurso-alvo alterado para ${FISCAL_CONTESTS.find((c) => c.id === id)?.name}!`);
-  };
-
   const today = todayISO();
   const weekStart = weekStartOf(today);
   const weekEnd = addDays(weekStart, 6);
@@ -159,7 +123,7 @@ function CommandCenterPage() {
   const [correctCount, setCorrectCount] = useState(0);
   const [notes, setNotes] = useState("");
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["command-center", today],
     queryFn: async () => {
       const [
@@ -172,8 +136,8 @@ function CommandCenterPage() {
         attemptsRes,
         reviewsRes,
         errorsRes,
-        weeksMap,
-      ] = await Promise.all([
+        weeksMapRes,
+      ] = await Promise.allSettled([
         supabase
           .from("contests")
           .select("id, name, role_title, exam_board, exam_date, status, organization")
@@ -215,10 +179,46 @@ function CommandCenterPage() {
           .from("error_entries")
           .select("id", { count: "exact", head: true })
           .eq("is_resolved", false),
-        fetchAvailabilityWeeks([weekStart]),
+        fetchAvailabilityWeeks([weekStart]).catch(() => new Map()),
       ]);
 
-      const allSessions = sessionsRes.data ?? [];
+      const contestsData =
+        contestsRes.status === "fulfilled" && !contestsRes.value.error
+          ? (contestsRes.value.data ?? [])
+          : [];
+      const plansData =
+        plansRes.status === "fulfilled" && !plansRes.value.error ? (plansRes.value.data ?? []) : [];
+      const todayTasksData =
+        todayTasksRes.status === "fulfilled" && !todayTasksRes.value.error
+          ? (todayTasksRes.value.data ?? [])
+          : [];
+      const overdueTasksData =
+        overdueTasksRes.status === "fulfilled" && !overdueTasksRes.value.error
+          ? (overdueTasksRes.value.data ?? [])
+          : [];
+      const weekTasksData =
+        weekTasksRes.status === "fulfilled" && !weekTasksRes.value.error
+          ? (weekTasksRes.value.data ?? [])
+          : [];
+      const sessionsData =
+        sessionsRes.status === "fulfilled" && !sessionsRes.value.error
+          ? (sessionsRes.value.data ?? [])
+          : [];
+      const attemptsData =
+        attemptsRes.status === "fulfilled" && !attemptsRes.value.error
+          ? (attemptsRes.value.data ?? [])
+          : [];
+      const reviewsCount =
+        reviewsRes.status === "fulfilled" && !reviewsRes.value.error
+          ? (reviewsRes.value.count ?? 0)
+          : 0;
+      const errorsCount =
+        errorsRes.status === "fulfilled" && !errorsRes.value.error
+          ? (errorsRes.value.count ?? 0)
+          : 0;
+      const weeksMap = weeksMapRes.status === "fulfilled" ? weeksMapRes.value : new Map();
+
+      const allSessions = sessionsData;
       const netSecondsTotal = allSessions.reduce((sum, s) => sum + (s.net_seconds ?? 0), 0);
       const netTodaySeconds = allSessions
         .filter((s) => s.session_date === today)
@@ -228,23 +228,21 @@ function CommandCenterPage() {
         .filter((s) => s.session_date >= weekStart && s.session_date <= weekEnd)
         .reduce((sum, s) => sum + (s.net_seconds ?? 0), 0);
 
-      const attemptRows = attemptsRes.data ?? [];
+      const attemptRows = attemptsData;
       const attemptCorrect = attemptRows.filter((a) => a.is_correct === true).length;
       const sessionQuestions = allSessions.reduce((sum, s) => sum + (s.questions_count ?? 0), 0);
       const sessionCorrect = allSessions.reduce((sum, s) => sum + (s.correct_count ?? 0), 0);
       const questionsTotal = attemptRows.length + sessionQuestions;
       const correctTotal = attemptCorrect + sessionCorrect;
 
-      const contestList = contestsRes.data ?? [];
+      const contestList = contestsData;
       const activeContest = contestList.find((c) => c.status === "ativo") ?? contestList[0] ?? null;
       const activePlan =
-        (plansRes.data ?? []).find((p) => p.contest_id === activeContest?.id) ??
-        (plansRes.data ?? [])[0] ??
-        null;
+        plansData.find((p) => p.contest_id === activeContest?.id) ?? plansData[0] ?? null;
 
-      const todayTasks = (todayTasksRes.data ?? []) as DayTask[];
-      const overdueTasks = (overdueTasksRes.data ?? []) as DayTask[];
-      const weekTasks = weekTasksRes.data ?? [];
+      const todayTasks = todayTasksData as DayTask[];
+      const overdueTasks = overdueTasksData as DayTask[];
+      const weekTasks = weekTasksData;
 
       const currentWeekAvail = weeksMap.get(weekStart);
       const weeklyAvailableMinutes = currentWeekAvail ? weekTotalMinutes(currentWeekAvail) : 0;
@@ -259,7 +257,7 @@ function CommandCenterPage() {
         activeContest,
         allContests: contestList,
         activePlan,
-        hasPlan: Boolean((plansRes.data ?? []).length),
+        hasPlan: Boolean(plansData.length),
         todayTasks,
         overdueTasks,
         completedTasksToday,
@@ -272,8 +270,8 @@ function CommandCenterPage() {
         netHoursTotal: netSecondsTotal / 3600,
         questionsTotal,
         accuracy: questionsTotal ? (correctTotal / questionsTotal) * 100 : null,
-        reviewsCompleted: reviewsRes.count ?? 0,
-        unresolvedErrors: errorsRes.count ?? 0,
+        reviewsCompleted: reviewsCount,
+        unresolvedErrors: errorsCount,
       };
     },
   });
@@ -332,7 +330,7 @@ function CommandCenterPage() {
     });
   };
 
-  if (isLoading || !data) {
+  if (isLoading) {
     return (
       <AppShell title="Centro de Comando">
         <div className="flex min-h-[400px] items-center justify-center">
@@ -342,11 +340,30 @@ function CommandCenterPage() {
     );
   }
 
+  if (isError || !data) {
+    return (
+      <AppShell title="Centro de Comando">
+        <div className="flex min-h-[400px] flex-col items-center justify-center space-y-3 p-8">
+          <AlertTriangle className="h-8 w-8 text-amber-500" />
+          <p className="text-sm font-medium text-foreground">
+            Não foi possível carregar os dados operacionais no momento.
+          </p>
+          <Button variant="outline" size="sm" onClick={() => refetch()}>
+            <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+            Tentar novamente
+          </Button>
+        </div>
+      </AppShell>
+    );
+  }
+
   const nextTask = data.todayTasks.find(
     (t) => t.status === "pendente" || t.status === "em_andamento",
   );
 
-  const daysToExam = activeContest?.exam_date ? daysBetween(today, activeContest.exam_date) : null;
+  const daysToExam = data.activeContest?.exam_date
+    ? daysBetween(today, data.activeContest.exam_date)
+    : null;
 
   const weeklyTargetMinutes =
     data.weeklyPlannedMinutes > 0 ? data.weeklyPlannedMinutes : data.weeklyAvailableMinutes;
@@ -379,20 +396,10 @@ function CommandCenterPage() {
               Sessão Guiada
             </Link>
           </Button>
-          <Button asChild variant="outline" size="sm">
+          <Button asChild size="sm">
             <Link to="/plano">
               <BookOpen className="mr-1.5 h-4 w-4" />
               Plano de Estudos
-            </Link>
-          </Button>
-          <Button
-            asChild
-            size="sm"
-            className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
-          >
-            <Link to="/questoes" search={{ tab: "simulation" }}>
-              <Sparkles className="mr-1.5 h-4 w-4 animate-pulse" />
-              Iniciar Simulado
             </Link>
           </Button>
         </div>
@@ -427,139 +434,184 @@ function CommandCenterPage() {
           </div>
         ) : null}
 
+        {/* ── WIDGET DO COACH FISCAL MOTIVACIONAL (ESTILO GURUJA) ───────────── */}
+        <CoachMotivationalWidget
+          accuracy={data.accuracy}
+          daysToExam={daysToExam}
+          contestName={data.activeContest?.name}
+          completedTasksToday={data.completedTasksToday}
+          totalTasksToday={data.todayTasks.length}
+        />
+
         {/* ── COACH DE IA PROATIVO (PROFESSOR FISCAL) ─────────────────────────── */}
         <CoachGuidanceCard />
 
         {/* ── GRID SUPERIOR: CONCURSO ATIVO + META SEMANAL ────────────────────── */}
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* Card: Concurso Ativo */}
-          <section className="panel flex flex-col justify-between p-5">
-            <div>
-              <div className="flex items-center justify-between gap-2 border-b border-border/40 pb-2 mb-3">
-                <p className="label-eyebrow text-muted-foreground">Concurso Alvo Ativo</p>
-                <div className="flex items-center gap-2">
-                  <Select value={selectedContestId} onValueChange={handleSelectContest}>
-                    <SelectTrigger className="h-7 w-[140px] text-xs bg-muted/20 border-border/60">
-                      <SelectValue placeholder="Selecione o concurso" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="sefaz-sp">SEFAZ-SP</SelectItem>
-                      <SelectItem value="receita-federal">Receita Federal</SelectItem>
-                      <SelectItem value="iss-sp">ISS-SP</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button asChild size="sm" variant="ghost" className="h-7 text-xs px-2">
+        <TooltipProvider>
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* Card: Concurso Ativo */}
+            <section className="panel flex flex-col justify-between p-5">
+              <div>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="label-eyebrow">Concurso Alvo Ativo</p>
+                  <Button asChild size="sm" variant="ghost" className="h-7 text-xs">
                     <Link to="/concursos">Gerenciar</Link>
                   </Button>
                 </div>
+
+                {!data.activeContest ? (
+                  <div className="mt-4">
+                    <p className="text-sm text-muted-foreground">
+                      Você ainda não possui um concurso cadastrado como ativo.
+                    </p>
+                    <Button asChild size="sm" variant="outline" className="mt-3">
+                      <Link to="/concursos">Cadastrar concurso</Link>
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="mt-3 space-y-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h2 className="font-display text-xl font-bold tracking-tight">
+                        {data.activeContest.name}
+                      </h2>
+                      {data.activeContest.role_title ? (
+                        <span className="text-xs text-muted-foreground">
+                          ({data.activeContest.role_title})
+                        </span>
+                      ) : null}
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2 pt-1">
+                      {data.activeContest.exam_board ? (
+                        <Badge variant="outline" className="border-border">
+                          Banca: {data.activeContest.exam_board}
+                        </Badge>
+                      ) : null}
+
+                      {data.activeContest.organization ? (
+                        <Badge variant="secondary">{data.activeContest.organization}</Badge>
+                      ) : null}
+
+                      {data.activeContest.exam_date ? (
+                        <Badge
+                          variant={
+                            daysToExam !== null && daysToExam <= 45 ? "destructive" : "default"
+                          }
+                        >
+                          Prova em {data.activeContest.exam_date}
+                          {daysToExam !== null ? ` · ${daysToExam} dia(s)` : ""}
+                        </Badge>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">
+                          Data da prova não informada
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <div className="space-y-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="font-display text-xl font-bold tracking-tight text-foreground">
-                    {activeContest.name}
-                  </h2>
-                  {activeContest.role_title ? (
-                    <span className="text-xs text-muted-foreground text-opacity-80">
-                      ({activeContest.role_title})
-                    </span>
-                  ) : null}
+              {data.activePlan ? (
+                <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-xs text-muted-foreground">
+                  <span>Plano: {data.activePlan.name}</span>
+                  <Link
+                    to="/plano/$planId"
+                    params={{ planId: data.activePlan.id }}
+                    className="inline-flex items-center text-primary hover:underline"
+                  >
+                    Ver cronograma
+                    <ArrowRight className="ml-1 h-3 w-3" />
+                  </Link>
+                </div>
+              ) : null}
+            </section>
+
+            {/* Card: Meta Semanal */}
+            <section className="panel flex flex-col justify-between p-5">
+              <div>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="label-eyebrow">Meta Semanal ({formatDateShort(weekStart)} a Dom)</p>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Badge variant="outline" className="text-xs cursor-help border-primary/30">
+                        {weeklyProgressPercent}% atingido
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent className="bg-popover border-border text-popover-foreground text-xs max-w-xs p-3">
+                      <p className="font-semibold text-primary mb-1">
+                        Memória de Cálculo do Progresso Semanal:
+                      </p>
+                      <p>• Fórmula: (Horas Realizadas / Meta Target) × 100</p>
+                      <p>
+                        • Memória: {formatHours(data.weeklyRealizedMinutes)} líquidas estudadas de{" "}
+                        {formatHours(weeklyTargetMinutes)} planejadas na semana atual.
+                      </p>
+                      <p>
+                        • Sincronização Adaptativa: Execuções parciais ajustam o ritmo sem acumular
+                        tarefas pendentes no dia seguinte.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2 pt-1">
-                  {activeContest.exam_board ? (
-                    <Badge variant="outline" className="border-border">
-                      Banca: {activeContest.exam_board}
-                    </Badge>
-                  ) : null}
+                <div className="mt-3 grid grid-cols-2 gap-4">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="cursor-help p-2 rounded-lg hover:bg-muted/40 transition-colors">
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          Horas Realizadas <Info className="h-3 w-3 text-primary/70" />
+                        </p>
+                        <p className="mt-1 font-display text-2xl font-bold text-primary">
+                          {formatHours(data.weeklyRealizedMinutes)}
+                        </p>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent className="bg-popover border-border text-popover-foreground text-xs p-2.5">
+                      Soma acumulada do tempo líquido (bruto - pausas) das sessões de estudo
+                      realizadas nesta semana.
+                    </TooltipContent>
+                  </Tooltip>
 
-                  {activeContest.organization ? (
-                    <Badge variant="secondary">{activeContest.organization}</Badge>
-                  ) : null}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="cursor-help p-2 rounded-lg hover:bg-muted/40 transition-colors">
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          Meta / Capacidade <Info className="h-3 w-3 text-muted-foreground" />
+                        </p>
+                        <p className="mt-1 font-display text-2xl font-bold text-foreground">
+                          {formatHours(weeklyTargetMinutes)}
+                        </p>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent className="bg-popover border-border text-popover-foreground text-xs p-2.5">
+                      Capacidade total alocada ou cadastrada em sua matriz de disponibilidade para
+                      esta semana.
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
 
-                  {activeContest.exam_date ? (
-                    <Badge
-                      variant={daysToExam !== null && daysToExam <= 45 ? "destructive" : "default"}
-                      className={
-                        daysToExam !== null && daysToExam > 45
-                          ? "bg-primary/20 text-primary border-primary/30"
-                          : ""
-                      }
-                    >
-                      Prova em{" "}
-                      {new Date(activeContest.exam_date + "T00:00:00").toLocaleDateString("pt-BR")}
-                      {daysToExam !== null ? ` · Faltam ${daysToExam} dias` : ""}
-                    </Badge>
-                  ) : (
-                    <span className="text-xs text-muted-foreground">
-                      Data da prova não informada
+                <div className="mt-4 space-y-1.5">
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>Ritmo da semana</span>
+                    <span>
+                      {data.weeklyRealizedMinutes >= weeklyTargetMinutes && weeklyTargetMinutes > 0
+                        ? "Meta da semana cumprida!"
+                        : `Faltam ${formatHours(Math.max(0, weeklyTargetMinutes - data.weeklyRealizedMinutes))}`}
                     </span>
-                  )}
+                  </div>
+                  <Progress value={weeklyProgressPercent} />
                 </div>
               </div>
-            </div>
 
-            {data.activePlan ? (
               <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-xs text-muted-foreground">
-                <span>Plano: {data.activePlan.name}</span>
-                <Link
-                  to="/plano/$planId"
-                  params={{ planId: data.activePlan.id }}
-                  className="inline-flex items-center text-primary hover:underline font-semibold"
-                >
-                  Ver cronograma
-                  <ArrowRight className="ml-1 h-3 w-3" />
+                <span>Disponibilidade cadastrada: {formatHours(data.weeklyAvailableMinutes)}</span>
+                <Link to="/disponibilidade" className="text-primary hover:underline">
+                  Ajustar horas
                 </Link>
               </div>
-            ) : null}
-          </section>
-
-          {/* Card: Meta Semanal */}
-          <section className="panel flex flex-col justify-between p-5">
-            <div>
-              <div className="flex items-center justify-between gap-2">
-                <p className="label-eyebrow">Meta Semanal ({formatDateShort(weekStart)} a Dom)</p>
-                <Badge variant="outline" className="text-xs">
-                  {weeklyProgressPercent}% atingido
-                </Badge>
-              </div>
-
-              <div className="mt-3 grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs text-muted-foreground">Horas Realizadas</p>
-                  <p className="mt-1 font-display text-2xl font-bold text-primary">
-                    {formatHours(data.weeklyRealizedMinutes)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Meta / Capacidade</p>
-                  <p className="mt-1 font-display text-2xl font-bold text-foreground">
-                    {formatHours(weeklyTargetMinutes)}
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-4 space-y-1.5">
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>Ritmo da semana</span>
-                  <span>
-                    {data.weeklyRealizedMinutes >= weeklyTargetMinutes && weeklyTargetMinutes > 0
-                      ? "Meta da semana cumprida!"
-                      : `Faltam ${formatHours(Math.max(0, weeklyTargetMinutes - data.weeklyRealizedMinutes))}`}
-                  </span>
-                </div>
-                <Progress value={weeklyProgressPercent} />
-              </div>
-            </div>
-
-            <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-xs text-muted-foreground">
-              <span>Disponibilidade cadastrada: {formatHours(data.weeklyAvailableMinutes)}</span>
-              <Link to="/disponibilidade" className="text-primary hover:underline">
-                Ajustar horas
-              </Link>
-            </div>
-          </section>
-        </div>
+            </section>
+          </div>
+        </TooltipProvider>
 
         {/* ── CARD ORIENTADO À AÇÃO: O QUE ESTUDAR AGORA ───────────────────────── */}
         <WhatToStudyNowCard
@@ -568,144 +620,84 @@ function CommandCenterPage() {
           onStartTask={(taskId) => startTaskMutation.mutate(taskId)}
         />
 
-        {/* ── PAINEL DE OBSERVABILIDADE DO CICLO COGNITIVO (FASE 7.8) ───────────── */}
-        <CognitiveTelemetryDashboardPanel />
+        {/* ── CICLO COGNITIVO DE ESTUDO (GURUJA STYLE SEPARATION) ──────────────── */}
+        <GurujaCycleTasks
+          tasks={data.todayTasks}
+          onOpenComplete={(task) => handleOpenComplete(task as unknown as DayTask)}
+          onStartTask={(taskId) => startTaskMutation.mutate(taskId)}
+          completedCount={data.completedTasksToday}
+          totalCount={data.todayTasks.length}
+          realizedMinutes={data.realizedMinutesToday}
+          plannedMinutes={data.plannedMinutesToday}
+        />
 
-        {/* ── LISTA DE TAREFAS DE HOJE ────────────────────────────────────────── */}
-        <section className="panel p-5">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="label-eyebrow">Agenda de Hoje ({formatDateShort(today)})</p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {data.completedTasksToday} de {data.todayTasks.length} blocos concluídos ·{" "}
-                {formatHours(data.realizedMinutesToday)} líquido de{" "}
-                {formatHours(data.plannedMinutesToday)} planejado
-              </p>
+        {/* ── MÉTRICAS DE PROGRESSO REAL COM MEMÓRIA DE CÁLCULO INTERATIVA ───── */}
+        <TooltipProvider>
+          <section>
+            <div className="flex items-center gap-2">
+              <p className="label-eyebrow">Métricas Reais Acumuladas</p>
+              <Badge variant="outline" className="text-[10px] text-muted-foreground">
+                Com memória de cálculo em tempo real
+              </Badge>
             </div>
-
-            <div className="flex items-center gap-1 rounded-md border border-border p-0.5 text-xs">
-              {(["todas", "pendentes", "concluidas"] as const).map((f) => (
-                <button
-                  key={f}
-                  type="button"
-                  onClick={() => setFilter(f)}
-                  className={`rounded px-2.5 py-1 font-medium transition-colors ${
-                    filter === f
-                      ? "bg-accent text-accent-foreground"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {f === "todas" ? "Todas" : f === "pendentes" ? "Pendentes" : "Concluídas"}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="mt-3">
-            <Progress
-              value={
-                data.plannedMinutesToday
-                  ? Math.min(100, (data.realizedMinutesToday / data.plannedMinutesToday) * 100)
-                  : 0
-              }
-            />
-          </div>
-
-          {filteredTasks.length === 0 ? (
-            <p className="mt-4 text-center py-6 text-sm text-muted-foreground">
-              {data.todayTasks.length === 0
-                ? "Nenhuma tarefa planejada para o dia de hoje."
-                : "Nenhuma tarefa encontrada com o filtro selecionado."}
-            </p>
-          ) : (
-            <ul className="mt-4 divide-y divide-border">
-              {filteredTasks.map((task) => (
-                <li
-                  key={task.id}
-                  className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm first:pt-0 last:pb-0"
-                >
-                  <div className="min-w-0 max-w-xl space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{task.title}</span>
-                      <Badge variant="outline" className="text-[10px]">
-                        {task.activity_type ? ACTIVITY_LABELS[task.activity_type] : "Estudo"}
-                      </Badge>
-                    </div>
-                    {task.priority_reason ? (
-                      <p className="text-xs text-muted-foreground truncate">
-                        {task.priority_reason}
+            <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+              {[
+                {
+                  label: "Horas líquidas totais",
+                  value: data.netHoursTotal ? `${data.netHoursTotal.toFixed(1)}h` : "0h",
+                  tooltipTitle: "Memória de Cálculo: Horas Líquidas Totais",
+                  tooltipText:
+                    "Soma de todos os tempos líquidos (net_seconds) registrados em sessões de estudo concluídas no sistema, convertidos em horas (÷ 3600).",
+                },
+                {
+                  label: "Questões resolvidas",
+                  value: String(data.questionsTotal),
+                  tooltipTitle: "Memória de Cálculo: Questões Resolvidas",
+                  tooltipText: `Soma das tentativas de questões individuais gravadas (${data.questionsTotal}) + contagem de baterias informadas nas sessões de estudo diárias.`,
+                },
+                {
+                  label: "Taxa de acerto",
+                  value: data.accuracy === null ? "—" : `${data.accuracy.toFixed(0)}%`,
+                  tooltipTitle: "Memória de Cálculo: Taxa Global de Acertos",
+                  tooltipText:
+                    data.accuracy === null
+                      ? "Sem questões registradas ainda para cálculo de porcentagem."
+                      : `${data.accuracy.toFixed(1)}% = Resultado de (Acertos Totais / Questões Resolvidas) × 100 com base no histórico real acumulado.`,
+                },
+                {
+                  label: "Revisões concluídas",
+                  value: String(data.reviewsCompleted),
+                  tooltipTitle: "Memória de Cálculo: Repetição Espaçada",
+                  tooltipText: `Total de ${data.reviewsCompleted} eventos de revisão concluídos pelo algoritmo de repetição espaçada no histórico.`,
+                },
+                {
+                  label: "Erros pendentes",
+                  value: String(data.unresolvedErrors),
+                  tooltipTitle: "Memória de Cálculo: Central de Erros",
+                  tooltipText: `Contagem exata de ${data.unresolvedErrors} questões/tópicos pendentes de saneamento e reteste na Central de Erros.`,
+                },
+              ].map((metric) => (
+                <Tooltip key={metric.label}>
+                  <TooltipTrigger asChild>
+                    <div className="panel px-4 py-4 cursor-help hover:border-primary/40 transition-all">
+                      <p className="text-xs text-muted-foreground flex items-center justify-between">
+                        <span>{metric.label}</span>
+                        <HelpCircle className="h-3 w-3 text-muted-foreground/60" />
                       </p>
-                    ) : null}
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground tabular-nums">
-                      {task.actual_minutes !== null ? `${task.actual_minutes}min / ` : ""}
-                      {task.planned_minutes ?? 0}min
-                    </span>
-
-                    <Badge
-                      variant={
-                        task.status === "concluida"
-                          ? "default"
-                          : task.status === "em_andamento"
-                            ? "secondary"
-                            : "outline"
-                      }
-                    >
-                      {TASK_STATUS_LABELS[task.status]}
-                    </Badge>
-
-                    {task.status !== "concluida" ? (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-8 px-2 text-xs"
-                        onClick={() => handleOpenComplete(task)}
-                      >
-                        Concluir
-                      </Button>
-                    ) : null}
-                  </div>
-                </li>
+                      <p className="mt-1 font-display text-xl font-semibold text-foreground">
+                        {metric.value}
+                      </p>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent className="bg-popover border-border text-popover-foreground text-xs max-w-xs p-3">
+                    <p className="font-semibold text-primary mb-1">{metric.tooltipTitle}</p>
+                    <p>{metric.tooltipText}</p>
+                  </TooltipContent>
+                </Tooltip>
               ))}
-            </ul>
-          )}
-        </section>
-
-        {/* ── MÉTRICAS DE PROGRESSO REAL ──────────────────────────────────────── */}
-        <section>
-          <p className="label-eyebrow">Métricas Reais Acumuladas</p>
-          <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-            {[
-              {
-                label: "Horas líquidas totais",
-                value: data.netHoursTotal ? `${data.netHoursTotal.toFixed(1)}h` : "0h",
-              },
-              {
-                label: "Questões resolvidas",
-                value: String(data.questionsTotal),
-              },
-              {
-                label: "Taxa de acerto",
-                value: data.accuracy === null ? "—" : `${data.accuracy.toFixed(0)}%`,
-              },
-              {
-                label: "Revisões concluídas",
-                value: String(data.reviewsCompleted),
-              },
-              {
-                label: "Erros pendentes",
-                value: String(data.unresolvedErrors),
-              },
-            ].map((metric) => (
-              <div key={metric.label} className="panel px-4 py-4">
-                <p className="text-xs text-muted-foreground">{metric.label}</p>
-                <p className="mt-1 font-display text-xl font-semibold">{metric.value}</p>
-              </div>
-            ))}
-          </div>
-        </section>
+            </div>
+          </section>
+        </TooltipProvider>
 
         {!data.activeContest && !data.hasPlan ? (
           <EmptyState

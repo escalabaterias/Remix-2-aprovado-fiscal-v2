@@ -6,11 +6,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { buildCoachContext } from "./context-builder";
 import { COACH_PROMPT_VERSION, COACH_SYSTEM_PROMPT, validateCoachGuidance } from "./prompts";
 import { getDailyCoachGuidance } from "./service";
-import {
-  determineCoachPersona,
-  generateAdaptiveExplanation,
-  getRecommendedMethod,
-} from "./coachEngine";
+import { buildStudentProfileContext, generateCoachPrompt, processCoachChat } from "./coachEngine";
 import * as gatewayModule from "@/services/ai/gateway";
 
 vi.mock("@/integrations/supabase/client", () => {
@@ -327,61 +323,58 @@ describe("Coach de IA Proativo — Fase 7.2.1 Mentor Intelligence Upgrade", () =
       expect(res.hasEnoughData).toBe(false);
     });
   });
-});
 
-describe("Coach Fiscal Socrático e Explicações Adaptativas (Etapa 4.3)", () => {
-  const mockGaps: any[] = [
-    {
-      id: "GAP-1",
-      subjectId: "DIR-TRIB",
-      subjectName: "Direito Tributário",
-      topicId: "LIMIT",
-      topicName: "Limitações",
-      accuracy: 0.35,
-      severity: "high",
-      primaryErrorCategory: "conhecimento",
-    },
-  ];
+  describe("5. Coach Engine Context Consolidation & Interactive Chat", () => {
+    it("consolida o perfil do aluno com taxa global, matérias fracas e flashcards", () => {
+      const profile = buildStudentProfileContext({
+        globalScore: 82,
+        targetExam: "SEFAZ SP — Auditor Fiscal",
+      });
 
-  it("deve adotar tom encorajador para alunos com falhas severas ou repetidas", () => {
-    // 5 erros recentes ou mais ativa tom encorajador
-    const persona = determineCoachPersona(mockGaps, 6);
-    expect(persona.tone).toBe("encouraging");
-    expect(persona.empathyScore).toBeGreaterThanOrEqual(90);
-  });
+      expect(profile.globalScore).toBe(82);
+      expect(profile.targetExam).toBe("SEFAZ SP — Auditor Fiscal");
+      expect(profile.weakSubjects.length).toBeGreaterThan(0);
+      expect(typeof profile.dueFlashcardsCount).toBe("number");
+    });
 
-  it("deve adotar tom socrático-desafiador se o aluno tem erros de atenção", () => {
-    const attentionGaps = [
-      {
-        id: "GAP-2",
-        subjectId: "DIR-TRIB",
-        topicId: "LIMIT",
-        topicName: "Limitações",
-        accuracy: 0.7,
-        severity: "medium",
-        primaryErrorCategory: "atencao",
-      },
-    ];
+    it("gera o prompt socrático injetando as variáveis do perfil de desempenho", () => {
+      const profile = buildStudentProfileContext({
+        globalScore: 78.5,
+        targetExam: "SEFAZ MG",
+        weakSubjects: ["Auditoria Fiscal"],
+      });
 
-    const persona = determineCoachPersona(attentionGaps, 2);
-    expect(persona.tone).toBe("socratic");
-  });
+      const prompt = generateCoachPrompt(profile, "Como estudar auditoria?");
 
-  it("deve gerar esquema passo a passo visual e tabela para matérias de Exatas", () => {
-    const persona = determineCoachPersona([], 0);
-    const explanation = generateAdaptiveExplanation("RLM", "Equivalências Lógicas", persona);
+      expect(prompt).toContain("SEFAZ MG");
+      expect(prompt).toContain("78.5%");
+      expect(prompt).toContain("Auditoria Fiscal");
+      expect(prompt).toContain("Como estudar auditoria?");
+    });
 
-    expect(explanation.type).toBe("visual_step_by_step");
-    expect(explanation.content).toContain("📊 Resolução Visual Passo a Passo");
-    expect(explanation.content).toContain("| Passo | Operação Lógica |");
-  });
+    it("processa atalho rápido 'Explicar exatas passo a passo' e retorna resposta estruturada", async () => {
+      const message = await processCoachChat("Explicar exatas passo a passo");
 
-  it("deve gerar narrativa de caso prático para matérias de Direito Tributário", () => {
-    const persona = determineCoachPersona([], 0);
-    const explanation = generateAdaptiveExplanation("DIR-TRIB", "Substituição Tributária", persona);
+      expect(message.sender).toBe("coach");
+      expect(message.content).toContain("Exatas");
+      expect(message.suggestedActions).toBeDefined();
+      expect(message.suggestedActions?.length).toBeGreaterThan(0);
+    });
 
-    expect(explanation.type).toBe("practical_case");
-    expect(explanation.content).toContain("💼 Caso Prático do Auditor Fiscal");
-    expect(explanation.content).toContain("ICMS");
+    it("processa atalho rápido 'Analisar meu Caderno de Erros'", async () => {
+      const message = await processCoachChat("Analisar meu Caderno de Erros");
+
+      expect(message.sender).toBe("coach");
+      expect(message.content).toContain("Caderno de Erros");
+      expect(message.suggestedActions).toContain("Ir para a Central de Erros");
+    });
+
+    it("processa atalho rápido 'Direcionamento para reta final da SEFAZ'", async () => {
+      const message = await processCoachChat("Direcionamento para reta final da SEFAZ");
+
+      expect(message.sender).toBe("coach");
+      expect(message.content).toContain("SEFAZ");
+      expect(message.suggestedActions).toContain("Ver Plano de Estudos da SEFAZ");
+    });
   });
 });

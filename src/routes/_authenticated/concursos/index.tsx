@@ -2,8 +2,13 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
+import { Award, BookOpen, Plus, Sparkles } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
+import {
+  REFERENCE_FISCAL_CONTESTS,
+  type ReferenceFiscalContest,
+} from "@/lib/concursos/fiscalReferenceContests";
 import { AppShell } from "@/components/layout/AppShell";
 import { EmptyState } from "@/components/common/EmptyState";
 import { Button } from "@/components/ui/button";
@@ -101,6 +106,29 @@ function ContestsPage() {
       toast.success("Concurso cadastrado.");
       setForm(EMPTY_FORM);
       setOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["contests"] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const importReferenceContest = useMutation({
+    mutationFn: async (ref: ReferenceFiscalContest) => {
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user) throw new Error("Sessão expirada.");
+      const { error } = await supabase.from("contests").insert({
+        user_id: auth.user.id,
+        name: ref.name,
+        organization: ref.organization,
+        role_title: ref.roleTitle,
+        area: ref.area,
+        exam_board: ref.examBoard,
+        status: ref.status as ContestStatus,
+        description: `Importado do catálogo de referência fiscal. ${ref.highlights.join(". ")}`,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Edital fiscal de referência importado para seus concursos!");
       queryClient.invalidateQueries({ queryKey: ["contests"] });
     },
     onError: (error: Error) => toast.error(error.message),
@@ -226,41 +254,123 @@ function ContestsPage() {
         </Dialog>
       }
     >
-      {isLoading ? (
-        <p className="text-sm text-muted-foreground">Carregando…</p>
-      ) : !contests?.length ? (
-        <EmptyState
-          title="Nenhum concurso cadastrado"
-          description="Cadastre o primeiro concurso para começar a organizar editais, matérias e tópicos."
-        />
-      ) : (
-        <ul className="grid gap-3 md:grid-cols-2">
-          {contests.map((contest) => (
-            <li key={contest.id}>
-              <Link
-                to="/concursos/$contestId"
-                params={{ contestId: contest.id }}
-                className="panel block px-5 py-4 transition-colors hover:border-primary/50"
+      <div className="space-y-8">
+        <div>
+          <h2 className="text-base font-bold font-display text-foreground mb-3 flex items-center gap-2">
+            <BookOpen className="h-4 w-4 text-emerald-400" />
+            Concursos em Acompanhamento
+          </h2>
+          {isLoading ? (
+            <p className="text-sm text-muted-foreground">Carregando…</p>
+          ) : !contests?.length ? (
+            <EmptyState
+              title="Nenhum concurso cadastrado"
+              description="Cadastre um novo concurso ou escolha um edital fiscal de referência no catálogo abaixo."
+            />
+          ) : (
+            <ul className="grid gap-3 md:grid-cols-2">
+              {contests.map((contest) => (
+                <li key={contest.id}>
+                  <Link
+                    to="/concursos/$contestId"
+                    params={{ contestId: contest.id }}
+                    className="panel block px-5 py-4 transition-colors hover:border-primary/50"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <h3 className="font-display text-base font-semibold">{contest.name}</h3>
+                      <Badge variant="outline">{CONTEST_STATUS_LABELS[contest.status]}</Badge>
+                    </div>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {[contest.organization, contest.role_title, contest.exam_board]
+                        .filter(Boolean)
+                        .join(" · ") || "Sem detalhes adicionais"}
+                    </p>
+                    {contest.exam_date ? (
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        Prova: {new Date(contest.exam_date).toLocaleDateString("pt-BR")}
+                      </p>
+                    ) : null}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {/* Catálogo de Editais Fiscais Reais de Referência */}
+        <div className="space-y-4 pt-4 border-t border-border/60">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h2 className="text-base font-bold font-display text-foreground flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-emerald-400" />
+                Catálogo de Editais Fiscais de Referência
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                Editais fiscais reais pré-configurados (SEFAZ-SP, SEFAZ-AL, SEF-SC, Receita Federal,
+                ISS-SP) com pesos de matérias e bancas.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {REFERENCE_FISCAL_CONTESTS.map((ref) => (
+              <div
+                key={ref.id}
+                className="panel p-5 space-y-4 flex flex-col justify-between border-emerald-500/20 bg-emerald-950/10 hover:border-emerald-500/40 transition-all"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <h2 className="font-display text-base font-semibold">{contest.name}</h2>
-                  <Badge variant="outline">{CONTEST_STATUS_LABELS[contest.status]}</Badge>
-                </div>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {[contest.organization, contest.role_title, contest.exam_board]
-                    .filter(Boolean)
-                    .join(" · ") || "Sem detalhes adicionais"}
-                </p>
-                {contest.exam_date ? (
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    Prova: {new Date(contest.exam_date).toLocaleDateString("pt-BR")}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] border-emerald-500/30 text-emerald-400 bg-emerald-500/10"
+                    >
+                      Banca {ref.examBoard}
+                    </Badge>
+                    <Badge variant="secondary" className="text-[10px]">
+                      {ref.area}
+                    </Badge>
+                  </div>
+                  <h3 className="font-bold text-sm text-foreground font-display leading-snug">
+                    {ref.name}
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Remuneração Inicial:{" "}
+                    <span className="text-emerald-400 font-mono font-bold">
+                      {ref.salaryInitial}
+                    </span>
                   </p>
-                ) : null}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
+                  <ul className="space-y-1 pt-1">
+                    {ref.highlights.map((h, i) => (
+                      <li
+                        key={i}
+                        className="text-[11px] text-muted-foreground flex items-center gap-1.5"
+                      >
+                        <span className="text-emerald-400 font-bold">•</span> {h}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="pt-3 border-t border-border/40 flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">
+                    {ref.expectedVagas} vagas est.
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-xs border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
+                    disabled={importReferenceContest.isPending}
+                    onClick={() => importReferenceContest.mutate(ref)}
+                  >
+                    <Plus className="h-3.5 w-3.5 mr-1" />
+                    Adicionar aos Meus Concursos
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </AppShell>
   );
 }

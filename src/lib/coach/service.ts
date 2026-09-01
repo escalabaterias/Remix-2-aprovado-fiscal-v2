@@ -141,106 +141,234 @@ async function fetchContestTopics(contestId?: string): Promise<RawContestTopic[]
 }
 
 /**
+ * Gera uma orientação pedagógica determinística baseada estritamente no CoachContext.
+ * Utilizada como fallback instantâneo e seguro quando o motor de IA está indisponível ou em falha.
+ */
+export function buildDeterministicCoachGuidance(context: CoachContext): CoachGuidance {
+  let priorityTopic = "";
+  let headline = "";
+  let situation = "";
+  let reason = "";
+  let recommendedAction = "";
+  let secondaryAction: string | undefined = undefined;
+
+  const topCritical = context.diagnosesSummary?.topCriticalTopics?.[0];
+  const topUrgent = context.reviewsSummary?.topUrgentReviews?.[0];
+  const topError = context.errorsSummary?.topCategories?.[0];
+
+  if (topCritical) {
+    priorityTopic = topCritical.topicName || topCritical.subjectName || "Tópico Crítico";
+    headline = `Foco Prioritário: ${priorityTopic}`;
+    situation = `Identificado nível crítico de desempenho no tópico ${priorityTopic} (${topCritical.masteryPercent}% de domínio).`;
+    reason = `Este tópico requer atenção imediata devido a ${topCritical.unresolvedErrorsCount ?? 0} erros pendentes e alta relevância no edital.`;
+    recommendedAction = `Resolver 10 questões focadas em ${priorityTopic} e revisar a teoria dos pontos de falha.`;
+    if (topCritical.hasUnmetPrerequisites && topCritical.unmetPrerequisiteNames?.length) {
+      secondaryAction = `Atenção aos pré-requisitos: ${topCritical.unmetPrerequisiteNames.join(", ")}.`;
+    }
+  } else if (topUrgent) {
+    priorityTopic = topUrgent.topicName || "Revisão Urgente";
+    headline = `Revisão Pendente: ${priorityTopic}`;
+    situation = `Revisão do tipo ${topUrgent.reviewType} acumulada para o tópico.`;
+    reason = `Risco de decaimento de memória após ${topUrgent.overdueDays} dias sem revisão.`;
+    recommendedAction = `Concluir sessão de revisão adaptativa para ${priorityTopic}.`;
+  } else if (topError) {
+    priorityTopic = topError.category || "Central de Erros";
+    headline = `Remediação de Erros em ${priorityTopic}`;
+    situation = `Foram registrados ${topError.unresolvedCount} erros pendentes de resolução nesta categoria.`;
+    reason = `A correção de erros recorrentes é o caminho mais rápido para elevação de nota.`;
+    recommendedAction = `Acessar a Central de Erros e reexecutar a análise guiada dos itens pendentes.`;
+  } else if (context.validTopicNames && context.validTopicNames.length > 0) {
+    priorityTopic = context.validTopicNames[0]!;
+    headline = `Orientação de Estudo: ${priorityTopic}`;
+    situation = `Acompanhamento proativo do seu plano de estudos.`;
+    reason = `Manter a constância diária de execução nos tópicos agendados.`;
+    recommendedAction = `Realizar o bloco de estudos agendado no seu cronograma diário.`;
+  } else {
+    priorityTopic = "Estudo Geral";
+    headline = "Acompanhamento Proativo do Aluno";
+    situation = "Dados pedagógicos cadastrados e prontos para acompanhamento.";
+    reason = "Inicie sessões de estudo para alimentar os motores de inteligência.";
+    recommendedAction = "Executar uma sessão de estudo ou resolver bloco de questões do edital.";
+  }
+
+  return {
+    headline,
+    situation,
+    priorityTopic,
+    reason,
+    recommendedAction,
+    secondaryAction,
+    avoid:
+      "Evite dispersar o tempo de estudo em tópicos de baixa relevância antes de cumprir a prioridade.",
+    nextStep: "Registrar a conclusão no Centro de Comando para atualizar os indicadores.",
+    confidenceScore: 0.85,
+    generatedAt: new Date().toISOString(),
+  };
+}
+
+/**
  * Função principal proativa para obter a orientação diária do Coach.
  */
 export async function getDailyCoachGuidance(options?: {
   forceRefresh?: boolean;
 }): Promise<CoachGuidanceResult> {
-  // 1. Verificar usuário autenticado
-  const { data: authData, error: authErr } = await supabase.auth.getUser();
-  if (authErr || !authData.user) {
-    return {
-      guidance: null,
-      cached: false,
-      status: "erro",
-      errorMessage: "Usuário não autenticado no Supabase.",
-      hasEnoughData: false,
-    };
-  }
-
-  // 2. Coletar dados pedagógicos dos motores em paralelo com tratamento de erros
-  const [
-    diagnosesRes,
-    reviewQueueRes,
-    errorSummariesRes,
-    todayTasksRes,
-    contestRes,
-    prereqsRes,
-    contestTopicsRes,
-  ] = await Promise.allSettled([
-    getUserDiagnoses(),
-    getUserReviewQueue(),
-    fetchTopicErrorSummaries(),
-    fetchTodayTasks(),
-    fetchActiveContest(),
-    fetchPrerequisites(),
-    fetchContestTopics(),
-  ]);
-
-  const diagnoses = diagnosesRes.status === "fulfilled" ? diagnosesRes.value : [];
-  const reviewQueue = reviewQueueRes.status === "fulfilled" ? reviewQueueRes.value : [];
-  const errorSummaries = errorSummariesRes.status === "fulfilled" ? errorSummariesRes.value : [];
-  const todayTasks = todayTasksRes.status === "fulfilled" ? todayTasksRes.value : [];
-  const activeContest = contestRes.status === "fulfilled" ? contestRes.value : null;
-  const prerequisites = prereqsRes.status === "fulfilled" ? prereqsRes.value : [];
-  const contestTopics = contestTopicsRes.status === "fulfilled" ? contestTopicsRes.value : [];
-
-  // 3. Construir o CoachContext compacto, sanitizado e multidimensional
-  const context = buildCoachContext({
-    diagnoses,
-    reviewQueue,
-    errorSummaries,
-    prerequisites,
-    contestTopics,
-    todayTasks,
-    activeContest,
-  });
-
-  // 4. Se não houver dados pedagógicos suficientes
-  if (!context.hasEnoughData) {
-    return {
-      guidance: null,
-      cached: false,
-      status: "dados_insuficientes",
-      hasEnoughData: false,
-    };
-  }
-
-  // 5. Enviar ao AI Gateway da Fase 7.1
   try {
-    const aiResult = await runAiTask({
-      type: "coach_daily_guidance",
-      tier: "inteligente",
-      inputRef: context as unknown as Record<string, unknown>,
-      promptVersion: COACH_PROMPT_VERSION,
-      systemPrompt: COACH_SYSTEM_PROMPT,
-      userPrompt: `Analise este CoachContext pedagógico e gere a orientação diária do aluno:\n${JSON.stringify(context, null, 2)}`,
-      forceRefresh: options?.forceRefresh,
+    // Timeout de segurança de 10 segundos
+    const timeoutPromise = new Promise<CoachGuidanceResult>((resolve) => {
+      setTimeout(() => {
+        resolve({
+          guidance: null,
+          cached: false,
+          status: "erro",
+          errorMessage: "Tempo limite de resposta do Professor Fiscal excedido.",
+          hasEnoughData: false,
+        });
+      }, 10_000);
     });
 
-    if (aiResult.status === "erro" || !aiResult.output) {
-      return {
-        guidance: null,
-        cached: aiResult.cached,
-        status: "erro",
-        errorMessage: aiResult.errorMessage || "Falha ao gerar orientação com o AI Gateway.",
-        hasEnoughData: true,
-        model: aiResult.model,
-        durationMs: aiResult.durationMs,
-      };
-    }
+    const executionPromise = (async (): Promise<CoachGuidanceResult> => {
+      // 1. Verificar usuário autenticado
+      let userId: string | null = null;
+      try {
+        const { data: authData, error: authErr } = await supabase.auth.getUser();
+        if (!authErr && authData?.user) {
+          userId = authData.user.id;
+        }
+      } catch (authException) {
+        console.warn("Exceção ao verificar usuário autenticado:", authException);
+      }
 
-    // 6. Validar o JSON retornado contra os tópicos válidos do contexto
-    const validatedGuidance = validateCoachGuidance(aiResult.output, context);
+      if (!userId) {
+        try {
+          const { data: sessData } = await supabase.auth.getSession();
+          if (sessData?.session?.user) {
+            userId = sessData.session.user.id;
+          }
+        } catch {
+          // Ignora
+        }
+      }
 
-    return {
-      guidance: validatedGuidance,
-      cached: aiResult.cached,
-      status: "processado",
-      hasEnoughData: true,
-      model: aiResult.model,
-      durationMs: aiResult.durationMs,
-    };
+      if (!userId) {
+        return {
+          guidance: null,
+          cached: false,
+          status: "erro",
+          errorMessage: "Usuário não autenticado no Supabase.",
+          hasEnoughData: false,
+        };
+      }
+
+      // 2. Coletar dados pedagógicos dos motores em paralelo com tratamento de erros
+      const [
+        diagnosesRes,
+        reviewQueueRes,
+        errorSummariesRes,
+        todayTasksRes,
+        contestRes,
+        prereqsRes,
+        contestTopicsRes,
+      ] = await Promise.allSettled([
+        getUserDiagnoses().catch(() => []),
+        getUserReviewQueue().catch(() => []),
+        fetchTopicErrorSummaries().catch(() => []),
+        fetchTodayTasks().catch(() => []),
+        fetchActiveContest().catch(() => null),
+        fetchPrerequisites().catch(() => []),
+        fetchContestTopics().catch(() => []),
+      ]);
+
+      const diagnoses = diagnosesRes.status === "fulfilled" ? diagnosesRes.value : [];
+      const reviewQueue = reviewQueueRes.status === "fulfilled" ? reviewQueueRes.value : [];
+      const errorSummaries =
+        errorSummariesRes.status === "fulfilled" ? errorSummariesRes.value : [];
+      const todayTasks = todayTasksRes.status === "fulfilled" ? todayTasksRes.value : [];
+      const activeContest = contestRes.status === "fulfilled" ? contestRes.value : null;
+      const prerequisites = prereqsRes.status === "fulfilled" ? prereqsRes.value : [];
+      const contestTopics = contestTopicsRes.status === "fulfilled" ? contestTopicsRes.value : [];
+
+      // 3. Construir o CoachContext compacto, sanitizado e multidimensional
+      const context = buildCoachContext({
+        diagnoses,
+        reviewQueue,
+        errorSummaries,
+        prerequisites,
+        contestTopics,
+        todayTasks,
+        activeContest,
+      });
+
+      // 4. Se não houver dados pedagógicos suficientes
+      if (!context.hasEnoughData) {
+        return {
+          guidance: null,
+          cached: false,
+          status: "dados_insuficientes",
+          hasEnoughData: false,
+        };
+      }
+
+      // 5. Enviar ao AI Gateway da Fase 7.1
+      try {
+        const aiResult = await runAiTask({
+          type: "coach_daily_guidance",
+          tier: "inteligente",
+          inputRef: context as unknown as Record<string, unknown>,
+          promptVersion: COACH_PROMPT_VERSION,
+          systemPrompt: COACH_SYSTEM_PROMPT,
+          userPrompt: `Analise este CoachContext pedagógico e gere a orientação diária do aluno:\n${JSON.stringify(context, null, 2)}`,
+          forceRefresh: options?.forceRefresh,
+        });
+
+        if (aiResult.status === "erro" || !aiResult.output) {
+          // Fallback gracioso para orientação determinística
+          return {
+            guidance: buildDeterministicCoachGuidance(context),
+            cached: Boolean(aiResult.cached),
+            status: "processado",
+            errorMessage:
+              aiResult.errorMessage || "Orientação gerada pelo motor determinístico pedagógico.",
+            hasEnoughData: true,
+            model: aiResult.model,
+            durationMs: aiResult.durationMs,
+          };
+        }
+
+        // 6. Validar o JSON retornado contra os tópicos válidos do contexto
+        try {
+          const validatedGuidance = validateCoachGuidance(aiResult.output, context);
+
+          return {
+            guidance: validatedGuidance,
+            cached: aiResult.cached,
+            status: "processado",
+            hasEnoughData: true,
+            model: aiResult.model,
+            durationMs: aiResult.durationMs,
+          };
+        } catch {
+          // Se a validação do JSON da IA falhar, utilizar o motor determinístico
+          return {
+            guidance: buildDeterministicCoachGuidance(context),
+            cached: Boolean(aiResult.cached),
+            status: "processado",
+            hasEnoughData: true,
+            model: aiResult.model,
+            durationMs: aiResult.durationMs,
+          };
+        }
+      } catch {
+        // Fallback para motor determinístico se a chamada de IA lançar exceção
+        return {
+          guidance: buildDeterministicCoachGuidance(context),
+          cached: false,
+          status: "processado",
+          hasEnoughData: true,
+        };
+      }
+    })();
+
+    return await Promise.race([executionPromise, timeoutPromise]);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Erro inesperado no serviço do Coach.";
     return {
@@ -248,7 +376,7 @@ export async function getDailyCoachGuidance(options?: {
       cached: false,
       status: "erro",
       errorMessage: msg,
-      hasEnoughData: true,
+      hasEnoughData: false,
     };
   }
 }

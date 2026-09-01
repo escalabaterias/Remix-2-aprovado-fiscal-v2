@@ -24,8 +24,7 @@ const CITATION_PATTERNS = [
 /**
  * Normaliza referências jurídicas para comparação simples.
  */
-function normalizeCitation(str?: string | null): string {
-  if (!str) return "";
+function normalizeCitation(str: string): string {
   return str
     .toLowerCase()
     .normalize("NFD")

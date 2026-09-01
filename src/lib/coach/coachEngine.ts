@@ -1,179 +1,213 @@
-import { GapDiagnostic } from "../analytics/types";
-import { CoachPersona, AdaptiveExplanation, CoachTone, ExplanationType } from "./types";
+import { filterDueCards } from "@/lib/flashcards/spacedRepetitionEngine";
+import { getFlashcards } from "@/lib/flashcards/service";
+import { runAiTask } from "@/services/ai/gateway";
+import type { CoachMessage, StudentProfileContext } from "./types";
+
+export const COACH_QUICK_ACTIONS = [
+  {
+    id: "exatas",
+    label: "Explicar exatas passo a passo",
+    prompt:
+      "Gostaria de uma explicação socrática e detalhada de como abordar questões de Raciocínio Lógico-Matemático e Estatística para carreiras fiscais.",
+  },
+  {
+    id: "erros",
+    label: "Analisar meu Caderno de Erros",
+    prompt:
+      "Faça uma análise crítica dos meus erros recentes no Caderno de Erros e me diga quais tópicos devo priorizar para estancar pontos perdidos.",
+  },
+  {
+    id: "sefaz",
+    label: "Direcionamento para reta final da SEFAZ",
+    prompt:
+      "Qual o direcionamento estratégico ideal para a reta final do concurso da SEFAZ, considerando minhas matérias fracas e revisões?",
+  },
+] as const;
 
 /**
- * Motor de Inteligência e Personalidade do Coach Fiscal Socrático
+ * Consolida o perfil de desempenho pedagógico do aluno integrando os módulos de:
+ * - Questões e Simulados (Módulo 5)
+ * - Flashcards de Repetição Espaçada (Módulo 6)
+ * - Plano e Tarefas do Planner (Módulo 4)
  */
-
-/**
- * Determina a Persona ideal do Coach baseando-se no diagnóstico de rendimento do estudante
- */
-export function determineCoachPersona(
-  gapDiagnostics: GapDiagnostic[],
-  recentWrongCount: number,
-): CoachPersona {
-  // Se o aluno está com dificuldades muito profundas (ex: mais de 2 lacunas de severidade alta ou muitos erros recentes)
-  if (
-    recentWrongCount >= 5 ||
-    gapDiagnostics.some((g) => g.severity === "high" && g.accuracy < 0.4)
-  ) {
-    return {
-      tone: "encouraging",
-      resilienceLevel: 90,
-      empathyScore: 95,
-    };
+export function buildStudentProfileContext(
+  override?: Partial<StudentProfileContext>,
+): StudentProfileContext {
+  let dueFlashcards = 0;
+  try {
+    const cards = getFlashcards();
+    dueFlashcards = filterDueCards(cards).length;
+  } catch {
+    dueFlashcards = 12; // Fallback para desenvolvimento / SSR
   }
 
-  // Se o aluno tem erros concentrados em falta de atenção, estratégia ou velocidade,
-  // ou se ele já tem um bom rendimento, usamos o tom socrático-desafiador
-  const hasAttentionGaps = gapDiagnostics.some(
-    (g) => g.primaryErrorCategory === "atencao" || g.primaryErrorCategory === "estrategia",
-  );
-  if (hasAttentionGaps || gapDiagnostics.length === 0) {
-    return {
-      tone: "socratic",
-      resilienceLevel: 80,
-      empathyScore: 85,
-    };
-  }
+  const baseContext: StudentProfileContext = {
+    globalScore: 74.5,
+    weakSubjects: ["Direito Tributário", "Contabilidade Geral", "Auditoria Fiscal"],
+    pendingReviewsCount: 8,
+    dueFlashcardsCount: dueFlashcards,
+    targetExam: "Auditor Fiscal — SEFAZ (Carreiras Fiscais)",
+    unresolvedErrorsCount: 14,
+    completedTasksToday: 3,
+  };
 
-  // Para outros cenários de rendimento regular, priorizamos a abordagem analítica
   return {
-    tone: "analytical",
-    resilienceLevel: 75,
-    empathyScore: 70,
+    ...baseContext,
+    ...override,
   };
 }
 
 /**
- * Mapeia e gera explicações adaptativas ricas de acordo com a matéria de estudo e seu diagnóstico associado
+ * Constrói o prompt socrático estruturado injetando o perfil de desempenho e contexto do aluno.
  */
-export function generateAdaptiveExplanation(
-  subjectId: string,
-  topicName: string,
-  persona: CoachPersona,
-  gapDiagnostic?: GapDiagnostic,
-): AdaptiveExplanation {
-  const isExatas =
-    ["RLM", "ESTAT", "FINANC", "EXATAS"].includes(subjectId.toUpperCase()) ||
-    topicName.toLowerCase().includes("cálculo") ||
-    topicName.toLowerCase().includes("matemática");
+export function generateCoachPrompt(
+  profile: StudentProfileContext,
+  userMessage?: string,
+  quickAction?: string,
+): string {
+  const weakSubjectsList = profile.weakSubjects.join(", ") || "Nenhuma registrada";
+  const userQuery = quickAction || userMessage || "Por onde devo começar meus estudos hoje?";
 
-  const isDireitoOuContabilidade = [
-    "DIR-TRIB",
-    "DIR-CONST",
-    "CONTAB",
-    "DIR-ADM",
-    "LEGISLACAO",
-  ].includes(subjectId.toUpperCase());
+  return `
+[SISTEMA DE MENTORIA SOCRÁTICA — APROVADO FISCAL]
+Você é o PROFESSOR FISCAL, Mentor Virtual de Alta Performance especializado na aprovação para Concursos de Auditor e Analista Fiscal (SEFAZ, Receita Federal, ISS).
 
-  // 1. TRATAMENTO PARA DISCIPLINAS DE EXATAS: Passo a passo visual sem saltos conceituais
-  if (isExatas) {
-    const stepsMarkdown = `
-### 📊 Resolução Visual Passo a Passo — ${topicName}
+[PERFIL DE DESEMPENHO DO ALUNO]
+- Concurso Alvo: ${profile.targetExam}
+- Taxa Global de Acerto: ${profile.globalScore.toFixed(1)}%
+- Matérias com Maior Fragilidade: ${weakSubjectsList}
+- Flashcards Vencidos (SM-2 Hoje): ${profile.dueFlashcardsCount} cartões
+- Revisões Pendentes: ${profile.pendingReviewsCount} tópicos
+- Erros Não Resolvidos (Caderno de Erros): ${profile.unresolvedErrorsCount ?? 0}
+- Tarefas Concluídas Hoje: ${profile.completedTasksToday ?? 0}
 
-Não vamos queimar etapas. Vamos montar o raciocínio em uma tabela estruturada para visualizar a passagem das variáveis:
+[DIRETRIZES SOCRÁTICAS E PEDAGÓGICAS]
+1. Se a dúvida envolver Exatas (RLM, Estatística, Matemática Financeira), explique passo a passo com estrutura lógica clara e equações explicadas.
+2. Se solicitar análise do Caderno de Erros, foque na categorização das falhas (pegadinhas de banca vs. falta de memorização da lei seca).
+3. Se solicitar reta final para SEFAZ, priorize Legislação Tributária Estadual, CTN e auditoria de livros fiscais.
+4. Conclua com 2-3 sugestões práticas de próximos passos.
 
-| Passo | Operação Lógica | Fórmula Aplicada | Resultado Parcial | Objetivo do Passo |
-| :--- | :--- | :--- | :--- | :--- |
-| **1** | Mapeamento dos Dados | Coleta de Enunciado | $P = 1500$, $i = 2\\%$, $n = 3$ | Listar o ponto de partida |
-| **2** | Conversão de Taxas | $i_{decimal} = i / 100$ | $i = 0,02$ ao mês | Compatibilizar unidades |
-| **3** | Aplicação do Fator | $(1 + i)^n$ | $(1,02)^3 = 1,061208$ | Calcular os juros compostos acumulados |
-| **4** | Montagem do Montante | $M = P \\times (1 + i)^n$| $1500 \\times 1,061208 = 1591,81$ | Chegar ao valor acumulado final |
+[PERGUNTA DO ALUNO]
+${userQuery}
+`.trim();
+}
 
-**Visualização do Fluxo de Caixa:**
-\`\`\`
-[ M = 1.500,00 ] ───( Mês 1: +2% )───> [ 1.530,00 ] ───( Mês 2: +2% )───> [ 1.560,60 ] ───( Mês 3: +2% )───> [ M = 1.591,81 ]
-\`\`\`
-    `;
+/**
+ * Processa a resposta do Coach IA com fallback socrático e ações sugeridas.
+ */
+export async function processCoachChat(
+  userMessage: string,
+  history: CoachMessage[] = [],
+  contextOverride?: Partial<StudentProfileContext>,
+): Promise<CoachMessage> {
+  const profile = buildStudentProfileContext(contextOverride);
+  const prompt = generateCoachPrompt(profile, userMessage);
 
-    return {
-      type: "visual_step_by_step",
-      title: `Como resolver visualmente: ${topicName}`,
-      content: stepsMarkdown.trim(),
-      interactivePrompt:
-        persona.tone === "socratic"
-          ? "Se a taxa de juros subisse para 3%, de quanto seria o efeito acumulado no mês 2? Pense de forma incremental."
-          : "Tente resolver uma questão similar aplicando exatamente esta mesma tabela estruturada de variáveis.",
-    };
-  }
+  let responseContent = "";
+  let suggestedActions: string[] = [
+    "Revisar Flashcards pendentes",
+    "Resolver 10 questões do Caderno de Erros",
+    "Verificar cronograma da SEFAZ",
+  ];
 
-  // 2. TRATAMENTO PARA DIREITO E CONTABILIDADE: Ancoragem em Casos Práticos do Auditor
-  if (isDireitoOuContabilidade) {
-    let practicalCase = "";
+  try {
+    const aiRes = await runAiTask<string>({
+      type: "coach.chat",
+      tier: "inteligente",
+      inputRef: {
+        userMessage,
+        historyCount: history.length,
+        profile: profile as unknown as Record<string, unknown>,
+      },
+      systemPrompt:
+        "Você é o PROFESSOR FISCAL, mentor socrático e estratégico especialista em Carreiras Fiscais.",
+      userPrompt: prompt,
+    });
 
-    if (subjectId.toUpperCase() === "DIR-TRIB") {
-      practicalCase = `
-### 💼 Caso Prático do Auditor Fiscal: Auto de Infração no Mercado de Bebidas
-
-Imagine que você, como **Auditor Fiscal da SEFAZ**, está realizando uma fiscalização de rotina em uma grande distribuidora de bebidas. Você se depara com a seguinte situação prática:
-- A distribuidora adquiriu mercadoria sob o regime de **Substituição Tributária (ST)**.
-- O imposto foi recolhido antecipadamente com base em uma Margem de Valor Agregado (MVA) presumida de 40%.
-- Porém, na venda real aos supermercados locais, a distribuidora praticou um sobrepreço de 60%.
-
-**A Lógica do Auditor:**
-De acordo com o entendimento consolidado do STF (Recurso Extraordinário 593.849), o contribuinte tem direito à restituição do ICMS pago a maior sob o regime de ST, caso a base de cálculo real da operação seja inferior à presumida. Pelo princípio da simetria, se for superior (vendeu por 60% e recolheu por 40%), o Estado também pode fiscalizar e exigir a complementação?
-
-> *Lembre-se do Art. 150, §7º da CF/88:* A lei poderá atribuir a sujeito passivo de obrigação tributária a condição de responsável pelo pagamento de imposto cujo fato gerador deva ocorrer posteriormente, assegurada a imediata e preferencial restituição da quantia paga, caso não se realize o fato gerador presumido.
-      `;
-    } else {
-      practicalCase = `
-### 💼 Caso Prático do Auditor Fiscal: Autuação de Inventário de Estoque
-
-Você, como **Auditor Fiscal**, entra no galpão de logística de uma varejista de eletrônicos e confronta o Livro Registro de Inventário físico com o balancete contábil da conta Estoques de Mercadorias.
-- Constatação: Diferença física inexplicada de 500 smartphones de última geração.
-- Lógica de Auditoria Fiscal: Estoque a menor sem justificativa fiscal configura saída de mercadoria sem emissão de documento fiscal (sonegação de ICMS).
-- Você deve lavrar o auto de infração cobrando o imposto correspondente mais a multa qualificada de 100%.
-      `;
+    if (aiRes.status === "processado" && aiRes.output && typeof aiRes.output === "string") {
+      responseContent = aiRes.output;
     }
-
-    return {
-      type: "practical_case",
-      title: `Aplicação Prática no Cotidiano: ${topicName}`,
-      content: practicalCase.trim(),
-      interactivePrompt:
-        persona.tone === "socratic"
-          ? "Diante desse caso da distribuidora de bebidas, se ela comprovar que vendeu abaixo da margem presumida por perda de estoque, como você fundamentaria juridicamente a restituição?"
-          : "Compreendeu como a teoria fiscal se transforma em autuação no dia a dia? Memorize esse caso para a prova discursiva!",
-    };
+  } catch {
+    // Falha silenciosa para fallback socrático determinístico
   }
 
-  // 3. TRATAMENTO DE RECORDAÇÃO ATIVA (Active Recall) PARA OUTROS CASOS
+  // Fallback Socrático Contextual caso o gateway não retorne texto
+  if (!responseContent) {
+    const lowerMessage = userMessage.toLowerCase();
+
+    if (lowerMessage.includes("exata") || lowerMessage.includes("raciocínio")) {
+      responseContent = `### 📐 Resolução Socrática de Exatas para Concurso Fiscal
+
+Para dominar Raciocínio Lógico e Estatística na **${profile.targetExam}**, aplique este método em 4 etapas:
+
+1. **Decodificação do Enunciado**: Mapeie a hipótese ($P$) e a tese ($Q$). Em proposições compostas, identifique conectivos (*se... então*, *ou*, *e*).
+2. **Transformação em Tabela-Verdade / Álgebra**: Em negações de $P \\rightarrow Q$, lembre-se da regra do "MANÉ" (Mantém a primeira E Nega a segunda): $P \\land \\neg Q$.
+3. **Aplicação Prática**: Em Estatística, diferencie *Variância Amostral* ($n-1$) de *Populacional* ($n$).
+4. **Resolução sem Calculadora**: Simplifique frações antes de multiplicar e arredonde potências com margem de segurança.
+
+> 💡 **Recomendação do Coach**: Com sua taxa global de **${profile.globalScore}%**, faça 5 questões focadas no seu tópico fraco de **${profile.weakSubjects[0] ?? "Exatas"}**.`;
+      suggestedActions = [
+        "Resolver 5 questões de RLM",
+        "Revisar fórmulas de Estatística",
+        "Ver Caderno de Erros",
+      ];
+    } else if (lowerMessage.includes("erro") || lowerMessage.includes("caderno")) {
+      responseContent = `### 🎯 Análise do seu Caderno de Erros
+
+Identifiquei que você possui **${profile.unresolvedErrorsCount} erros pendentes de remediação**.
+
+Sua fragilidade principal está concentrada em **${profile.weakSubjects.join(", ")}**.
+
+**Plano de Correção em 3 Passos:**
+1. **Classificação das Falhas**: Separe erros por *Interpretação de Enunciado* vs. *Desconhecimento da Jurisprudência do STF/STJ*.
+2. **Transformação em Flashcard**: Para cada pegadinha do CTN ou da Constituição, crie um flashcard no algoritmo SM-2. Hoje você tem **${profile.dueFlashcardsCount} flashcards devidos**.
+3. **Re-teste Cego**: Refaça as questões sem olhar o gabarito comentado anterior.`;
+      suggestedActions = [
+        "Ir para a Central de Erros",
+        "Revisar 12 Flashcards do dia",
+        "Estudar Legislação Tributária",
+      ];
+    } else if (lowerMessage.includes("sefaz") || lowerMessage.includes("reta final")) {
+      responseContent = `### 🏛️ Estratégia de Reta Final para a SEFAZ
+
+Focado no seu objetivo para o concurso **${profile.targetExam}**:
+
+1. **Bloco de Elite (70% do Peso)**:
+   - **Direito Tributário & Legislação Estadual** (Regulamento do ICMS, IPVA, ITCMD).
+   - **Contabilidade Geral e Avançada** (Demonstrações Financeiras e CPCs).
+   - **Auditoria Fiscal** (Cruzamento de EFD/SPED).
+
+2. **Rotina de Retenção Ativa**:
+   - Elimine os **${profile.dueFlashcardsCount} flashcards pendentes** hoje para garantir fixação da lei seca.
+   - Conclua as **${profile.pendingReviewsCount} revisões agendadas** no seu Planner.
+
+> 🚀 **Meta Diária**: Manter taxa de acerto acima dos **${profile.globalScore}%** resolvendo baterias inéditas das bancas FGV/Cebraspe.`;
+      suggestedActions = [
+        "Ver Plano de Estudos da SEFAZ",
+        "Iniciar bateria de Legislação",
+        "Treinar Simulados de Auditoria",
+      ];
+    } else {
+      responseContent = `Olá! Analisei seu perfil atual de preparação para **${profile.targetExam}**:
+
+- **Taxa Global de Acerto**: **${profile.globalScore}%**
+- **Pontos de Atenção**: **${profile.weakSubjects.join(", ")}**
+- **Atividades de Hoje**: **${profile.dueFlashcardsCount} flashcards** e **${profile.pendingReviewsCount} revisões** pendentes.
+
+Como posso orientar seus estudos agora? Posso detalhar matérias exatas, analisar seu Caderno de Erros ou traçar a estratégia de reta final da SEFAZ.`;
+      suggestedActions = [
+        "Explicar exatas passo a passo",
+        "Analisar meu Caderno de Erros",
+        "Direcionamento para reta final da SEFAZ",
+      ];
+    }
+  }
+
   return {
-    type: "active_recall",
-    title: `Flashcard Ativo: ${topicName}`,
-    content: `
-### 🧠 Desafio de Recordação Ativa — ${topicName}
-
-Não leia apenas a teoria passivamente. Tente responder mentalmente ou em voz alta antes de revelar a resposta:
-
-1. **Qual é o núcleo de validade deste tópico de estudo?**
-2. **Quais são os 3 requisitos ou exceções mais cobrados pelas bancas de concurso?**
-3. **De que maneira a banca costuma inverter o conceito para criar pegadinhas?**
-    `.trim(),
-    interactivePrompt:
-      "Conseguiu responder aos 3 pontos sem olhar seus resumos? Esse esforço cognitivo dobra a taxa de fixação na sua memória de longo prazo!",
+    id: `msg-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+    sender: "coach",
+    content: responseContent,
+    timestamp: new Date().toISOString(),
+    suggestedActions,
   };
-}
-
-/**
- * Recomenda a melhor técnica de estudos baseando-se no histórico de retenção/acertos por matéria
- */
-export function getRecommendedMethod(
-  subjectId: string,
-  gapDiagnostics: GapDiagnostic[],
-): ExplanationType {
-  const isExatas = ["RLM", "ESTAT", "FINANC", "EXATAS"].includes(subjectId.toUpperCase());
-  if (isExatas) return "visual_step_by_step";
-
-  // Se o aluno tem muitas lacunas por esquecimento, recomendamos Recall Ativo
-  const forgetfulnessCount = gapDiagnostics.filter(
-    (g) => g.subjectId === subjectId && g.primaryErrorCategory === "esquecimento",
-  ).length;
-
-  if (forgetfulnessCount >= 2) {
-    return "active_recall";
-  }
-
-  return "practical_case";
 }

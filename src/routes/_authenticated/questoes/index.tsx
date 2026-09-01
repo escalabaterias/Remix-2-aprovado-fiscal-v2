@@ -2,13 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo, useCallback } from "react";
 import { toast } from "sonner";
-import { RotateCcw, Filter, Sparkles, Trophy } from "lucide-react";
-
-import { QuestionSolver } from "@/components/questions/QuestionSolver";
-import { SimulationBuilder } from "@/components/simulations/SimulationBuilder";
-import { SimulationRunner } from "@/components/simulations/SimulationRunner";
-import { ErrorNotebook } from "@/components/simulations/ErrorNotebook";
-import { SimulationConfig } from "@/lib/simulations/types";
+import { RotateCcw, Filter } from "lucide-react";
 
 import {
   fetchQuestions,
@@ -48,7 +42,6 @@ export const Route = createFileRoute("/_authenticated/questoes/")({
     difficulty: typeof search.difficulty === "string" ? search.difficulty : undefined,
     source: typeof search.source === "string" ? search.source : undefined,
     tags: typeof search.tags === "string" ? search.tags : undefined,
-    tab: typeof search.tab === "string" ? search.tab : undefined,
   }),
   head: () => ({
     meta: [
@@ -128,20 +121,6 @@ function QuestoesPage() {
   const queryClient = useQueryClient();
   const searchParams = Route.useSearch();
   const navigate = Route.useNavigate();
-
-  const tabParam = searchParams.tab;
-  const initialTab =
-    tabParam === "static" ||
-    tabParam === "adaptive" ||
-    tabParam === "simulation" ||
-    tabParam === "errors"
-      ? tabParam
-      : "static";
-
-  const [activeTab, setActiveTab] = useState<"static" | "adaptive" | "simulation" | "errors">(
-    initialTab,
-  );
-  const [simulationConfig, setSimulationConfig] = useState<SimulationConfig | null>(null);
 
   // Filtros derivados dos search params da URL (com fallback "all")
   const subjectFilter = searchParams.subject ?? "all";
@@ -338,100 +317,6 @@ function QuestoesPage() {
     setSubmittedResult(null);
   }, []);
 
-  if (activeTab === "adaptive") {
-    return (
-      <AppShell
-        title="Simulados Adaptativos"
-        description="Agente Dinâmico de Estudos com cronômetro inteligente, desvios de erros e inteligência socrática."
-      >
-        <div className="space-y-4">
-          <div className="flex justify-between items-center bg-[#13141c] border border-[#13141c]/60 rounded-xl p-3 px-4">
-            <span className="text-xs text-muted-foreground flex items-center gap-1.5">
-              <Sparkles className="h-4 w-4 text-[#ff79c6]" />
-              Motor de Simulado Baseado em Lacunas do Analytics (Etapa 5.1)
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setActiveTab("static")}
-              className="text-xs font-bold h-8 cursor-pointer"
-            >
-              Voltar ao Banco Estático
-            </Button>
-          </div>
-          <QuestionSolver />
-        </div>
-      </AppShell>
-    );
-  }
-
-  if (activeTab === "simulation") {
-    return (
-      <AppShell
-        title="Simulados Customizados"
-        description="Simule exames reais das principais bancas do Fisco brasileiro com cronômetro e pesos customizáveis."
-      >
-        <div className="space-y-4">
-          <div className="flex justify-between items-center bg-[#13141c] border border-[#13141c]/60 rounded-xl p-3 px-4">
-            <span className="text-xs text-muted-foreground flex items-center gap-1.5">
-              <Trophy className="h-4 w-4 text-[#ff79c6]" />
-              Gerador Dinâmico de Simulados (Etapa 5.2)
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setSimulationConfig(null);
-                setActiveTab("static");
-              }}
-              className="text-xs font-bold h-8 cursor-pointer"
-            >
-              Voltar ao Banco Estático
-            </Button>
-          </div>
-          {simulationConfig ? (
-            <SimulationRunner
-              config={simulationConfig}
-              onFinish={() => {
-                setSimulationConfig(null);
-                setActiveTab("static");
-              }}
-            />
-          ) : (
-            <SimulationBuilder onStartSimulation={(cfg) => setSimulationConfig(cfg)} />
-          )}
-        </div>
-      </AppShell>
-    );
-  }
-
-  if (activeTab === "errors") {
-    return (
-      <AppShell
-        title="Caderno de Erros"
-        description="Aprimore sua performance revisando as falhas catalogadas por viés cognitivo de forma inteligente."
-      >
-        <div className="space-y-4">
-          <div className="flex justify-between items-center bg-[#13141c] border border-[#13141c]/60 rounded-xl p-3 px-4">
-            <span className="text-xs text-muted-foreground flex items-center gap-1.5">
-              <Sparkles className="h-4 w-4 text-red-400" />
-              Gerenciador de Erros Cognitivo Integrado (Etapa 5.2)
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setActiveTab("static")}
-              className="text-xs font-bold h-8 cursor-pointer"
-            >
-              Voltar ao Banco Estático
-            </Button>
-          </div>
-          <ErrorNotebook />
-        </div>
-      </AppShell>
-    );
-  }
-
   // ── Loading ───────────────────────────────────────────────────────────
   if (isLoading) {
     return (
@@ -481,71 +366,6 @@ function QuestoesPage() {
       description="Filtre e resolva questões com metadados completos de Banca, Ano, Órgão, Cargo, Concurso e Matéria."
     >
       <div className="space-y-6">
-        {/* Banner/Seletor de Modo */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Simulado Adaptativo (Etapa 5.1) */}
-          <div className="flex flex-col justify-between p-4.5 rounded-xl bg-[#1e1f29]/30 border border-[#ff79c6]/20 gap-3">
-            <div className="space-y-1">
-              <h4 className="text-xs font-black text-foreground flex items-center gap-1.5 uppercase font-mono">
-                <Sparkles className="h-4 w-4 text-[#ff79c6]" />
-                Simulado Adaptativo
-              </h4>
-              <p className="text-[10px] text-muted-foreground leading-relaxed">
-                Questões personalizadas baseadas nas suas lacunas cognitivas identificadas no
-                Analytics.
-              </p>
-            </div>
-            <Button
-              size="sm"
-              onClick={() => setActiveTab("adaptive")}
-              className="text-[10px] font-black uppercase tracking-wider bg-[#ff79c6] hover:bg-[#ff79c6]/95 text-[#1a1b26] h-8 cursor-pointer w-full"
-            >
-              Iniciar Adaptativo
-            </Button>
-          </div>
-
-          {/* Gerador de Simulados Customizados (Etapa 5.2) */}
-          <div className="flex flex-col justify-between p-4.5 rounded-xl bg-[#1e1f29]/30 border border-primary/20 gap-3">
-            <div className="space-y-1">
-              <h4 className="text-xs font-black text-foreground flex items-center gap-1.5 uppercase font-mono">
-                <Trophy className="h-4 w-4 text-primary" />
-                Simulados Reais
-              </h4>
-              <p className="text-[10px] text-muted-foreground leading-relaxed">
-                Crie exames sob medida por banca (FGV, FCC, Cebraspe), tempo regressivo e pesos
-                específicos.
-              </p>
-            </div>
-            <Button
-              size="sm"
-              onClick={() => setActiveTab("simulation")}
-              className="text-[10px] font-black uppercase tracking-wider bg-primary hover:bg-primary/90 text-primary-foreground h-8 cursor-pointer w-full"
-            >
-              Gerar Simulado
-            </Button>
-          </div>
-
-          {/* Caderno de Erros Cognitivo (Etapa 5.2) */}
-          <div className="flex flex-col justify-between p-4.5 rounded-xl bg-[#1e1f29]/30 border border-red-500/20 gap-3">
-            <div className="space-y-1">
-              <h4 className="text-xs font-black text-foreground flex items-center gap-1.5 uppercase font-mono">
-                🚨 Caderno de Erros
-              </h4>
-              <p className="text-[10px] text-muted-foreground leading-relaxed">
-                Aprimore seu rendimento re-resolvendo falhas catalogadas por viés cognitivo (falta
-                de atenção, etc).
-              </p>
-            </div>
-            <Button
-              size="sm"
-              onClick={() => setActiveTab("errors")}
-              className="text-[10px] font-black uppercase tracking-wider bg-red-500/10 hover:bg-red-500/20 text-red-400 h-8 border border-red-500/30 cursor-pointer w-full"
-            >
-              Acessar Caderno
-            </Button>
-          </div>
-        </div>
-
         {/* Painel de Filtros Avançados */}
         <Card className="border-border/60 bg-card/40 backdrop-blur-xs">
           <CardHeader className="pb-3 pt-4 px-4 flex flex-row items-center justify-between space-y-0">

@@ -463,43 +463,6 @@ export function WhatToStudyNowCard({
                     `Intervenção pedagógica recomendada (${interventionLabel}) para fortalecer seu desempenho no edital.`}
                 </p>
               </div>
-
-              {/* Materiais de Apoio Mapeados (Google Drive) */}
-              <div className="mt-3 space-y-2">
-                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block">
-                  📂 Material de Apoio da Rotina (Google Drive)
-                </span>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <a
-                    href="https://drive.google.com/drive/folders/1_aprovado_fiscal_pdf_materials_folder"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 p-2.5 rounded-lg border border-border/80 hover:border-primary/40 bg-muted/10 hover:bg-muted/30 transition-all text-xs font-medium text-foreground cursor-pointer group"
-                  >
-                    <span className="p-1 rounded bg-red-500/10 text-red-500 shrink-0 text-sm">📄</span>
-                    <div className="min-w-0">
-                      <p className="font-semibold truncate group-hover:text-primary transition-colors">
-                        PDF Teórico de {primary.subjectName.split(" ")[0]}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground truncate">Google Drive · Abrir material</p>
-                    </div>
-                  </a>
-                  <a
-                    href="https://drive.google.com/drive/folders/1_aprovado_fiscal_video_lectures_folder"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 p-2.5 rounded-lg border border-border/80 hover:border-primary/40 bg-muted/10 hover:bg-muted/30 transition-all text-xs font-medium text-foreground cursor-pointer group"
-                  >
-                    <span className="p-1 rounded bg-blue-500/10 text-blue-500 shrink-0 text-sm">🎥</span>
-                    <div className="min-w-0">
-                      <p className="font-semibold truncate group-hover:text-primary transition-colors">
-                        Videoaula Completa de Apoio
-                      </p>
-                      <p className="text-[10px] text-muted-foreground truncate">Google Drive · Assistir aula</p>
-                    </div>
-                  </a>
-                </div>
-              </div>
             </div>
 
             {/* Real Cognitive Metrics */}

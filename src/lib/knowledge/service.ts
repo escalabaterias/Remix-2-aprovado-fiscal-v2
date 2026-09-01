@@ -201,6 +201,8 @@ export async function recordExposureKnowledge(
       const { error: insertError } = await builder.insert({
         user_id: userId,
         topic_id: input.topicId,
+        subject_id: input.subjectId ?? null,
+        contest_id: input.contestId ?? null,
         mastery: 0,
         confidence: 0,
         total_questions: 0,
@@ -305,6 +307,8 @@ export async function recordReviewKnowledge(
     const insertData: Record<string, any> = {
       user_id: userId,
       topic_id: input.topicId,
+      subject_id: input.subjectId ?? null,
+      contest_id: input.contestId ?? null,
       mastery: 0,
       confidence: 0,
       total_questions: 0,
