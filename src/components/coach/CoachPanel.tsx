@@ -26,12 +26,13 @@ import {
 } from "@/lib/coach/coachEngine";
 import type { CoachMessage, StudentProfileContext } from "@/lib/coach/types";
 
-export function CoachPanel() {
+export function CoachPanel({ initialCustomPrompt }: { initialCustomPrompt?: string }) {
   const [profile, setProfile] = useState<StudentProfileContext | null>(null);
   const [messages, setMessages] = useState<CoachMessage[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const promptProcessedRef = useRef(false);
 
   // Inicializa o perfil e a mensagem de boas-vindas do Coach
   useEffect(() => {
@@ -60,7 +61,15 @@ Como posso direcionar seu estudo de hoje? Selecione um dos atalhos rápidos ou d
     };
 
     setMessages([initialMessage]);
-  }, []);
+
+    // Se houver prompt customizado inicial (ex: vindo da análise de pegadinhas), enviar automaticamente
+    if (initialCustomPrompt && !promptProcessedRef.current) {
+      promptProcessedRef.current = true;
+      setTimeout(() => {
+        handleSendMessage(initialCustomPrompt);
+      }, 300);
+    }
+  }, [initialCustomPrompt]);
 
   // Rola automaticamente para a última mensagem
   const scrollToBottom = () => {

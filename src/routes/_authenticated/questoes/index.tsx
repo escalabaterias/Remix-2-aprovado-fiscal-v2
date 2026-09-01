@@ -1,8 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo, useCallback } from "react";
 import { toast } from "sonner";
-import { RotateCcw, Filter } from "lucide-react";
+import { RotateCcw, Filter, Bot, Sparkles, ExternalLink, ShieldAlert } from "lucide-react";
 
 import {
   fetchQuestions,
@@ -28,6 +28,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { EXAM_BOARDS_DATA } from "@/components/bancas/BancasPanel";
+import { useCoachDrawer } from "@/components/coach/CoachContext";
 
 export const Route = createFileRoute("/_authenticated/questoes/")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -121,6 +123,7 @@ function QuestoesPage() {
   const queryClient = useQueryClient();
   const searchParams = Route.useSearch();
   const navigate = Route.useNavigate();
+  const { openCoach } = useCoachDrawer();
 
   // Filtros derivados dos search params da URL (com fallback "all")
   const subjectFilter = searchParams.subject ?? "all";
@@ -134,6 +137,12 @@ function QuestoesPage() {
   const difficultyFilter = searchParams.difficulty ?? "all";
   const sourceFilter = searchParams.source ?? "all";
   const tagFilter = searchParams.tags ?? "";
+
+  const selectedBoardData = useMemo(() => {
+    if (!examBoardFilter || examBoardFilter === "all") return null;
+    const key = examBoardFilter.toLowerCase();
+    return EXAM_BOARDS_DATA[key] || null;
+  }, [examBoardFilter]);
 
   // Função para atualizar 1 filtro na URL
   const setFilterParam = useCallback(
@@ -577,6 +586,62 @@ function QuestoesPage() {
           </CardContent>
         </Card>
 
+        {/* Banner Raio-X da Banca Selecionada */}
+        {selectedBoardData && (
+          <Card className="border-emerald-500/30 bg-emerald-950/15 relative overflow-hidden">
+            <CardContent className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Badge
+                    variant="outline"
+                    className="border-emerald-500/40 text-emerald-400 bg-emerald-500/10 text-xs font-semibold"
+                  >
+                    <ShieldAlert className="h-3.5 w-3.5 mr-1 text-emerald-400" />
+                    Raio-X de Banca: {selectedBoardData.name} ({selectedBoardData.fullName})
+                  </Badge>
+                  <Badge variant="secondary" className="text-xs">
+                    Dificuldade {selectedBoardData.overallDifficulty}
+                  </Badge>
+                </div>
+                <p className="text-sm font-semibold text-foreground">{selectedBoardData.tagline}</p>
+                <p className="text-xs text-muted-foreground">
+                  Tempo médio:{" "}
+                  <span className="font-mono font-bold text-foreground">
+                    {selectedBoardData.averageTimePerQuestion}
+                  </span>{" "}
+                  • {selectedBoardData.style}
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
+                <Button
+                  size="sm"
+                  onClick={() =>
+                    openCoach(
+                      `Analisar estilo de cobrança, pegadinhas e estatísticas da banca ${selectedBoardData.name} na carreira fiscal.`,
+                    )
+                  }
+                  className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-sm"
+                >
+                  <Bot className="h-4 w-4" />
+                  Analisar Pegadinhas com Coach IA
+                </Button>
+                <Button
+                  asChild
+                  variant="outline"
+                  size="sm"
+                  className="text-xs gap-1 border-border/80"
+                >
+                  <Link to="/central-erros">
+                    Central de Erros
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Resumo da Busca */}
         <div className="flex items-center justify-between">
           <p className="text-sm font-medium text-muted-foreground">
@@ -719,18 +784,45 @@ function QuestionView({
   onBack: () => void;
   hasNext: boolean;
 }) {
+  const { openCoach } = useCoachDrawer();
   const alternatives = parseAlternatives(question.alternatives);
   const hasResult = result !== null;
   const isLocked = hasResult || alreadyAnswered;
 
+  const handleCoachPegadinha = () => {
+    openCoach(
+      `Coach, por favor analise as pegadinhas e distratores da banca ${
+        question.examBoard || "FGV"
+      } nesta questão de ${question.subjectName || "Carreira Fiscal"}:\n\nEnunciado: ${
+        question.statement
+      }`,
+      {
+        questionId: question.questionId,
+        statement: question.statement,
+        examBoard: question.examBoard || undefined,
+        subjectName: question.subjectName || undefined,
+      },
+    );
+  };
+
   return (
     <AppShell
       title="Banco de Questões"
-      description="Resolva a questão e veja o feedback."
+      description="Resolva a questão e veja o feedback imediato."
       actions={
-        <Button variant="outline" onClick={onBack}>
-          Voltar à lista
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={handleCoachPegadinha}
+            className="gap-1.5 border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/10 bg-emerald-500/5 text-xs font-semibold"
+          >
+            <Bot className="h-4 w-4" />
+            Analisar Pegadinha com Coach IA
+          </Button>
+          <Button variant="outline" onClick={onBack}>
+            Voltar à lista
+          </Button>
+        </div>
       }
     >
       <div className="space-y-6 max-w-3xl">
