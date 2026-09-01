@@ -358,6 +358,12 @@ export interface Question {
   explanation: string; // Gabarito comentado / explicação didática
   associatedLaws?: string[]; // LawTags associadas, ex: ["CF/88 - Art. 150", "CTN - Art. 113"]
   difficulty?: "Fácil" | "Médio" | "Difícil";
+  // --- ETAPA 5.1: ALIASES PARA MOTOR DE BANCA ---
+  options?: string[];
+  subject?: string;
+  topic?: string;
+  board?: "FGV" | "CEBRASPE" | "FCC" | string;
+  lawTags?: string[];
 }
 
 export interface QuestionAttempt {
@@ -370,6 +376,21 @@ export interface QuestionAttempt {
   errorCategory?: ErrorCategory; // preenchido opcionalmente se isCorrect for false
   notes?: string;
   occurredAt: string;
+  // --- ETAPA 5.1: ALIASES PARA MOTOR DE BANCA ---
+  selectedOption?: string;
+  timestamp?: string;
+}
+
+export interface ExamSession {
+  id: string;
+  mode: "practice" | "simulation" | "targeted_review";
+  questions: Question[];
+  timeLimitSeconds: number;
+  timeSpentSeconds: number;
+  isCompleted: boolean;
+  accuracy: number;
+  score: number;
+  attempts: Record<string, QuestionAttempt>;
 }
 
 export interface ErrorNotebookEntry {

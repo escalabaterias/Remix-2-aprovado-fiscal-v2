@@ -143,3 +143,28 @@ export type CoachGuidanceResult = {
   model?: string;
   durationMs?: number;
 };
+
+// --- ETAPA 4.3: CONTRATOS DO COACH FISCAL SOCRÁTICO ---
+
+export type CoachTone = "socratic" | "encouraging" | "analytical";
+
+export interface CoachPersona {
+  tone: CoachTone;
+  resilienceLevel: number; // 0 a 100
+  empathyScore: number; // 0 a 100
+}
+
+export type ExplanationType = "visual_step_by_step" | "practical_case" | "active_recall";
+
+export interface AdaptiveExplanation {
+  type: ExplanationType;
+  title: string;
+  content: string; // Conteúdo formatado em Markdown
+  interactivePrompt?: string; // Pergunta socrática final para engajamento ativo
+}
+
+export interface LearningMethodMetric {
+  methodType: ExplanationType;
+  subjectId: string;
+  retentionRate: number; // 0.0 a 100.0
+}

@@ -6,6 +6,11 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { buildCoachContext } from "./context-builder";
 import { COACH_PROMPT_VERSION, COACH_SYSTEM_PROMPT, validateCoachGuidance } from "./prompts";
 import { getDailyCoachGuidance } from "./service";
+import {
+  determineCoachPersona,
+  generateAdaptiveExplanation,
+  getRecommendedMethod,
+} from "./coachEngine";
 import * as gatewayModule from "@/services/ai/gateway";
 
 vi.mock("@/integrations/supabase/client", () => {
@@ -321,5 +326,62 @@ describe("Coach de IA Proativo — Fase 7.2.1 Mentor Intelligence Upgrade", () =
       expect(res.guidance).toBeNull();
       expect(res.hasEnoughData).toBe(false);
     });
+  });
+});
+
+describe("Coach Fiscal Socrático e Explicações Adaptativas (Etapa 4.3)", () => {
+  const mockGaps: any[] = [
+    {
+      id: "GAP-1",
+      subjectId: "DIR-TRIB",
+      subjectName: "Direito Tributário",
+      topicId: "LIMIT",
+      topicName: "Limitações",
+      accuracy: 0.35,
+      severity: "high",
+      primaryErrorCategory: "conhecimento",
+    },
+  ];
+
+  it("deve adotar tom encorajador para alunos com falhas severas ou repetidas", () => {
+    // 5 erros recentes ou mais ativa tom encorajador
+    const persona = determineCoachPersona(mockGaps, 6);
+    expect(persona.tone).toBe("encouraging");
+    expect(persona.empathyScore).toBeGreaterThanOrEqual(90);
+  });
+
+  it("deve adotar tom socrático-desafiador se o aluno tem erros de atenção", () => {
+    const attentionGaps = [
+      {
+        id: "GAP-2",
+        subjectId: "DIR-TRIB",
+        topicId: "LIMIT",
+        topicName: "Limitações",
+        accuracy: 0.7,
+        severity: "medium",
+        primaryErrorCategory: "atencao",
+      },
+    ];
+
+    const persona = determineCoachPersona(attentionGaps, 2);
+    expect(persona.tone).toBe("socratic");
+  });
+
+  it("deve gerar esquema passo a passo visual e tabela para matérias de Exatas", () => {
+    const persona = determineCoachPersona([], 0);
+    const explanation = generateAdaptiveExplanation("RLM", "Equivalências Lógicas", persona);
+
+    expect(explanation.type).toBe("visual_step_by_step");
+    expect(explanation.content).toContain("📊 Resolução Visual Passo a Passo");
+    expect(explanation.content).toContain("| Passo | Operação Lógica |");
+  });
+
+  it("deve gerar narrativa de caso prático para matérias de Direito Tributário", () => {
+    const persona = determineCoachPersona([], 0);
+    const explanation = generateAdaptiveExplanation("DIR-TRIB", "Substituição Tributária", persona);
+
+    expect(explanation.type).toBe("practical_case");
+    expect(explanation.content).toContain("💼 Caso Prático do Auditor Fiscal");
+    expect(explanation.content).toContain("ICMS");
   });
 });
