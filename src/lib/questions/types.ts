@@ -329,3 +329,68 @@ export type AttemptFeedback = {
 
 export type { Difficulty } from "../knowledge/engine";
 export type { KnowledgeStateName } from "../diagnosis/engine";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ETAPA 3.4 — MÓDULO DE EXERCÍCIOS & CADERNOS DE DESVIO DE ERROS
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type ErrorCategory =
+  | "conhecimento"
+  | "esquecimento"
+  | "interpretacao"
+  | "calculo"
+  | "atencao"
+  | "estrategia"
+  | "velocidade"
+  | "outros";
+
+export interface Question {
+  id: string;
+  subjectId: string;
+  subjectName: string;
+  topicId: string;
+  topicName: string;
+  examBoard: string; // ex: 'FGV', 'Cebraspe', 'FCC'
+  year: number;
+  statement: string; // Enunciado
+  alternatives: string[]; // Alternativas A, B, C, D, E ou V/F
+  correctAnswer: string; // ex: 'A', 'B' ou 'V', 'F'
+  explanation: string; // Gabarito comentado / explicação didática
+  associatedLaws?: string[]; // LawTags associadas, ex: ["CF/88 - Art. 150", "CTN - Art. 113"]
+  difficulty?: "Fácil" | "Médio" | "Difícil";
+}
+
+export interface QuestionAttempt {
+  id: string;
+  userId: string;
+  questionId: string;
+  selectedAlternative: string;
+  isCorrect: boolean;
+  timeSpentSeconds: number;
+  errorCategory?: ErrorCategory; // preenchido opcionalmente se isCorrect for false
+  notes?: string;
+  occurredAt: string;
+}
+
+export interface ErrorNotebookEntry {
+  id: string;
+  questionId: string;
+  attemptId: string;
+  subjectId: string;
+  topicId: string;
+  category: ErrorCategory;
+  notes?: string;
+  isResolved: boolean;
+  occurredAt: string;
+  resolvedAt?: string;
+  question?: Question;
+}
+
+export interface ErrorNotebook {
+  subjectId: string;
+  subjectName: string;
+  entries: ErrorNotebookEntry[];
+  errorDistribution: Record<ErrorCategory, number>;
+  totalErrors: number;
+  resolvedCount: number;
+}

@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { DocumentBlock, BlockType, InlineMark, RichTextSegment } from "@/lib/editor/types";
 import { SlashCommandMenu } from "./SlashCommandMenu";
 import { FormattingToolbar } from "./FormattingToolbar";
+import { LawTagModal } from "./LawTagModal";
 import {
   Plus,
   GripVertical,
@@ -54,6 +55,9 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
     left: number;
     query: string;
   } | null>(null);
+
+  const [isLawTagModalOpen, setIsLawTagModalOpen] = useState(false);
+  const [savedRange, setSavedRange] = useState<Range | null>(null);
 
   const blockRefs = useRef<{ [key: string]: HTMLElement | null }>({});
 
@@ -261,7 +265,17 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
   // Formatações inline aplicadas através do Bubble Toolbar
   const handleApplyMark = (mark: InlineMark) => {
     const selection = window.getSelection();
-    if (!selection || selection.isCollapsed) return;
+    if (!selection) return;
+
+    if (mark.type === "law-tag") {
+      if (selection.rangeCount > 0) {
+        setSavedRange(selection.getRangeAt(0));
+      }
+      setIsLawTagModalOpen(true);
+      return;
+    }
+
+    if (selection.isCollapsed) return;
 
     // Aplicação simulada de marcação rica no bloco ativo
     if (activeBlockId) {
@@ -270,7 +284,6 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
         // Para simplificar no contentEditable reativo, adicionamos marcação simulada HTML
         // No mundo real, salvamos segmentos estruturados no JSON.
         // Simulamos adicionando tag de estilo no texto
-        const range = selection.getRangeAt(0);
         const selectedText = selection.toString();
 
         let formattedHTML = selectedText;
@@ -280,14 +293,40 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
           formattedHTML = `<em>${selectedText}</em>`;
         } else if (mark.type === "highlight") {
           formattedHTML = `<mark style="background-color: ${mark.color || "#50fa7b"}">${selectedText}</mark>`;
-        } else if (mark.type === "law-tag") {
-          formattedHTML = `<span class="bg-[#ff79c6]/20 text-[#ff79c6] px-1 rounded font-mono text-[11px]" title="CTN - Art. 113">§ ${selectedText}</span>`;
         }
 
         document.execCommand("insertHTML", false, formattedHTML);
         handleContentChange(activeBlockId, el.innerHTML);
       }
     }
+  };
+
+  const handleSelectLawTag = (metadata: {
+    lawNumber: string;
+    articleNumber: string;
+    text: string;
+  }) => {
+    if (activeBlockId) {
+      const el = blockRefs.current[activeBlockId];
+      if (el) {
+        el.focus();
+        const selection = window.getSelection();
+        if (selection && savedRange) {
+          selection.removeAllRanges();
+          selection.addRange(savedRange);
+        }
+
+        const selectedText = selection?.toString() || "";
+        const label = selectedText
+          ? selectedText
+          : `${metadata.articleNumber} da ${metadata.lawNumber}`;
+        const formattedHTML = `<span class="bg-[#ff79c6]/20 text-[#ff79c6] px-1.5 py-0.5 rounded font-mono text-[11px] font-bold border border-[#ff79c6]/30 cursor-help" title="${metadata.lawNumber} - ${metadata.articleNumber}">§ ${label}</span>`;
+
+        document.execCommand("insertHTML", false, formattedHTML);
+        handleContentChange(activeBlockId, el.innerHTML);
+      }
+    }
+    setSavedRange(null);
   };
 
   // Excluir bloco
@@ -611,6 +650,12 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
 
       {/* Barra de Formatação Inline de Seleção */}
       <FormattingToolbar onApplyMark={handleApplyMark} />
+
+      <LawTagModal
+        isOpen={isLawTagModalOpen}
+        onClose={() => setIsLawTagModalOpen(false)}
+        onSelectLawTag={handleSelectLawTag}
+      />
     </div>
   );
 };
