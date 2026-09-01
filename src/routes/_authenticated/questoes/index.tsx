@@ -48,6 +48,7 @@ export const Route = createFileRoute("/_authenticated/questoes/")({
     difficulty: typeof search.difficulty === "string" ? search.difficulty : undefined,
     source: typeof search.source === "string" ? search.source : undefined,
     tags: typeof search.tags === "string" ? search.tags : undefined,
+    tab: typeof search.tab === "string" ? search.tab : undefined,
   }),
   head: () => ({
     meta: [
@@ -128,8 +129,17 @@ function QuestoesPage() {
   const searchParams = Route.useSearch();
   const navigate = Route.useNavigate();
 
+  const tabParam = searchParams.tab;
+  const initialTab =
+    tabParam === "static" ||
+    tabParam === "adaptive" ||
+    tabParam === "simulation" ||
+    tabParam === "errors"
+      ? tabParam
+      : "static";
+
   const [activeTab, setActiveTab] = useState<"static" | "adaptive" | "simulation" | "errors">(
-    "static",
+    initialTab,
   );
   const [simulationConfig, setSimulationConfig] = useState<SimulationConfig | null>(null);
 

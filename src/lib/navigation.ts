@@ -30,9 +30,9 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "Domínio", to: "/dominio", group: "conhecimento" },
   { label: "Revisões", to: "/revisao", group: "conhecimento" },
   { label: "Fichas e Resumos", to: "/estudo/materiais", group: "conhecimento" },
-  { label: "Flashcards", to: null, group: "conhecimento" },
+  { label: "Flashcards", to: "/flashcards", group: "conhecimento" },
 
-  { label: "Coach IA", to: null, group: "inteligencia" },
+  { label: "Coach IA", to: "/coach", group: "inteligencia" },
   { label: "Análise de Bancas", to: null, group: "inteligencia" },
 
   { label: "Configurações", to: "/configuracoes", group: "sistema" },

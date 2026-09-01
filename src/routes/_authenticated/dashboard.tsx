@@ -99,8 +99,51 @@ type DayTask = {
 
 type TaskFilter = "todas" | "pendentes" | "concluidas";
 
+const FISCAL_CONTESTS = [
+  {
+    id: "sefaz-sp",
+    name: "SEFAZ-SP",
+    role_title: "Auditor Fiscal da Receita Estadual",
+    exam_board: "FGV",
+    exam_date: "2026-12-13",
+    status: "ativo",
+    organization: "Secretaria da Fazenda de SP",
+  },
+  {
+    id: "receita-federal",
+    name: "Receita Federal",
+    role_title: "Auditor Fiscal da Receita Federal",
+    exam_board: "FGV",
+    exam_date: "2026-11-22",
+    status: "ativo",
+    organization: "Receita Federal do Brasil",
+  },
+  {
+    id: "iss-sp",
+    name: "ISS-SP",
+    role_title: "Auditor Fiscal Tributário Municipal",
+    exam_board: "FGV",
+    exam_date: "2026-10-25",
+    status: "ativo",
+    organization: "Prefeitura de São Paulo",
+  },
+];
+
 function CommandCenterPage() {
   const queryClient = useQueryClient();
+  const [selectedContestId, setSelectedContestId] = useState<string>(() => {
+    return localStorage.getItem("aprovado_fiscal_active_contest_id") ?? "sefaz-sp";
+  });
+
+  const activeContest =
+    FISCAL_CONTESTS.find((c) => c.id === selectedContestId) || FISCAL_CONTESTS[0];
+
+  const handleSelectContest = (id: string) => {
+    setSelectedContestId(id);
+    localStorage.setItem("aprovado_fiscal_active_contest_id", id);
+    toast.success(`Concurso-alvo alterado para ${FISCAL_CONTESTS.find((c) => c.id === id)?.name}!`);
+  };
+
   const today = todayISO();
   const weekStart = weekStartOf(today);
   const weekEnd = addDays(weekStart, 6);
@@ -303,9 +346,7 @@ function CommandCenterPage() {
     (t) => t.status === "pendente" || t.status === "em_andamento",
   );
 
-  const daysToExam = data.activeContest?.exam_date
-    ? daysBetween(today, data.activeContest.exam_date)
-    : null;
+  const daysToExam = activeContest?.exam_date ? daysBetween(today, activeContest.exam_date) : null;
 
   const weeklyTargetMinutes =
     data.weeklyPlannedMinutes > 0 ? data.weeklyPlannedMinutes : data.weeklyAvailableMinutes;
@@ -338,10 +379,20 @@ function CommandCenterPage() {
               Sessão Guiada
             </Link>
           </Button>
-          <Button asChild size="sm">
+          <Button asChild variant="outline" size="sm">
             <Link to="/plano">
               <BookOpen className="mr-1.5 h-4 w-4" />
               Plano de Estudos
+            </Link>
+          </Button>
+          <Button
+            asChild
+            size="sm"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
+          >
+            <Link to="/questoes" search={{ tab: "simulation" }}>
+              <Sparkles className="mr-1.5 h-4 w-4 animate-pulse" />
+              Iniciar Simulado
             </Link>
           </Button>
         </div>
@@ -384,63 +435,68 @@ function CommandCenterPage() {
           {/* Card: Concurso Ativo */}
           <section className="panel flex flex-col justify-between p-5">
             <div>
-              <div className="flex items-center justify-between gap-2">
-                <p className="label-eyebrow">Concurso Alvo Ativo</p>
-                <Button asChild size="sm" variant="ghost" className="h-7 text-xs">
-                  <Link to="/concursos">Gerenciar</Link>
-                </Button>
-              </div>
-
-              {!data.activeContest ? (
-                <div className="mt-4">
-                  <p className="text-sm text-muted-foreground">
-                    Você ainda não possui um concurso cadastrado como ativo.
-                  </p>
-                  <Button asChild size="sm" variant="outline" className="mt-3">
-                    <Link to="/concursos">Cadastrar concurso</Link>
+              <div className="flex items-center justify-between gap-2 border-b border-border/40 pb-2 mb-3">
+                <p className="label-eyebrow text-muted-foreground">Concurso Alvo Ativo</p>
+                <div className="flex items-center gap-2">
+                  <Select value={selectedContestId} onValueChange={handleSelectContest}>
+                    <SelectTrigger className="h-7 w-[140px] text-xs bg-muted/20 border-border/60">
+                      <SelectValue placeholder="Selecione o concurso" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="sefaz-sp">SEFAZ-SP</SelectItem>
+                      <SelectItem value="receita-federal">Receita Federal</SelectItem>
+                      <SelectItem value="iss-sp">ISS-SP</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button asChild size="sm" variant="ghost" className="h-7 text-xs px-2">
+                    <Link to="/concursos">Gerenciar</Link>
                   </Button>
                 </div>
-              ) : (
-                <div className="mt-3 space-y-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="font-display text-xl font-bold tracking-tight">
-                      {data.activeContest.name}
-                    </h2>
-                    {data.activeContest.role_title ? (
-                      <span className="text-xs text-muted-foreground">
-                        ({data.activeContest.role_title})
-                      </span>
-                    ) : null}
-                  </div>
+              </div>
 
-                  <div className="flex flex-wrap items-center gap-2 pt-1">
-                    {data.activeContest.exam_board ? (
-                      <Badge variant="outline" className="border-border">
-                        Banca: {data.activeContest.exam_board}
-                      </Badge>
-                    ) : null}
-
-                    {data.activeContest.organization ? (
-                      <Badge variant="secondary">{data.activeContest.organization}</Badge>
-                    ) : null}
-
-                    {data.activeContest.exam_date ? (
-                      <Badge
-                        variant={
-                          daysToExam !== null && daysToExam <= 45 ? "destructive" : "default"
-                        }
-                      >
-                        Prova em {data.activeContest.exam_date}
-                        {daysToExam !== null ? ` · ${daysToExam} dia(s)` : ""}
-                      </Badge>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">
-                        Data da prova não informada
-                      </span>
-                    )}
-                  </div>
+              <div className="space-y-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="font-display text-xl font-bold tracking-tight text-foreground">
+                    {activeContest.name}
+                  </h2>
+                  {activeContest.role_title ? (
+                    <span className="text-xs text-muted-foreground text-opacity-80">
+                      ({activeContest.role_title})
+                    </span>
+                  ) : null}
                 </div>
-              )}
+
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  {activeContest.exam_board ? (
+                    <Badge variant="outline" className="border-border">
+                      Banca: {activeContest.exam_board}
+                    </Badge>
+                  ) : null}
+
+                  {activeContest.organization ? (
+                    <Badge variant="secondary">{activeContest.organization}</Badge>
+                  ) : null}
+
+                  {activeContest.exam_date ? (
+                    <Badge
+                      variant={daysToExam !== null && daysToExam <= 45 ? "destructive" : "default"}
+                      className={
+                        daysToExam !== null && daysToExam > 45
+                          ? "bg-primary/20 text-primary border-primary/30"
+                          : ""
+                      }
+                    >
+                      Prova em{" "}
+                      {new Date(activeContest.exam_date + "T00:00:00").toLocaleDateString("pt-BR")}
+                      {daysToExam !== null ? ` · Faltam ${daysToExam} dias` : ""}
+                    </Badge>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">
+                      Data da prova não informada
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
 
             {data.activePlan ? (
@@ -449,7 +505,7 @@ function CommandCenterPage() {
                 <Link
                   to="/plano/$planId"
                   params={{ planId: data.activePlan.id }}
-                  className="inline-flex items-center text-primary hover:underline"
+                  className="inline-flex items-center text-primary hover:underline font-semibold"
                 >
                   Ver cronograma
                   <ArrowRight className="ml-1 h-3 w-3" />
