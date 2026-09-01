@@ -1,218 +1,215 @@
 # ROADMAP MESTRE OFICIAL — APROVADO FISCAL
 
-## REGRA DE GOVERNANÇA DO ROADMAP
-O ROADMAP_MESTRE.md é a referência estrutural oficial do APROVADO FISCAL. Fases e subfases podem ser detalhadas durante a implementação, mas não devem alterar a estrutura ou o objetivo das etapas principais sem decisão explícita.
+## REGRA DE GOVERNANÇA E FONTE DE VERDADE DO PRODUTO
+
+O `ROADMAP_MESTRE.md` é a **ÚNICA FONTE OFICIAL DE VERDADE DO PLANEJAMENTO DO PROJETO APROVADO FISCAL**.
+
+Ele deve ser tratado como o documento de governança suprema da arquitetura e do produto. Nenhum agente, auditoria ou refatoração futura deve:
+* Ignorar decisões aqui registradas;
+* Criar roadmaps paralelos ou concorrentes;
+* Substituir suas decisões sem justificativa formal;
+* Remover requisitos estratégicos ou simplificar capacidades para facilitar a implementação pontual de uma etapa;
+* Reinterpretar a visão de produto de forma incompatível;
+* Considerar qualquer etapa como concluída apenas pela existência parcial de código (exige validação por testes, build e RLS).
+
+Documentos técnicos específicos de etapas (ex: `/docs/ETAPA_8_ARQUITETURA.md`) são rigorosamente subordinados ao Roadmap Mestre.
 
 ---
 
-## CADEIA CENTRAL DO PRODUTO
+## PRINCÍPIO CENTRAL E VISÃO DO PRODUTO
 
-Princípio arquitetural fundamental do sistema:
+O **APROVADO FISCAL** não é um mero organizador de estudos, banco de questões ou aplicativo de flashcards.
 
-**EDITAL**  
-↓  
-**CONHECIMENTO**  
-↓  
-**QUESTÕES**  
-↓  
-**ERROS**  
-↓  
-**DIAGNÓSTICO**  
-↓  
-**REVISÃO**  
-↓  
-**PLANEJAMENTO**  
-↓  
-**EXECUÇÃO**  
-↓  
-**MEDIÇÃO**  
-↓  
-**ADAPTAÇÃO**  
-↓  
-**PREDIÇÃO**  
-↓  
-**NOVA DECISÃO**  
-↓  
-**CICLO CONTÍNUO**  
+> **VISÃO CORE:** O objetivo final é construir um **SISTEMA DE INTELIGÊNCIA DE APROVAÇÃO**, capaz de cruzar continuamente dados do aluno com dados históricos de concursos, bancas examinadoras, provas anteriores, editais, disciplinas, tópicos, legislações e questões para determinar, de forma adaptativa e determinística, o que o aluno deve estudar, revisar, praticar e aprofundar para maximizar sua probabilidade de aprovação em carreiras fiscais e de controle.
+
+O sistema busca responder continuamente a seguinte pergunta fundamental:
+
+> **"Considerando o meu desempenho atual + o histórico das bancas + o edital + a incidência histórica + meus erros + meu domínio + meu tempo disponível + meu histórico de aprendizagem, qual é a melhor coisa que eu deveria fazer agora para aumentar minhas chances de aprovação?"**
 
 ---
 
-## ESTRUTURA DAS ETAPAS OFICIAIS
+## CADEIA CENTRAL DEFINITIVA DE INTELIGÊNCIA DE APROVAÇÃO
 
-### ETAPA 1 — FUNDAÇÃO TÉCNICA
-**Objetivo:** Construir a infraestrutura-base do sistema.  
-**Inclui:**
-* Arquitetura e estrutura do projeto;
-* Supabase (Auth, RLS, Storage);
-* Perfis de usuário;
-* Modelagem de dados fundamental;
-* Componentes base;
-* Serviços e engines essenciais;
-* Tipagem e contratos TypeScript;
-* Configurações de ambiente;
-* Testes automatizados;
-* Arquitetura modular limpa.
+```text
+FONTES REAIS
+ (Questões + Editais + Legislação + Provas Anteriores)
+                        ↓
+             INCIDÊNCIA / BANCA DNA
+                        ↓
+                 DADOS DO ALUNO
+                        ↓
+                 KNOWLEDGE ENGINE
+                        ↓
+                 DIAGNOSIS ENGINE
+                        ↓
+                 ANALYTICS ENGINE
+                        ↓
+                 DECISION ENGINE
+                        ↓
+     COACH / SOCRATIC / COGNITIVE ARTIFACTS
+                        ↓
+       ESTUDO / QUESTÕES / REVISÃO / SIMULADOS
+                        ↓
+                  EVIDENCE LAYER
+                        ↓
+            ATUALIZAÇÃO DO PERFIL DO ALUNO
+                        ↓
+                   NOVA DECISÃO
+                        ↓
+                  CICLO CONTÍNUO
+```
 
 ---
 
-### ETAPA 1.1 — INTEGRIDADE, SEGURANÇA E ENDURECIMENTO
-**Objetivo:** Garantir segurança, integridade, estabilidade e auditabilidade.  
-**Inclui:**
-* Segurança e isolamento RLS rígido;
-* Validações determinísticas de entrada e saída;
-* Tratamento e centralização de erros;
-* Controle de acesso baseado em autenticação;
-* Integridade referencial e idempotência de transações;
-* Testes de regressão e suites de sanitização;
-* Hardening de rotas e APIs;
-* Auditoria arquitetural contínua.
+## CAPACIDADES ESTRUTURAIS PERMANENTES DO APROVADO FISCAL
+
+Estas capacidades **NÃO SÃO IDEIAS OPCIONAIS**. Elas constituem o DNA permanente do APROVADO FISCAL e são requisitos estratégicos obrigatórios distribuídos pelas etapas do produto.
+
+### 1. MOTOR DE INTELIGÊNCIA DE BANCA, EDITAL E INCIDÊNCIA (INTELLIGENCE / CROSS-DOMAIN APPROVAL ENGINE)
+Motor transversal responsável por cruzar:
+`CONCURSOS × BANCAS × PROVAS ANTERIORES × EDITAIS × DISCIPLINAS × TÓPICOS × SUBTÓPICOS × QUESTÕES × LEGISLAÇÕES × ARTIGOS × INCIDÊNCIA HISTÓRICA × DESEMPENHO INDIVIDUAL × ESTRATÉGIA DE ESTUDO`.
+
+* **Geração de Inteligência Real:** Produz afirmações estatísticas derivadas de dados reais (ex: *"A banca X cobrou este assunto em 87% das provas analisadas"*, *"Dentro deste tópico, os subassuntos A, B e C concentram a maior incidência"*, *"Você possui domínio baixo no subassunto A, que possui alto peso + alta incidência; portanto, A recebe prioridade máxima"*).
+* **REGRA CRÍTICA DE VERACIDADE E SEGURANÇA:** A IA **NUNCA** pode inventar estatísticas. Toda afirmação de incidência deve indicar sua origem, conjunto de provas analisado, período, banca, concurso, disciplina e tópico. Quando a amostra for reduzida, o sistema deve sinalizar a incerteza explicitamente.
+
+### 2. DNA DAS BANCAS (BANCA DNA)
+Mapeamento profundo do padrão de atuação de cada banca examinadora (FGV, Cebraspe, FCC, Vunesp, etc.), cobrindo:
+* Assuntos e subtópicos mais cobrados;
+* Legislação e artigos com maior incidência;
+* Nível de dificuldade médio e estilo de enunciados;
+* Padrões de pegadinhas e pegadas conceituais;
+* Preferência por jurisprudência vs. letra da lei;
+* Evolução histórica das exigências.
+* **Alimentação:** O Banca DNA nutre diretamente o Planner, Diagnosis, Review Engine, Question Engine, Simulados, Coach, Analytics e Prediction Engine.
+
+### 3. VADE MECUM INTELIGENTE + BANCO DE LEIS COM INTELIGÊNCIA DE INCIDÊNCIA
+Camada especializada de estudo e exploração da legislação jurídica e tributária:
+* **Mapeamento:** `LEI → ARTIGO → TÓPICO DO EDITAL → QUESTÕES → BANCA → CONCURSO → ANO → FREQUÊNCIA → PADRÃO DE COBRANÇA → DESEMPENHO → REVISÃO`.
+* **Dispositivos Críticos:** Destaque automático dos artigos com maior recorrência histórica nas bancas do concurso alvo.
+* **Questões & Bancas Relacionadas:** Conexão direta entre o dispositivo legal e as questões reais onde foi cobrado.
+* **Prioridade Personalizada:** Cálculo da importância individual baseado na fórmula:  
+  `INCIDÊNCIA HISTÓRICA + RELEVÂNCIA NO EDITAL + DESEMPENHO DO ALUNO + RECORRÊNCIA DE ERROS`.
+* **Gerador de Flashcards Rastreáveis:** Possibilidade de criar flashcards fiéis à letra da lei com 1 clique, preservando a rastreabilidade da fonte legal.
+* **Segurança Jurídica:** A IA interpreta e explica fontes confiáveis; jamais possui autoridade exclusiva nem inventa artigos, parágrafos, incisos, leis ou súmulas.
+
+### 4. DÚVIDAS RECORRENTES & CONTEXTUALIZAÇÃO INTELIGENTE (CONTEXTUAL LEARNING)
+Remediação profunda para erros reincidentes e conceitos de baixa retenção:
+* **Trilha de Compreensão Progressiva:**  
+  `CONCEITO → EXPLICAÇÃO SIMPLES → EXEMPLO PRÁTICO → CASO CONCRETO → SITUAÇÃO DO DIA A DIA → APLICAÇÃO EM PROVA → QUESTÃO → RECUPERAÇÃO ATIVA`.
+* Transforma abstrações jurídicas/fiscais em situações reais de empresas ou rotinas tributárias para assegurar apreensão conceitual definitiva. Dúvidas recorrentes sobre o mesmo conceito alimentam automaticamente o diagnóstico pedagógico.
+
+### 5. MNEMÔNICOS INTELIGENTES
+Geração adaptativa de mnemônicos contextualizados para legislação, listas, classificações, exceções, fórmulas e sequências. O sistema mede posteriormente se determinado mnemônico resultou em aumento real da retenção do aluno após 7, 14 e 30 dias.
+
+### 6. COACH AUTÔNOMO — MOTOR AUTÔNOMO DE DIAGNÓSTICO, ENSINO E DECISÃO PEDAGÓGICA
+O Coach do APROVADO FISCAL **NÃO É UM CHATBOT GENÉRICO**. É um motor autônomo de decisão pedagógica e ensino.
+* **Análise Contínua:** Avalia taxa de acertos, domínio por tópico, reincidência de erros, tempo por questão, retenção, backlog de revisões, metas cumpridas, incidência da banca e proximidade da prova.
+* **Atuação como Professor Adaptativo:** Prescreve o que, por que, como e por quanto tempo estudar. Quando o aluno não entende um conceito, o Coach não desiste:  
+  `Explicação Direta → Explicação Simplificada → Analogia → Caso Concreto → Decomposição em Etapas → Representação Visual / Esquema / Tabela`.
+* **Modo Socrático Preservado:** Alterna entre orientação direta e condução socrática (`PERGUNTA → TENTATIVA → PISTA → NOVA TENTATIVA → FEEDBACK → CONSOLIDAÇÃO → EVIDÊNCIA`) para reforçar a recuperação ativa.
+
+### 7. ENSINO ADAPTATIVO MULTIMODAL
+Se o aluno não entendeu de uma forma, o sistema deve tentar obrigatoriamente outra abordagem. A meta não é apenas responder a dúvidas, mas produzir compreensão real através de múltiplos formatos pedagógicos (tabelas comparativas, mapas conceituais, passos a passo, questões comentadas e exemplos práticos).
+
+### 8. EXPERIMENTAÇÃO DE MÉTODOS DE REVISÃO (MOTOR DE EXPERIMENTAÇÃO PEDAGÓGICA)
+O sistema testa empiricamente diferentes estratégias (leitura de resumo, resolução de questões, recuperação socrática, flashcards, mnemônicos, mapas mentais, casos práticos) para identificar:  
+**"Qual método de estudo/revisão funciona melhor para ESTE aluno, neste tópico específico, neste momento?"**
+
+### 9. ATENÇÃO E TRATAMENTO ESPECIAL PARA DISCIPLINAS DE EXATAS
+Tratamento arquitetural dedicado para disciplinas de alta densidade quantitativa (Raciocínio Lógico-Matemático, Estatística, Matemática Financeira, Contabilidade Avançada):
+* Diagnóstico de pré-requisitos não consolidados;
+* Raciocínio passo a passo detalhado e identificação de erros de procedimento vs. erro conceitual;
+* Prática deliberada e progressão gradativa de dificuldade com suporte conceitual visual/desenhado pelo Coach;
+* Ajuste de carga horária baseado em evidência real de domínio, e não apenas em regras fixas.
+
+### 10. MÉTRICAS EXPLICÁVEIS & TRANSPARÊNCIA UX
+Todo indicador, percentual, score de domínio ou métrica de probabilidade apresentado na UI deve possuir explicação pedagógica e metodológica acessível via hover (desktop) ou toque (mobile):
+* O que o percentual representa;
+* Como foi calculado e quais dados foram considerados;
+* Como interpretá-lo e qual ação prática o aluno deve tomar.
 
 ---
+
+## MAPEAMENTO DAS CAPACIDADES NAS 10 ETAPAS OFICIAIS
+
+Nenhuma capacidade descrita exige uma "Etapa 11". Todas estão distribuídas nas 10 etapas oficiais do produto:
+
+### ETAPA 1 — FUNDAÇÃO TÉCNICA E INFRAESTRUTURA
+* Architecture, Supabase (Auth, RLS, Storage), data modeling, base components, TypeScript types/contracts.
+* **ETAPA 1.1 — INTEGRIDADE, SEGURANÇA E ENDURECIMENTO:** RLS rígido, validações determinísticas, tratamento central de erros, testes de regressão, hardening de APIs.
 
 ### ETAPA 2 — CENTRO DE COMANDO + PLANEJAMENTO ADAPTATIVO
-**Inclui:**
-
-#### Centro de Comando
-* Dashboard com visão holística do progresso;
-* Acompanhamento de domínio por matéria e tópico;
-* Indicadores reais de horas líquidas e questões;
-* Painel de pendências e tarefas do dia;
-* Alertas preventivos e sugestões;
-* Distribuição de prioridades de estudo.
-
-#### Planner (Planejador Adaptativo)
-* Ciclos de estudo personalizados;
-* Grade de disponibilidade semanal (minutos disponíveis);
-* Alocação equilibrada de horas por matéria/tópico;
-* Geração determinística de blocos de estudo e metas;
-* Replanejamento dinâmico diante de imprevistos/atrasos;
-* Adaptação contínua da grade sem sobrecarga.
-
-#### Coach
-* Orientação contextual e pedagógica;
-* Recomendações personalizadas de foco;
-* Acompanhamento do ritmo semanal;
-* Priorização estratégica de conteúdo.
-
----
+* **Centro de Comando:** Dashboard holístico, domínio por matéria/tópico, horas líquidas, tarefas diárias, alertas.
+* **Planner Adaptativo:** Ciclos de estudo, disponibilidade semanal, geração determinística de blocos, replanejamento dinâmico diante de atrasos.
+* **Coach:** Orientação contextual, recomendações de foco e priorização estratégica.
 
 ### ETAPA 3 — MOTOR DE QUESTÕES + DIAGNÓSTICO
-**Inclui:**
-
-#### Motor de Questões
-* Banco de questões estruturado com metadados;
-* Filtros dinâmicos (disciplina, assunto, banca, concurso, ano, tipo);
-* Resolução interativa com feedback imediato;
-* Rastreamento de acertos, erros e tempo líquido gasto;
-* Calibração de dificuldade por desempenho.
-
-#### Central de Erros Inteligente
-* Registro automático e manual de erros cometidos;
-* Classificação taxonômica do erro (lacuna teórica, pegadinha, interpretação, distração);
-* Identificação de padrões de recorrência e severidade;
-* Histórico evolutivo e trilha de remediação.
-
-#### Engines de Conhecimento e Diagnóstico
-* **Knowledge Engine:** Cálculo e atualização determinística do domínio (`mastery_score`) e confiança (`confidence_level`);
-* **Signals Builder:** Emissão de sinais cognitivos para consumo adaptativo;
-* **Diagnostic Engine:** Diagnóstico detalhado de saúde do conhecimento por tópico.
-
-#### Integração Crítica
-* Diagnóstico → Planner via `computeDiagnosticBoost` para priorização ativa no cronograma.
-
----
+* **Motor de Questões:** Banco de questões estruturado, filtros dinâmicos, resolução interativa, taxa de acerto e tempo.
+* **Central de Erros Inteligente:** Registro automático/manual, taxonomia de erros (lacuna teórica, pegadinha, interpretação, distração), severidade e trilha de remediação.
+* **Engines de Conhecimento e Diagnóstico:** Knowledge Engine (`mastery_score`, `confidence_level`), Signals Builder e Diagnostic Engine (`computeDiagnosticBoost`).
 
 ### ETAPA 4 — MOTOR DE REVISÃO ADAPTATIVA
-**Inclui:**
-* **Review Engine:** Algoritmo determinístico baseado na curva do esquecimento (Ebbinghaus / SRS adaptativo);
-* **Review Service & Types:** Contratos e persistência da fila de revisão;
-* Rastreamento de `next_review_at`, `last_review_at` e `last_review_result`;
-* Registro de histórico em `review_events`;
-* Priorização adaptativa da fila de revisões por urgência e retenção;
-* Balanceamento da proporção entre revisão e conteúdo novo na grade diária.
-
----
+* **Review Engine:** Algoritmo determinístico baseado na curva do esquecimento (Ebbinghaus / SRS adaptativo).
+* Rastreamento de `next_review_at`, `last_review_at`, `last_review_result` e eventos `review_events`.
+* Priorização adaptativa e balanceamento diário de revisões vs. conteúdo novo.
 
 ### ETAPA 5 — INTELIGÊNCIA PEDAGÓGICA ADAPTATIVA
-**Integra:**
-* Domínio e nível de confiança;
-* Histórico e severidade de erros;
-* Desempenho e velocidade em questões;
-* Diagnóstico de vulnerabilidades por tópico;
-* Fila de revisões adaptativas pendentes;
-* Incidência histórica e peso no edital;
-* Dificuldade percebida e esforço despendido;
-* Tempo acumulado e evolução temporal.
-
-**Objetivo:** Calcular a prioridade pedagógica global e balancear tarefas unificadas (estudo novo + revisão + remediação) de forma determinística e adaptativa.
-
----
+* Unificação de domínio, confiança, severidade de erros, velocidade, diagnósticos, revisões pendentes, peso no edital e incidência da banca.
+* Cálculo determinístico da prioridade pedagógica global e balanceamento de tarefas (estudo + revisão + remediação).
 
 ### ETAPA 6 — INTELIGÊNCIA DE EDITAL + ESTRATÉGIA DE PROVA
-**Inclui:**
-* Mapeamento completo e hierárquico do edital (disciplinas, tópicos, subtópicos);
-* Atribuição de pesos e relevância por matéria;
-* Análise de incidência estatística por banca examinadora;
-* Inteligência de histórico e padrões de cobrança de bancas (FGV, Cebraspe, FCC, etc.);
-* Estratégia de fechamento de edital por custo-benefício;
-* Otimização do retorno cognitivo por hora estudada (ROI pedagógico).
-
----
+* Mapeamento hierárquico de edital (disciplinas, tópicos, subtópicos), pesos e relevância.
+* Análise de incidência estatística por banca examinadora, Banca DNA, custo-benefício e ROI pedagógico por hora estudada.
+* Base de evidências de questões, editais, Legislação e Vade Mecum Inteligente.
 
 ### ETAPA 7 — COACH AUTÔNOMO + SISTEMA DE DECISÃO
-**Acompanhamento Contínuo:**
-* Desempenho, taxa de acertos e consistência;
-* Níveis de domínio e vulnerabilidades ativas;
-* Erros pendentes e reincidentes;
-* Fila e atrasos em revisões adaptativas;
-* Horas líquidas cumpridas versus disponibilidade cadastrada;
-* Aderência ao plano e desvios de ritmo;
-* Trajetória de retenção e risco de esquecimento;
-* Proximidade da data da prova / pós-edital.
-
-**Capacidade Decisória:**
-* Recomendar estudo novo, revisão espaçada ou remediação socrática;
-* Ajustar carga horária e redistribuir backlog de tarefas;
-* Recuperar atrasos com realocação inteligente de disponibilidade;
-* Alterar prioridades com base em fraquezas diagnósticas;
-* Prescrever baterias de questões direcionadas;
-* Reforçar assuntos críticos com artefatos cognitivos e fundamentação jurídica RAG;
-* Orientar o aluno no ciclo contínuo:
-  **Aluno executa → sistema mede → sistema interpreta → sistema decide → planner adapta.**
-
----
+* Decision Engine, Coach Autônomo, Coach Socrático, Artefatos Cognitivos, Ciclo Cognitivo de Aprendizagem e Analytics.
+* Acompanhamento contínuo de desempenho, prescrição adaptativa de estudos, alteração de prioridades, remediação socrática, contextualização de dúvidas e mnemônicos.
 
 ### ETAPA 8 — SIMULAÇÃO + INTELIGÊNCIA DE PERFORMANCE
-**Inclui:**
-* Gestão e execução de simulados e provas completas;
-* Simulados personalizados e direcionados por vulnerabilidade;
-* Análise aprofundada de nota bruta, líquida e percentil;
-* Gestão de tempo de prova e ritmo por questão/disciplina;
-* Análise de questões em branco, chutes e pegadinhas;
-* Estratégia de prova, resistência mental e consistência emocional;
-* Relatórios pós-simulado com plano de ataque corretivo.
-
----
+* **Subfase 8.1 CONCLUÍDA E VALIDADA:** Modelagem de dados (`exam_templates`, `exam_sessions`, `exam_session_answers`, `exam_session_events`), RLS, constraints, tipos e schemas Zod.
+* **Subfases 8.2 a 8.9 (NÃO INICIADAS):** Geração e distribuição de provas, scoring engine, cronômetro auditável, analytics, integração cognitiva, hub/construtor, ambiente de prova e pós-prova.
 
 ### ETAPA 9 — INTELIGÊNCIA PREDITIVA + OTIMIZAÇÃO PARA APROVAÇÃO
-**Inclui:**
-* Modelos preditivos de evolução de notas e domínio até o dia da prova;
-* Previsão probabilística de desempenho por disciplina e banca;
-* Estimativa de risco de reprovação e pontos de corte projetados;
-* Simulação de cenários e ajuste de metas para aprovação;
-* Otimização global da carga horária para maximização do ROI cognitivo por hora.
-
----
+* Modelos preditivos de evolução de notas, previsão probabilística de desempenho por banca/disciplina, estimativa de nota de corte, simulação de cenários de aprovação, Motor de Experimentação de Métodos de Estudo/Revisão e otimização global da carga horária.
 
 ### ETAPA 10 — ECOSSISTEMA APROVADO FISCAL
-**Inclui:**
-* Expansão para múltiplos concursos e carreiras da área fiscal e controle;
-* Ingestão multimodal de materiais (PDFs, videoaulas, YouTube, Google Drive);
-* Geração inteligente de materiais e recursos de apoio (flashcards, mapas mentais, resumos esquematizados);
-* Hub integrado unificando Dashboard, Coach, Planner, Questões, Revisões, Central de Erros, Simulados e Métricas;
-* Observabilidade completa do ciclo de aprendizagem e dashboards de alta precisão.
+* Expansão para múltiplos concursos/carreiras fiscais e de controle, ingestão multimodal de materiais (PDFs, vídeos), geração de materiais sintéticos (flashcards, mapas mentais), Vade Mecum Inteligente ampliado, Hub integrado e escala do produto.
 
 ---
 
-## ESTADO DE AUDITORIA PERMANENTE
-Este documento foi registrado no repositório como baseline oficial em 31/08/2026. Todas as auditorias e implementações técnicas futuras devem referenciar as etapas e princípios aqui definidos.
+## MATRIZ DE ESTADO OFICIAL DO PROJETO
+
+| Etapa / Subfase | Descrição / Foco | Estado Oficial |
+| :--- | :--- | :--- |
+| **Etapa 1** | Fundação Técnica & Infraestrutura | 🟢 CONCLUÍDA |
+| **Etapa 1.1** | Endurecimento & Segurança | 🟢 CONCLUÍDA |
+| **Etapa 2** | Centro de Comando + Planner Adaptativo | 🟢 CONCLUÍDA |
+| **Etapa 3** | Motor de Questões + Diagnóstico + Central de Erros | 🟢 CONCLUÍDA |
+| **Etapa 4** | Motor de Revisão Adaptativa | 🟢 CONCLUÍDA |
+| **Etapa 5** | Inteligência Pedagógica Adaptativa + Unified Scheduler | 🟢 CONCLUÍDA |
+| **Etapa 6** | Inteligência de Edital + Evidências Reais | 🟢 CONCLUÍDA |
+| **Etapa 7** | Coach Autônomo + Sistema de Decisão + Ciclo Cognitivo | 🟢 CONCLUÍDA |
+| **Etapa 8.1** | Modelagem de Dados & Tipos Contratuais de Simulados | 🟢 CONCLUÍDA E VALIDADA |
+| **Etapa 8.2** | Motor de Geração e Distribuição de Provas | 🔴 NÃO INICIADA |
+| **Etapas 8.3 – 8.9** | Pontuação, Cronômetro, Analytics, UI Simulados | 🔴 NÃO INICIADAS |
+| **Etapa 9** | Inteligência Preditiva & Otimização de Aprovação | 🔴 NÃO INICIADA |
+| **Etapa 10** | Ecossistema Aprovado Fiscal Multimodal | 🔴 NÃO INICIADA |
+
+---
+
+## REGRA ABSOLUTA DE GOVERNANÇA E PRESERVAÇÃO
+
+> **Nenhuma futura implementação pode remover, simplificar ou ignorar essas capacidades apenas porque a implementação imediata de uma etapa não necessita delas.**
+
+Elas constituem a especificação estratégica permanente do APROVADO FISCAL. Uma etapa pode implementar uma fração do banco ou da interface, mas a arquitetura deve ser sempre projetada preservando a evolução completa do sistema.
+
+---
+
+## REGISTRO DE HISTÓRICO DE AUDITORIA
+
+* **Data da Última Auditoria:** 31/08/2026
+* **Testes Validados:** 1.271 / 1.271 aprovados (57 suítes de teste).
+* **Build:** Aprovado (`compile_applet` verde).
+* **Migration 8.1:** `20260831150000_etapa8_1_simulados_domain.sql` criada e validada.
+* **Próxima Ação Autorizada:** Aguardar permissão explícita para início da Etapa 8.2.
