@@ -119,11 +119,11 @@ function ContestDetailPage() {
             )
             .eq("contest_id", contestId)
             .limit(300);
-          data = res.data;
+          data = (res.data as typeof initialData) || [];
         }
       }
 
-      return data;
+      return data || [];
     },
   });
 

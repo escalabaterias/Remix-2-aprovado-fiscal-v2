@@ -14,7 +14,7 @@ import {
   emitSocraticCognitiveEvidence,
 } from "./socratic-persistence";
 import { SOCRATIC_EVIDENCE_KINDS } from "./types";
-import type { SocraticSessionContext } from "./types";
+import type { SocraticSessionContext, SocraticTurnSummary } from "./types";
 import * as evidenceServiceModule from "@/lib/evidence/service";
 import * as errorCentralModule from "@/lib/error-central/service";
 import * as knowledgeServiceModule from "@/lib/knowledge/service";
@@ -46,18 +46,18 @@ describe("Persistência Cognitiva do Professor Fiscal — Fase 7.3.4", () => {
 
       const sanitized = sanitizeSocraticMetadata(rawMeta);
 
-      expect(sanitized.topicId).toBe("top-101");
-      expect(sanitized.apiKey).toBeUndefined();
-      expect(sanitized.bearerToken).toBeUndefined();
-      expect(sanitized.password).toBeUndefined();
-      expect(sanitized.privatePrompt).toBeUndefined();
+      expect(sanitized['topicId']).toBe("top-101");
+      expect(sanitized['apiKey']).toBeUndefined();
+      expect(sanitized['bearerToken']).toBeUndefined();
+      expect(sanitized['password']).toBeUndefined();
+      expect(sanitized['privatePrompt']).toBeUndefined();
 
-      const nestedLegal = sanitized.legalMetadata as any;
+      const nestedLegal = sanitized['legalMetadata'] as any;
       expect(nestedLegal.legalSourceUsed).toEqual(["CF88_ART150"]);
       expect(nestedLegal.legalGrounded).toBe(true);
       expect(nestedLegal.systemPrompt).toBeUndefined();
 
-      const nestedCreds = sanitized.userCredentials as any;
+      const nestedCreds = sanitized['userCredentials'] as any;
       expect(nestedCreds.role).toBe("student");
       expect(nestedCreds.jwt).toBeUndefined();
     });
@@ -218,7 +218,7 @@ describe("Persistência Cognitiva do Professor Fiscal — Fase 7.3.4", () => {
 
       const result = await emitSocraticCognitiveEvidence({
         socraticContext,
-        lastTurn: socraticContext.turnHistory[0],
+        lastTurn: socraticContext.turnHistory[0] as SocraticTurnSummary,
         userId: "user-test-734",
         socraticResponse: {
           status: "completed",
@@ -234,7 +234,7 @@ describe("Persistência Cognitiva do Professor Fiscal — Fase 7.3.4", () => {
             needsHint: false,
             recommendedNextStep: "CONSOLIDATE",
           },
-        },
+        } as any,
       });
 
       expect(recordEvSpy).toHaveBeenCalled();
@@ -249,7 +249,7 @@ describe("Persistência Cognitiva do Professor Fiscal — Fase 7.3.4", () => {
       // Testar chamada subsequente com os mesmos parâmetros para garantir idempotência
       const duplicateResult = await emitSocraticCognitiveEvidence({
         socraticContext,
-        lastTurn: socraticContext.turnHistory[0],
+        lastTurn: socraticContext.turnHistory[0] as SocraticTurnSummary,
         userId: "user-test-734",
       });
 

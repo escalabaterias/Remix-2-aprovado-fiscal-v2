@@ -139,7 +139,7 @@ export async function markSocraticEvidenceRecorded(
       output: {
         recordedAt: new Date().toISOString(),
         metadata: sanitizeSocraticMetadata(metadata),
-      },
+      } as any,
     });
   } catch (err) {
     // Silencioso se falhar gravação secundária
@@ -307,12 +307,14 @@ export async function emitSocraticCognitiveEvidence(
     lastTurn?.evaluationClassification || socraticResponse?.evaluation?.classification;
   const pedagogicalMode = socraticContext.pedagogicalMode;
 
-  const score = calculateSocraticCognitiveScore({
-    classification,
+  const scoreParams: any = {
     hintLevel,
     currentState: socraticContext.currentState,
     pedagogicalMode,
-  });
+  };
+  if (classification) scoreParams.classification = classification;
+
+  const score = calculateSocraticCognitiveScore(scoreParams);
 
   const baseSanitizedMetadata = sanitizeSocraticMetadata({
     sessionId: socraticContext.sessionId,
@@ -322,7 +324,7 @@ export async function emitSocraticCognitiveEvidence(
     hintLevel,
     targetConcept:
       socraticContext.currentQuestion?.targetConcept || socraticContext.pedagogicalGoal,
-    questionId: socraticContext.currentQuestion?.questionId || socraticContext.currentQuestion?.id,
+    questionId: socraticContext.currentQuestion?.questionId,
     classification,
     reasoningQuality: socraticResponse?.evaluation?.reasoningQuality,
     identifiedGap: socraticResponse?.detectedGap || socraticResponse?.evaluation?.identifiedGap,
@@ -409,10 +411,9 @@ export async function emitSocraticCognitiveEvidence(
     }
 
     // Registrar na Evidence Layer
-    const evidenceResult = await recordCognitiveEvidence({
+    const evidenceInput: any = {
       userId: targetUserId,
       topicId: socraticContext.topicId,
-      subjectId: socraticContext.subjectName ? undefined : null,
       kind: item.cognitiveKind,
       source: "socratic_tutor",
       timestamp: new Date().toISOString(),
@@ -423,7 +424,12 @@ export async function emitSocraticCognitiveEvidence(
         socraticEvidenceKind: item.socraticKind,
         idempotencyKey,
       },
-    });
+    };
+    if (socraticContext.subjectName) {
+      evidenceInput.subjectId = socraticContext.subjectName;
+    }
+
+    const evidenceResult = await recordCognitiveEvidence(evidenceInput);
 
     if (evidenceResult.processed) {
       emittedKinds.push(item.socraticKind);
@@ -435,7 +441,7 @@ export async function emitSocraticCognitiveEvidence(
   }
 
   // 3. Orquestração com a Central de Erros quando há sucesso na remediação
-  const errorContext = socraticContext.contextMetadata?.errorContext as
+  const errorContext = socraticContext.contextMetadata?.['errorContext'] as
     { errorEntryId?: string } | undefined;
 
   if (errorContext?.errorEntryId && isSuccess) {

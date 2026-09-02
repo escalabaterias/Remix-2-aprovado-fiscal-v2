@@ -33,6 +33,7 @@ import type {
 function makeQuestionRow(overrides: Record<string, unknown> = {}) {
   return {
     id: "q-1",
+    source_id: null,
     statement: "Qual é a capital do Brasil?",
     alternatives: ["A", "B", "C", "D"],
     correct_answer: "A",
@@ -111,6 +112,7 @@ function makeQuestionSetItemRow(overrides: Record<string, unknown> = {}) {
 function makeQuestionBankItem(overrides: Partial<QuestionBankItem> = {}): QuestionBankItem {
   return {
     questionId: "q-1",
+    sourceId: null,
     statement: "Qual é a capital do Brasil?",
     alternatives: ["A", "B", "C", "D"],
     correctAnswer: "A",

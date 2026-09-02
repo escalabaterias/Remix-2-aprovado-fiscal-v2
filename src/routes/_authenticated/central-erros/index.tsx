@@ -574,15 +574,15 @@ function TopicSummariesList({ summaries }: { summaries: TopicErrorSummaryWithMet
                   <div>
                     <p className="text-xs text-muted-foreground">Recorrência</p>
                     <p className="text-sm font-semibold">
-                      {s.analysis.recurrenceRate > 0
-                        ? `${(s.analysis.recurrenceRate * 100).toFixed(0)}%`
+                      {s.analysis.totalErrors > 0
+                        ? `${((s.analysis.recurringErrors / s.analysis.totalErrors) * 100).toFixed(0)}%`
                         : "0%"}
                     </p>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Não resolvidos</p>
                     <p className="text-sm font-semibold text-destructive">
-                      {s.analysis.unresolvedCount}
+                      {s.analysis.unresolvedErrors}
                     </p>
                   </div>
                 </div>

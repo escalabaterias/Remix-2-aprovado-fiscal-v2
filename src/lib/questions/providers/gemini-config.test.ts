@@ -15,20 +15,20 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { getGeminiConfig, GeminiConfigError } from "./gemini-config";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SETUP — salvar e restaurar process.env.GEMINI_API_KEY
+// SETUP — salvar e restaurar process.env["GEMINI_API_KEY"]
 // ─────────────────────────────────────────────────────────────────────────────
 
 let originalValue: string | undefined;
 
 beforeEach(() => {
-  originalValue = process.env.GEMINI_API_KEY;
+  originalValue = process.env["GEMINI_API_KEY"];
 });
 
 afterEach(() => {
   if (originalValue === undefined) {
-    delete process.env.GEMINI_API_KEY;
+    delete process.env["GEMINI_API_KEY"];
   } else {
-    process.env.GEMINI_API_KEY = originalValue;
+    process.env["GEMINI_API_KEY"] = originalValue;
   }
 });
 
@@ -38,7 +38,7 @@ afterEach(() => {
 
 describe("getGeminiConfig — configuração ausente", () => {
   it("lança GeminiConfigError quando GEMINI_API_KEY não está definida", () => {
-    delete process.env.GEMINI_API_KEY;
+    delete process.env["GEMINI_API_KEY"];
 
     expect(() => getGeminiConfig()).toThrow(GeminiConfigError);
 
@@ -53,7 +53,7 @@ describe("getGeminiConfig — configuração ausente", () => {
   });
 
   it("lança GeminiConfigError quando GEMINI_API_KEY é string vazia", () => {
-    process.env.GEMINI_API_KEY = "";
+    process.env["GEMINI_API_KEY"] = "";
 
     expect(() => getGeminiConfig()).toThrow(GeminiConfigError);
 
@@ -66,7 +66,7 @@ describe("getGeminiConfig — configuração ausente", () => {
   });
 
   it("lança GeminiConfigError quando GEMINI_API_KEY contém apenas espaços", () => {
-    process.env.GEMINI_API_KEY = "   ";
+    process.env["GEMINI_API_KEY"] = "   ";
 
     expect(() => getGeminiConfig()).toThrow(GeminiConfigError);
 
@@ -79,7 +79,7 @@ describe("getGeminiConfig — configuração ausente", () => {
   });
 
   it("mensagem de erro orienta sobre .env.local ou variáveis de deploy", () => {
-    delete process.env.GEMINI_API_KEY;
+    delete process.env["GEMINI_API_KEY"];
 
     try {
       getGeminiConfig();
@@ -97,7 +97,7 @@ describe("getGeminiConfig — configuração ausente", () => {
 
 describe("getGeminiConfig — configuração válida", () => {
   it("retorna GeminiProviderConfig com a apiKey do ambiente", () => {
-    process.env.GEMINI_API_KEY = "AIzaSyTest1234567890";
+    process.env["GEMINI_API_KEY"] = "AIzaSyTest1234567890";
 
     const config = getGeminiConfig();
 
@@ -105,7 +105,7 @@ describe("getGeminiConfig — configuração válida", () => {
   });
 
   it("trima a apiKey", () => {
-    process.env.GEMINI_API_KEY = "  AIzaSyTest1234567890  ";
+    process.env["GEMINI_API_KEY"] = "  AIzaSyTest1234567890  ";
 
     const config = getGeminiConfig();
 
@@ -113,7 +113,7 @@ describe("getGeminiConfig — configuração válida", () => {
   });
 
   it("retorna config sem model, timeoutMs e baseUrl quando sem overrides", () => {
-    process.env.GEMINI_API_KEY = "AIzaSyTest1234567890";
+    process.env["GEMINI_API_KEY"] = "AIzaSyTest1234567890";
 
     const config = getGeminiConfig();
 
@@ -124,7 +124,7 @@ describe("getGeminiConfig — configuração válida", () => {
   });
 
   it("repassa override de model", () => {
-    process.env.GEMINI_API_KEY = "AIzaSyTest1234567890";
+    process.env["GEMINI_API_KEY"] = "AIzaSyTest1234567890";
 
     const config = getGeminiConfig({ model: "gemini-1.5-pro" });
 
@@ -133,7 +133,7 @@ describe("getGeminiConfig — configuração válida", () => {
   });
 
   it("repassa override de timeoutMs", () => {
-    process.env.GEMINI_API_KEY = "AIzaSyTest1234567890";
+    process.env["GEMINI_API_KEY"] = "AIzaSyTest1234567890";
 
     const config = getGeminiConfig({ timeoutMs: 60_000 });
 
@@ -141,7 +141,7 @@ describe("getGeminiConfig — configuração válida", () => {
   });
 
   it("repassa override de baseUrl", () => {
-    process.env.GEMINI_API_KEY = "AIzaSyTest1234567890";
+    process.env["GEMINI_API_KEY"] = "AIzaSyTest1234567890";
 
     const config = getGeminiConfig({
       baseUrl: "https://custom.api.example.com/v1",
@@ -151,7 +151,7 @@ describe("getGeminiConfig — configuração válida", () => {
   });
 
   it("repassa todos os overrides juntos", () => {
-    process.env.GEMINI_API_KEY = "AIzaSyTest1234567890";
+    process.env["GEMINI_API_KEY"] = "AIzaSyTest1234567890";
 
     const config = getGeminiConfig({
       model: "gemini-3.6-flash",
@@ -167,7 +167,7 @@ describe("getGeminiConfig — configuração válida", () => {
 
   it("a key retornada corresponde exatamente à variável de ambiente (sem mutação)", () => {
     const key = "AIzaSyExactKey_abc123-XYZ";
-    process.env.GEMINI_API_KEY = key;
+    process.env["GEMINI_API_KEY"] = key;
 
     const config = getGeminiConfig();
 

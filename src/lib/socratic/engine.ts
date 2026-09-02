@@ -53,22 +53,24 @@ export function createInitialSessionContext(params: {
     }
   }
 
-  return {
+  const ctx: any = {
     sessionId:
       params.sessionId || `soc_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
     topicId: params.topicId,
     topicName: params.topicName,
-    subjectName: params.subjectName,
     pedagogicalGoal: params.pedagogicalGoal,
     pedagogicalMode: params.pedagogicalMode || "ACTIVE_RECALL",
     currentState: "QUESTION",
     currentTurnNumber: 1,
     hintLevel: 0,
-    currentQuestion: params.currentQuestion,
     turnHistory: [],
     constraints,
     validTopicNames: Array.from(validTopicsSet),
   };
+  if (params.subjectName) ctx.subjectName = params.subjectName;
+  if (params.currentQuestion) ctx.currentQuestion = params.currentQuestion;
+
+  return ctx as SocraticSessionContext;
 }
 
 /**
@@ -168,7 +170,7 @@ export function computeNextStateAndAction(
       return {
         nextState: "CORRECTING",
         nextAction: "EXPLAIN",
-        nextHintLevel,
+        nextHintLevel: hintLevel,
         shouldContinue: true,
       };
     }

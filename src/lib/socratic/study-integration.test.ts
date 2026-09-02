@@ -55,7 +55,7 @@ describe("Integração do Professor Fiscal ao Fluxo Real de Estudo — Fase 7.3.
       });
 
       expect(ctx.pedagogicalMode).toBe("ERROR_REMEDIATION");
-      expect(ctx.contextMetadata?.errorContext).toEqual({
+      expect(ctx.contextMetadata?.['errorContext']).toEqual({
         errorEntryId: "err-999",
         errorCategory: "excecao_normativa",
         isRecurring: true,
@@ -155,17 +155,17 @@ describe("Integração do Professor Fiscal ao Fluxo Real de Estudo — Fase 7.3.
         attemptId: "att-733",
         attemptNumber: 1,
         feedback: {
-          attemptId: "att-733",
           questionId: "q-200",
           isCorrect: false,
           isFirstAttempt: true,
           currentStreak: -1,
-          difficulty: 3,
           topicId: "top-ctn-111",
           subjectId: "sub-dir-trib",
           shouldCreateError: true,
           suggestedErrorCategory: "interpretação_normativa",
-          knowledgeUpdateReason: "Erro na primeira tentativa",
+          knowledgeDifficulty: 3 as any,
+          masteryImpactEstimate: -0.1,
+          timestamp: new Date().toISOString(),
         },
         updatedStats: {} as any,
         errorCreated: true,

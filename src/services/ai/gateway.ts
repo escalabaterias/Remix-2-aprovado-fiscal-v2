@@ -104,17 +104,19 @@ export async function runAiTask<T = unknown>(task: AiTask): Promise<AiResult<T>>
   const inputHash = await hashInput(hashPayload);
 
   try {
+    const serverPayload: any = {
+      taskType: task.type,
+      tier: task.tier,
+      inputHash,
+      inputRef: task.inputRef,
+      promptVersion,
+    };
+    if (task.systemPrompt) serverPayload.systemPrompt = task.systemPrompt;
+    if (task.userPrompt) serverPayload.userPrompt = task.userPrompt;
+    if (task.forceRefresh !== undefined) serverPayload.forceRefresh = task.forceRefresh;
+
     const res: any = await serverExecuteAiTask({
-      data: {
-        taskType: task.type,
-        tier: task.tier,
-        inputHash,
-        inputRef: task.inputRef,
-        promptVersion,
-        systemPrompt: task.systemPrompt || undefined,
-        userPrompt: task.userPrompt || undefined,
-        forceRefresh: task.forceRefresh || undefined,
-      },
+      data: serverPayload,
     });
 
     return {

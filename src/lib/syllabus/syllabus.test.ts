@@ -136,13 +136,13 @@ describe("Edital Verticalizado e LawTags do Vade Mecum (Módulo 8)", () => {
       const pending = getPendingTopicsForPlanner(mockSyllabus);
 
       expect(pending).toHaveLength(2); // 'studying' e 'not_started'
-      expect(pending[0].weight).toBeGreaterThanOrEqual(pending[1].weight);
-      expect(pending[0].topic).toBe("Lançamento"); // peso 4 > peso 3
+      expect(pending[0]!.weight).toBeGreaterThanOrEqual(pending[1]!.weight);
+      expect(pending[0]!.topic).toBe("Lançamento"); // peso 4 > peso 3
     });
 
     it("deve vincular LawTag a um item do edital", () => {
       const initialItems = getSyllabusItems();
-      const firstItem = initialItems[0];
+      const firstItem = initialItems[0]!;
 
       const updated = linkLawTagToSyllabusItem(firstItem.id, "lei-14133-art-11");
       const updatedItem = updated.find((i) => i.id === firstItem.id);

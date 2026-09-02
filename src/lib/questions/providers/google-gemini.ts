@@ -205,22 +205,22 @@ export function parseGeminiResponse(responseBody: unknown): ParsedGeminiResponse
   const body = responseBody as Record<string, unknown>;
 
   // Extrair texto da resposta do candidato
-  const candidates = body.candidates;
+  const candidates = body['candidates'];
   if (!Array.isArray(candidates) || candidates.length === 0) return null;
 
   const firstCandidate = candidates[0] as Record<string, unknown> | undefined;
   if (!firstCandidate) return null;
 
-  const content = firstCandidate.content as Record<string, unknown> | undefined;
+  const content = firstCandidate['content'] as Record<string, unknown> | undefined;
   if (!content) return null;
 
-  const parts = content.parts as Array<Record<string, unknown>> | undefined;
+  const parts = content['parts'] as Array<Record<string, unknown>> | undefined;
   if (!Array.isArray(parts) || parts.length === 0) return null;
 
-  const textPart = parts.find((p) => typeof p.text === "string");
-  if (!textPart || typeof textPart.text !== "string") return null;
+  const textPart = parts.find((p) => typeof p['text'] === "string");
+  if (!textPart || typeof textPart['text'] !== "string") return null;
 
-  const rawText = (textPart.text as string).trim();
+  const rawText = (textPart['text'] as string).trim();
   if (rawText.length === 0) return null;
 
   // Tentar parse direto
@@ -246,7 +246,7 @@ export function parseGeminiResponse(responseBody: unknown): ParsedGeminiResponse
   const data = parsed as Record<string, unknown>;
 
   // Extrair questions
-  const rawQuestions = data.questions;
+  const rawQuestions = data['questions'];
   if (!Array.isArray(rawQuestions)) return null;
 
   const questions: ExtractedQuestionData[] = rawQuestions
@@ -266,48 +266,48 @@ export function parseGeminiResponse(responseBody: unknown): ParsedGeminiResponse
       };
 
       return {
-        statement: typeof q.statement === "string" ? q.statement : "",
-        alternatives: Array.isArray(q.alternatives)
-          ? (q.alternatives as Array<Record<string, unknown>>).map((a) => ({
-              letter: typeof a.letter === "string" ? a.letter : "",
-              text: typeof a.text === "string" ? a.text : "",
-              isCorrect: typeof a.isCorrect === "boolean" ? a.isCorrect : null,
+        statement: typeof q['statement'] === "string" ? q['statement'] : "",
+        alternatives: Array.isArray(q['alternatives'])
+          ? (q['alternatives'] as Array<Record<string, unknown>>).map((a) => ({
+              letter: typeof a['letter'] === "string" ? a['letter'] : "",
+              text: typeof a['text'] === "string" ? a['text'] : "",
+              isCorrect: typeof a['isCorrect'] === "boolean" ? a['isCorrect'] : null,
             }))
           : [],
-        correctAnswer: typeof q.correctAnswer === "string" ? q.correctAnswer : null,
-        isTrueFalse: q.isTrueFalse === true,
-        explanation: typeof q.explanation === "string" ? q.explanation : null,
-        subjectLabel: getString(q.subjectLabel) ?? getString(q.subject),
-        topicLabel: getString(q.topicLabel) ?? getString(q.topic),
-        contestName: getString(q.contestName) ?? getString(q.concurso),
-        examBoard: getString(q.examBoard) ?? getString(q.banca),
-        year: getNumber(q.year) ?? getNumber(q.ano),
-        organization: getString(q.organization) ?? getString(q.orgao),
-        roleTitle: getString(q.roleTitle) ?? getString(q.cargo) ?? getString(q.position),
-        position: getString(q.position) ?? getString(q.cargo) ?? getString(q.roleTitle),
-        examName: getString(q.examName) ?? getString(q.prova),
+        correctAnswer: typeof q['correctAnswer'] === "string" ? q['correctAnswer'] : null,
+        isTrueFalse: q['isTrueFalse'] === true,
+        explanation: typeof q['explanation'] === "string" ? q['explanation'] : null,
+        subjectLabel: getString(q['subjectLabel']) ?? getString(q['subject']),
+        topicLabel: getString(q['topicLabel']) ?? getString(q['topic']),
+        contestName: getString(q['contestName']) ?? getString(q['concurso']),
+        examBoard: getString(q['examBoard']) ?? getString(q['banca']),
+        year: getNumber(q['year']) ?? getNumber(q['ano']),
+        organization: getString(q['organization']) ?? getString(q['orgao']),
+        roleTitle: getString(q['roleTitle']) ?? getString(q['cargo']) ?? getString(q['position']),
+        position: getString(q['position']) ?? getString(q['cargo']) ?? getString(q['roleTitle']),
+        examName: getString(q['examName']) ?? getString(q['prova']),
         questionNumber:
-          getNumber(q.questionNumber) ??
-          getString(q.questionNumber) ??
-          getNumber(q.numeroQuestao) ??
-          getString(q.numeroQuestao),
-        sourceTitle: getString(q.sourceTitle) ?? getString(q.fonte),
-        sourceUrl: getString(q.sourceUrl) ?? getString(q.url),
-        externalId: getString(q.externalId) ?? getString(q.idExterno),
+          getNumber(q['questionNumber']) ??
+          getString(q['questionNumber']) ??
+          getNumber(q['numeroQuestao']) ??
+          getString(q['numeroQuestao']),
+        sourceTitle: getString(q['sourceTitle']) ?? getString(q['fonte']),
+        sourceUrl: getString(q['sourceUrl']) ?? getString(q['url']),
+        externalId: getString(q['externalId']) ?? getString(q['idExterno']),
         difficulty:
-          typeof q.difficulty === "number" && Number.isFinite(q.difficulty) ? q.difficulty : null,
-        tags: Array.isArray(q.tags)
-          ? (q.tags as unknown[]).filter((t): t is string => typeof t === "string")
+          typeof q['difficulty'] === "number" && Number.isFinite(q['difficulty']) ? q['difficulty'] : null,
+        tags: Array.isArray(q['tags'])
+          ? (q['tags'] as unknown[]).filter((t): t is string => typeof t === "string")
           : [],
         confidence:
-          typeof q.confidence === "number" && Number.isFinite(q.confidence) ? q.confidence : null,
+          typeof q['confidence'] === "number" && Number.isFinite(q['confidence']) ? q['confidence'] : null,
       };
     });
 
   // Extrair overallConfidence
   const overallConfidence =
-    typeof data.overallConfidence === "number" && Number.isFinite(data.overallConfidence)
-      ? data.overallConfidence
+    typeof data['overallConfidence'] === "number" && Number.isFinite(data['overallConfidence'])
+      ? data['overallConfidence']
       : null;
 
   return { questions, overallConfidence };
@@ -392,11 +392,11 @@ export async function extractWithGemini(
     try {
       const errorBody = (await response.json()) as Record<string, unknown>;
       if (
-        errorBody.error &&
-        typeof errorBody.error === "object" &&
-        (errorBody.error as Record<string, unknown>).message
+        errorBody['error'] &&
+        typeof errorBody['error'] === "object" &&
+        (errorBody['error'] as Record<string, unknown>)['message']
       ) {
-        errorMessage = `Gemini API: ${(errorBody.error as Record<string, unknown>).message}`;
+        errorMessage = `Gemini API: ${(errorBody['error'] as Record<string, unknown>)['message']}`;
       }
     } catch {
       // Ignora erros ao ler o body de erro

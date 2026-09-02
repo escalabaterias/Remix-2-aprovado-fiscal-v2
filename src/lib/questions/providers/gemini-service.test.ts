@@ -21,20 +21,20 @@ import type { ImageExtractionRequest } from "../adapters/image-adapter";
 import type { ExtractionResult } from "../extraction";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SETUP — salvar e restaurar process.env.GEMINI_API_KEY
+// SETUP — salvar e restaurar process.env["GEMINI_API_KEY"]
 // ─────────────────────────────────────────────────────────────────────────────
 
 let originalApiKey: string | undefined;
 
 beforeEach(() => {
-  originalApiKey = process.env.GEMINI_API_KEY;
+  originalApiKey = process.env["GEMINI_API_KEY"];
 });
 
 afterEach(() => {
   if (originalApiKey === undefined) {
-    delete process.env.GEMINI_API_KEY;
+    delete process.env["GEMINI_API_KEY"];
   } else {
-    process.env.GEMINI_API_KEY = originalApiKey;
+    process.env["GEMINI_API_KEY"] = originalApiKey;
   }
 });
 
@@ -112,7 +112,7 @@ function makeMockFetch(responseBody: unknown, status = 200): typeof fetch {
 describe("extractQuestionsWithGemini", () => {
   describe("fluxo completo com sucesso", () => {
     it("retorna ExtractionResult com 1 questão extraída", async () => {
-      process.env.GEMINI_API_KEY = "test-key-123";
+      process.env["GEMINI_API_KEY"] = "test-key-123";
       const mockFetch = makeMockFetch(makeGeminiApiResponse());
 
       const result = await extractQuestionsWithGemini(makeRequest(), {
@@ -132,7 +132,7 @@ describe("extractQuestionsWithGemini", () => {
     });
 
     it("retorna ExtractionResult com múltiplas questões", async () => {
-      process.env.GEMINI_API_KEY = "test-key-123";
+      process.env["GEMINI_API_KEY"] = "test-key-123";
       const body = makeGeminiApiResponse(
         [
           {
@@ -175,7 +175,7 @@ describe("extractQuestionsWithGemini", () => {
     });
 
     it("preserva contestMetadata do request nas questões extraídas", async () => {
-      process.env.GEMINI_API_KEY = "test-key-123";
+      process.env["GEMINI_API_KEY"] = "test-key-123";
       const mockFetch = makeMockFetch(makeGeminiApiResponse());
 
       const result = await extractQuestionsWithGemini(makeRequest(), {
@@ -195,7 +195,7 @@ describe("extractQuestionsWithGemini", () => {
 
   describe("erro de configuração", () => {
     it("retorna ExtractionResult com erro quando GEMINI_API_KEY ausente", async () => {
-      delete process.env.GEMINI_API_KEY;
+      delete process.env["GEMINI_API_KEY"];
 
       const result = await extractQuestionsWithGemini(makeRequest());
 
@@ -212,7 +212,7 @@ describe("extractQuestionsWithGemini", () => {
     });
 
     it("retorna ExtractionResult com erro quando GEMINI_API_KEY é vazia", async () => {
-      process.env.GEMINI_API_KEY = "";
+      process.env["GEMINI_API_KEY"] = "";
 
       const result = await extractQuestionsWithGemini(makeRequest());
 
@@ -223,7 +223,7 @@ describe("extractQuestionsWithGemini", () => {
     });
 
     it("não lança exceção quando configuração falha", async () => {
-      delete process.env.GEMINI_API_KEY;
+      delete process.env["GEMINI_API_KEY"];
 
       // Deve retornar resultado, não lançar
       const result = await extractQuestionsWithGemini(makeRequest());
@@ -238,7 +238,7 @@ describe("extractQuestionsWithGemini", () => {
 
   describe("erro do provedor Gemini", () => {
     it("retorna ExtractionResult com erro para HTTP 500", async () => {
-      process.env.GEMINI_API_KEY = "test-key-123";
+      process.env["GEMINI_API_KEY"] = "test-key-123";
       const mockFetch = makeMockFetch({ error: { message: "Internal server error" } }, 500);
 
       const result = await extractQuestionsWithGemini(makeRequest(), {
@@ -253,7 +253,7 @@ describe("extractQuestionsWithGemini", () => {
     });
 
     it("retorna ExtractionResult com erro para HTTP 429 (rate limit)", async () => {
-      process.env.GEMINI_API_KEY = "test-key-123";
+      process.env["GEMINI_API_KEY"] = "test-key-123";
       const mockFetch = makeMockFetch({ error: { message: "Resource exhausted" } }, 429);
 
       const result = await extractQuestionsWithGemini(makeRequest(), {
@@ -265,7 +265,7 @@ describe("extractQuestionsWithGemini", () => {
     });
 
     it("retorna ExtractionResult com erro de rede", async () => {
-      process.env.GEMINI_API_KEY = "test-key-123";
+      process.env["GEMINI_API_KEY"] = "test-key-123";
       const mockFetch = vi
         .fn()
         .mockRejectedValue(new Error("Network error")) as unknown as typeof fetch;
@@ -286,7 +286,7 @@ describe("extractQuestionsWithGemini", () => {
 
   describe("timeout do provedor", () => {
     it("retorna ExtractionResult com erro de timeout", async () => {
-      process.env.GEMINI_API_KEY = "test-key-123";
+      process.env["GEMINI_API_KEY"] = "test-key-123";
       const mockFetch = vi.fn().mockImplementation(() => {
         const error = new DOMException("The operation was aborted", "AbortError");
         return Promise.reject(error);
@@ -309,7 +309,7 @@ describe("extractQuestionsWithGemini", () => {
 
   describe("resposta vazia do Gemini", () => {
     it("retorna ExtractionResult com success=false e EMPTY_RESPONSE", async () => {
-      process.env.GEMINI_API_KEY = "test-key-123";
+      process.env['GEMINI_API_KEY'] = "test-key-123";
       const body = makeGeminiApiResponse([], 0);
       const mockFetch = makeMockFetch(body);
 
@@ -332,7 +332,7 @@ describe("extractQuestionsWithGemini", () => {
 
   describe("parse failure do Gemini", () => {
     it("retorna ExtractionResult com erro de parse", async () => {
-      process.env.GEMINI_API_KEY = "test-key-123";
+      process.env['GEMINI_API_KEY'] = "test-key-123";
       const mockFetch = makeMockFetch({ data: "sem candidates" });
 
       const result = await extractQuestionsWithGemini(makeRequest(), {
@@ -350,7 +350,7 @@ describe("extractQuestionsWithGemini", () => {
 
   describe("overrides de configuração", () => {
     it("passa model override para extractWithGemini", async () => {
-      process.env.GEMINI_API_KEY = "test-key-123";
+      process.env["GEMINI_API_KEY"] = "test-key-123";
       const mockFetch = makeMockFetch(makeGeminiApiResponse());
 
       await extractQuestionsWithGemini(makeRequest(), {
@@ -366,7 +366,7 @@ describe("extractQuestionsWithGemini", () => {
     });
 
     it("passa baseUrl override para extractWithGemini", async () => {
-      process.env.GEMINI_API_KEY = "test-key-123";
+      process.env["GEMINI_API_KEY"] = "test-key-123";
       const mockFetch = makeMockFetch(makeGeminiApiResponse());
 
       await extractQuestionsWithGemini(makeRequest(), {
@@ -388,7 +388,7 @@ describe("extractQuestionsWithGemini", () => {
 
   describe("fetchFn customizado", () => {
     it("usa o fetchFn fornecido em vez do global", async () => {
-      process.env.GEMINI_API_KEY = "test-key-123";
+      process.env["GEMINI_API_KEY"] = "test-key-123";
       const mockFetch = makeMockFetch(makeGeminiApiResponse());
 
       await extractQuestionsWithGemini(makeRequest(), {
@@ -399,7 +399,7 @@ describe("extractQuestionsWithGemini", () => {
     });
 
     it("chama fetch com a API key do ambiente na URL", async () => {
-      process.env.GEMINI_API_KEY = "my-secret-key-abc";
+      process.env['GEMINI_API_KEY'] = "my-secret-key-abc";
       const mockFetch = makeMockFetch(makeGeminiApiResponse());
 
       await extractQuestionsWithGemini(makeRequest(), {
@@ -420,7 +420,7 @@ describe("extractQuestionsWithGemini", () => {
 
   describe("questão sem enunciado descartada", () => {
     it("descarta questão sem enunciado e preserva as válidas", async () => {
-      process.env.GEMINI_API_KEY = "test-key-123";
+      process.env["GEMINI_API_KEY"] = "test-key-123";
       const body = makeGeminiApiResponse(
         [
           {
@@ -472,7 +472,7 @@ describe("extractQuestionsWithGemini", () => {
       // Como não podemos facilmente forçar um erro non-GeminiConfigError
       // sem mockar o módulo inteiro, vamos pelo menos verificar que
       // o serviço retorna ExtractionResult (e não lança) em cenário de erro.
-      delete process.env.GEMINI_API_KEY;
+      delete process.env["GEMINI_API_KEY"];
 
       const result = await extractQuestionsWithGemini(makeRequest());
 
@@ -489,7 +489,7 @@ describe("extractQuestionsWithGemini", () => {
 
   describe("processingTimeMs", () => {
     it("reporta processingTimeMs em resultado de sucesso", async () => {
-      process.env.GEMINI_API_KEY = "test-key-123";
+      process.env["GEMINI_API_KEY"] = "test-key-123";
       const mockFetch = makeMockFetch(makeGeminiApiResponse());
 
       const result = await extractQuestionsWithGemini(makeRequest(), {
@@ -500,7 +500,7 @@ describe("extractQuestionsWithGemini", () => {
     });
 
     it("reporta processingTimeMs null quando configuração falha", async () => {
-      delete process.env.GEMINI_API_KEY;
+      delete process.env["GEMINI_API_KEY"];
 
       const result = await extractQuestionsWithGemini(makeRequest());
 

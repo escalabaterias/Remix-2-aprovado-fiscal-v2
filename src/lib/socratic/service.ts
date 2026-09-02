@@ -38,10 +38,10 @@ export async function processSocraticTurn(
   const answer = studentAnswerText !== undefined ? studentAnswerText : context.studentAnswerText;
 
   // 1. Atualizar context temporário com a resposta atual do aluno
-  const currentContext: SocraticSessionContext = {
+  const currentContext: any = {
     ...context,
-    studentAnswerText: answer,
   };
+  if (answer !== undefined) currentContext.studentAnswerText = answer;
 
   // 2. Prever a próxima transição determinística
   const deterministicPrediction = computeNextStateAndAction(
@@ -73,57 +73,56 @@ INSTRUÇÕES DO TURNO:
 Avalie a resposta do aluno (se presente), identifique a qualidade do raciocínio e lacunas conceituais. Em seguida, produza a resposta no formato JSON estrito especificando a ação ('${deterministicPrediction.nextAction}'), pergunta/pista instigante e nível de pista ('${deterministicPrediction.nextHintLevel}').
 `.trim();
 
-  const aiResult = await runAiTask<Record<string, unknown>>({
+  const aiTaskInput: any = {
     type: "socratic_tutor",
     tier: "inteligente",
     inputRef: cacheRefPayload,
     promptVersion: SOCRATIC_PROMPT_VERSION,
     systemPrompt: SOCRATIC_SYSTEM_PROMPT,
     userPrompt,
-    forceRefresh: options?.forceRefresh,
-  });
+  };
+  if (options?.forceRefresh) aiTaskInput.forceRefresh = options.forceRefresh;
+
+  const aiResult = await runAiTask<Record<string, unknown>>(aiTaskInput);
 
   // 5. Tratamento gracioso caso a IA apresente falha de infraestrutura
   if (aiResult.status === "erro" || !aiResult.output) {
     // Fallback gracioso baseado na máquina de estados determinística
-    const fallbackResponse: SocraticResponse = {
+    const fallbackResponse: any = {
       status: "active",
       pedagogicalMode: currentContext.pedagogicalMode,
       action: deterministicPrediction.nextAction,
-      question:
-        deterministicPrediction.nextAction === "ASK" ||
-        deterministicPrediction.nextAction === "HINT"
-          ? `Vamos analisar o conceito de ${currentContext.topicName}. O que você recorda sobre as regras principais deste tópico?`
-          : undefined,
-      explanation:
-        deterministicPrediction.nextAction === "EXPLAIN"
-          ? `O tópico ${currentContext.topicName} envolve fundamentos essenciais do edital. Vamos revisar seus pontos principais.`
-          : undefined,
       hintLevel: deterministicPrediction.nextHintLevel,
       confidenceScore: 0.5,
       shouldContinue: deterministicPrediction.shouldContinue,
       generatedAt: new Date().toISOString(),
     };
+    if (deterministicPrediction.nextAction === "ASK" || deterministicPrediction.nextAction === "HINT") {
+      fallbackResponse.question = `Vamos analisar o conceito de ${currentContext.topicName}. O que você recorda sobre as regras principais deste tópico?`;
+    }
+    if (deterministicPrediction.nextAction === "EXPLAIN") {
+      fallbackResponse.explanation = `O tópico ${currentContext.topicName} envolve fundamentos essenciais do edital. Vamos revisar seus pontos principais.`;
+    }
 
-    const newTurn: SocraticTurnSummary = {
+    const newTurn: any = {
       turnNumber: currentTurnNumber,
       state: deterministicPrediction.nextState,
       action: deterministicPrediction.nextAction,
-      questionOrHintText: fallbackResponse.question,
-      explanationText: fallbackResponse.explanation,
-      studentAnswerText: answer,
       hintLevel: deterministicPrediction.nextHintLevel,
       timestamp: new Date().toISOString(),
     };
+    if (fallbackResponse.question) newTurn.questionOrHintText = fallbackResponse.question;
+    if (fallbackResponse.explanation) newTurn.explanationText = fallbackResponse.explanation;
+    if (answer) newTurn.studentAnswerText = answer;
 
-    const updatedContext: SocraticSessionContext = {
+    const updatedContext: any = {
       ...currentContext,
       currentState: deterministicPrediction.nextState,
       currentTurnNumber: currentTurnNumber + 1,
       hintLevel: deterministicPrediction.nextHintLevel,
-      turnHistory: [...currentContext.turnHistory, newTurn],
-      studentAnswerText: undefined,
+      turnHistory: [...currentContext.turnHistory, newTurn as SocraticTurnSummary],
     };
+    delete updatedContext.studentAnswerText;
 
     return {
       response: fallbackResponse,
@@ -153,24 +152,24 @@ Avalie a resposta do aluno (se presente), identifique a qualidade do raciocínio
       generatedAt: new Date().toISOString(),
     };
 
-    const newTurn: SocraticTurnSummary = {
+    const newTurn: any = {
       turnNumber: currentTurnNumber,
       state: deterministicPrediction.nextState,
       action: deterministicPrediction.nextAction,
-      questionOrHintText: fallbackResponse.question,
-      studentAnswerText: answer,
       hintLevel: deterministicPrediction.nextHintLevel,
       timestamp: new Date().toISOString(),
     };
+    if (fallbackResponse.question) newTurn.questionOrHintText = fallbackResponse.question;
+    if (answer) newTurn.studentAnswerText = answer;
 
-    const updatedContext: SocraticSessionContext = {
+    const updatedContext: any = {
       ...currentContext,
       currentState: deterministicPrediction.nextState,
       currentTurnNumber: currentTurnNumber + 1,
       hintLevel: deterministicPrediction.nextHintLevel,
-      turnHistory: [...currentContext.turnHistory, newTurn],
-      studentAnswerText: undefined,
+      turnHistory: [...currentContext.turnHistory, newTurn as SocraticTurnSummary],
     };
+    delete updatedContext.studentAnswerText;
 
     return {
       response: fallbackResponse,
@@ -205,33 +204,37 @@ Avalie a resposta do aluno (se presente), identifique a qualidade do raciocínio
   }
 
   // 9. Registrar o novo turno
-  const turnRecord: SocraticTurnSummary = {
+  const turnRecord: any = {
     turnNumber: currentTurnNumber,
     state: finalNextState,
     action: validatedResponse.action,
-    questionOrHintText: validatedResponse.question,
-    explanationText: validatedResponse.explanation,
-    studentAnswerText: answer,
-    evaluationClassification: validatedResponse.evaluation?.classification,
     hintLevel: validatedResponse.hintLevel,
     timestamp: new Date().toISOString(),
   };
+  if (validatedResponse.question) turnRecord.questionOrHintText = validatedResponse.question;
+  if (validatedResponse.explanation) turnRecord.explanationText = validatedResponse.explanation;
+  if (answer) turnRecord.studentAnswerText = answer;
+  if (validatedResponse.evaluation?.classification) {
+    turnRecord.evaluationClassification = validatedResponse.evaluation.classification;
+  }
 
-  const updatedContext: SocraticSessionContext = {
+  const updatedContext: any = {
     ...currentContext,
     currentState: finalNextState,
     currentTurnNumber: currentTurnNumber + 1,
     hintLevel: validatedResponse.hintLevel,
-    turnHistory: [...currentContext.turnHistory, turnRecord],
-    studentAnswerText: undefined, // Limpa para a próxima interação
+    turnHistory: [...currentContext.turnHistory, turnRecord as SocraticTurnSummary],
   };
+  delete updatedContext.studentAnswerText; // Limpa para a próxima interação
 
-  return {
+  const serviceResult: any = {
     response: validatedResponse,
-    updatedContext,
+    updatedContext: updatedContext as SocraticSessionContext,
     cached: aiResult.cached,
     status: finalNextState === "COMPLETED" ? "concluido" : "processado",
-    model: aiResult.model,
-    durationMs: aiResult.durationMs,
   };
+  if (aiResult.model) serviceResult.model = aiResult.model;
+  if (aiResult.durationMs !== undefined) serviceResult.durationMs = aiResult.durationMs;
+
+  return serviceResult as SocraticServiceResult;
 }

@@ -118,13 +118,12 @@ export function startStudySocraticSession(
 
   const questionCtx: SocraticQuestionContext | undefined = input.questionContext
     ? {
-        id: input.questionContext.questionId,
-        questionId: input.questionContext.questionId,
+        ...(input.questionContext.questionId ? { questionId: input.questionContext.questionId } : {}),
         statement: input.questionContext.statement,
-        options: input.questionContext.options,
-        correctAnswer: input.questionContext.correctAnswer,
+        ...(input.questionContext.options ? { options: input.questionContext.options } : {}),
+        ...(input.questionContext.correctAnswer ? { correctAnswer: input.questionContext.correctAnswer } : {}),
         targetConcept: input.questionContext.targetConcept || input.topicName,
-        expectedReasoning: input.questionContext.expectedReasoning,
+        ...(input.questionContext.expectedReasoning ? { expectedReasoning: input.questionContext.expectedReasoning } : {}),
       }
     : undefined;
 
@@ -132,7 +131,7 @@ export function startStudySocraticSession(
     sessionId,
     topicId: input.topicId,
     topicName: input.topicName,
-    subjectName: input.subjectName,
+    ...(input.subjectName ? { subjectName: input.subjectName } : {}),
     pedagogicalGoal: questionCtx
       ? `Compreender o fundamento de ${questionCtx.targetConcept}`
       : `Dominar os conceitos essenciais de ${input.topicName}`,
@@ -140,7 +139,7 @@ export function startStudySocraticSession(
     currentState: "QUESTION",
     currentTurnNumber: 1,
     hintLevel: 0,
-    currentQuestion: questionCtx,
+    ...(questionCtx ? { currentQuestion: questionCtx } : {}),
     turnHistory: [],
     constraints: {
       maxHints: 3,
@@ -171,13 +170,14 @@ export async function executeStudySocraticTurn(
   input: ProcessSocraticTurnInput,
 ): Promise<IntegratedSocraticResult> {
   // 1. Processar o turno socrático com grounding jurídico
+  const processOptions: any = {};
+  if (input.forceRefresh !== undefined) processOptions.forceRefresh = input.forceRefresh;
+  if (input.customSources !== undefined) processOptions.customSources = input.customSources;
+
   const socraticResult = await processLegalSocraticTurn(
     input.socraticContext,
     input.studentAnswerText,
-    {
-      forceRefresh: input.forceRefresh,
-      customSources: input.customSources,
-    },
+    processOptions,
   );
 
   const updatedContext = socraticResult.updatedContext;
@@ -187,12 +187,14 @@ export async function executeStudySocraticTurn(
   await saveSocraticSession(updatedContext);
 
   // 3. Mapear e emitir as evidências cognitivas de forma idempotente e sanitizada (Fase 7.3.4)
-  const emitResult = await emitSocraticCognitiveEvidence({
+  const emitParams: any = {
     socraticContext: updatedContext,
-    lastTurn,
-    socraticResponse: socraticResult.response,
-    legalEvidenceMetadata: socraticResult.legalEvidenceMetadata,
-  });
+  };
+  if (lastTurn) emitParams.lastTurn = lastTurn;
+  if (socraticResult.response) emitParams.socraticResponse = socraticResult.response;
+  if (socraticResult.legalEvidenceMetadata) emitParams.legalEvidenceMetadata = socraticResult.legalEvidenceMetadata;
+
+  const emitResult = await emitSocraticCognitiveEvidence(emitParams);
 
   const isCompleted =
     socraticResult.status === "concluido" || updatedContext.currentState === "COMPLETED";
@@ -233,24 +235,28 @@ export async function submitAnswerWithSocraticFeedback(
     }
 
     if (!socraticCtx) {
+      const questionCtxParams: any = {
+        questionId: input.questionId,
+        statement: input.questionStatement || "Questão de prova",
+      };
+      if (input.options) questionCtxParams.options = input.options;
+      if (input.correctAnswer) questionCtxParams.correctAnswer = input.correctAnswer;
+
       socraticCtx = startStudySocraticSession({
-        sessionId: input.sessionId || undefined,
+        ...(input.sessionId ? { sessionId: input.sessionId } : {}),
         topicId: attemptResult.feedback.topicId || "topico_desconhecido",
         topicName: input.topicName || "Direito Tributário",
-        subjectName: input.subjectName,
-        questionContext: {
-          questionId: input.questionId,
-          statement: input.questionStatement || "Questão de prova",
-          options: input.options,
-          correctAnswer: input.correctAnswer,
-        },
+        ...(input.subjectName ? { subjectName: input.subjectName } : {}),
+        questionContext: questionCtxParams,
         pedagogicalMode: input.isCorrect ? "QUESTION_ANALYSIS" : "ERROR_REMEDIATION",
-        errorContext: attemptResult.errorEntryId
+        ...(attemptResult.errorEntryId
           ? {
-              errorEntryId: attemptResult.errorEntryId,
-              errorCategory: attemptResult.feedback.suggestedErrorCategory || "interpretação",
+              errorContext: {
+                errorEntryId: attemptResult.errorEntryId,
+                errorCategory: attemptResult.feedback.suggestedErrorCategory || "interpretação",
+              },
             }
-          : undefined,
+          : {}),
       });
     }
 
@@ -260,12 +266,20 @@ export async function submitAnswerWithSocraticFeedback(
       studentAnswerText: `Minha resposta foi a alternativa "${input.chosenAnswer}". Resultado: ${input.isCorrect ? "CORRETO" : "INCORRETO"}.`,
     });
 
-    return {
+    const finalResult: any = {
       ...attemptResult,
       socraticContext: turnResult.socraticResult.updatedContext,
-      socraticResponse: turnResult.socraticResult.response || undefined,
-      legalEvidenceMetadata: turnResult.socraticResult.legalEvidenceMetadata,
     };
+    if (turnResult.socraticResult.response) {
+      finalResult.socraticResponse = turnResult.socraticResult.response;
+    } else {
+      finalResult.socraticResponse = null;
+    }
+    if (turnResult.socraticResult.legalEvidenceMetadata) {
+      finalResult.legalEvidenceMetadata = turnResult.socraticResult.legalEvidenceMetadata;
+    }
+
+    return finalResult as SubmitAnswerWithSocraticResult;
   } catch (err) {
     console.error("Erro ao integrar feedback socrático com a tentativa:", err);
     return attemptResult;

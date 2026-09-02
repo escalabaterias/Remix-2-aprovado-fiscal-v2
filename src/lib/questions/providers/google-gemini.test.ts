@@ -178,8 +178,8 @@ describe("buildRequestBody", () => {
     const request = makeRequest({ contentType: "image_base64" });
     const body = buildRequestBody(request, "prompt-text");
 
-    const contents = body.contents as Array<Record<string, unknown>>;
-    const parts = contents[0]!.parts as Array<Record<string, unknown>>;
+    const contents = body['contents'] as Array<Record<string, unknown>>;
+    const parts = contents[0]!['parts'] as Array<Record<string, unknown>>;
 
     expect(parts[0]).toEqual({ text: "prompt-text" });
     expect(parts[1]).toEqual({
@@ -197,8 +197,8 @@ describe("buildRequestBody", () => {
     });
     const body = buildRequestBody(request, "prompt-text");
 
-    const contents = body.contents as Array<Record<string, unknown>>;
-    const parts = contents[0]!.parts as Array<Record<string, unknown>>;
+    const contents = body['contents'] as Array<Record<string, unknown>>;
+    const parts = contents[0]!['parts'] as Array<Record<string, unknown>>;
 
     expect(parts[1]).toEqual({
       fileData: {
@@ -210,10 +210,10 @@ describe("buildRequestBody", () => {
 
   it("configura generationConfig com temperature baixa e JSON", () => {
     const body = buildRequestBody(makeRequest(), "prompt");
-    const config = body.generationConfig as Record<string, unknown>;
+    const config = body['generationConfig'] as Record<string, unknown>;
 
-    expect(config.temperature).toBe(0.1);
-    expect(config.responseMimeType).toBe("application/json");
+    expect(config['temperature']).toBe(0.1);
+    expect(config['responseMimeType']).toBe("application/json");
   });
 });
 
@@ -231,7 +231,7 @@ describe("parseGeminiResponse", () => {
     expect(result!.questions[0]!.statement).toBe("Qual é a capital do Brasil?");
     expect(result!.questions[0]!.correctAnswer).toBe("A");
     expect(result!.questions[0]!.confidence).toBe(0.92);
-    expect(result!.overallConfidence).toBe(0.92);
+    expect(result!['overallConfidence']).toBe(0.92);
   });
 
   it("parseia múltiplas questões", () => {
@@ -257,7 +257,7 @@ describe("parseGeminiResponse", () => {
     expect(result!.questions).toHaveLength(2);
     expect(result!.questions[0]!.statement).toBe("Q1");
     expect(result!.questions[1]!.statement).toBe("Q2");
-    expect(result!.overallConfidence).toBe(0.85);
+    expect(result!['overallConfidence']).toBe(0.85);
   });
 
   it("parseia resposta com JSON embutido em markdown", () => {
@@ -351,15 +351,15 @@ describe("parseGeminiResponse", () => {
   it("retorna overallConfidence null quando não informado", () => {
     const body = makeGeminiSuccessBody([{ statement: "Q1", alternatives: [] }], null);
     // Remover overallConfidence do JSON
-    const candidates = body.candidates as Array<Record<string, unknown>>;
-    const content = (candidates[0] as Record<string, unknown>).content as Record<string, unknown>;
-    const parts = content.parts as Array<Record<string, unknown>>;
-    const parsed = JSON.parse(parts[0]!.text as string) as Record<string, unknown>;
-    delete parsed.overallConfidence;
-    parts[0]!.text = JSON.stringify(parsed);
+    const candidates = body['candidates'] as Array<Record<string, unknown>>;
+    const content = (candidates[0] as Record<string, unknown>)['content'] as Record<string, unknown>;
+    const parts = content['parts'] as Array<Record<string, unknown>>;
+    const parsed = JSON.parse(parts[0]!['text'] as string) as Record<string, unknown>;
+    delete parsed['overallConfidence'];
+    parts[0]!['text'] = JSON.stringify(parsed);
 
     const result = parseGeminiResponse(body);
-    expect(result!.overallConfidence).toBeNull();
+    expect(result!['overallConfidence']).toBeNull();
   });
 
   it("filtra itens null do array questions", () => {
@@ -395,7 +395,7 @@ describe("extractWithGemini", () => {
       expect(result.questions).toHaveLength(1);
       expect(result.questions[0]!.statement).toBe("Qual é a capital do Brasil?");
       expect(result.questions[0]!.correctAnswer).toBe("A");
-      expect(result.overallConfidence).toBe(0.92);
+      expect(result['overallConfidence']).toBe(0.92);
       expect(result.processingTimeMs).toBeGreaterThanOrEqual(0);
     });
 
@@ -464,7 +464,7 @@ describe("extractWithGemini", () => {
       expect(result.questions[1]!.statement).toBe("Q2");
       expect(result.questions[2]!.statement).toBe("Q3");
       expect(result.questions[2]!.isTrueFalse).toBe(true);
-      expect(result.overallConfidence).toBe(0.82);
+      expect(result['overallConfidence']).toBe(0.82);
     });
   });
 
@@ -586,7 +586,7 @@ describe("extractWithGemini", () => {
 
       expect(result.success).toBe(true);
       expect(result.questions).toHaveLength(0);
-      expect(result.overallConfidence).toBe(0);
+      expect(result['overallConfidence']).toBe(0);
     });
   });
 

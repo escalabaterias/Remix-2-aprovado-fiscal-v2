@@ -359,7 +359,7 @@ export async function fetchAvailableFilterOptions(
   const orgsSet = new Set<string>();
   const rolesSet = new Set<string>();
 
-  contests.forEach((c) => {
+  contests.forEach((c: any) => {
     if (c.organization?.trim()) orgsSet.add(c.organization.trim());
     if (c.roleTitle?.trim()) rolesSet.add(c.roleTitle.trim());
     if (c.exam_board?.trim()) examBoardsSet.add(c.exam_board.trim());
@@ -373,14 +373,14 @@ export async function fetchAvailableFilterOptions(
       yearsSet.add(q.year);
     }
     const meta = q.metadata as Record<string, unknown> | null;
-    if (meta?.organization && typeof meta.organization === "string" && meta.organization.trim()) {
-      orgsSet.add(meta.organization.trim());
+    if (meta?.['organization'] && typeof meta['organization'] === "string" && meta['organization'].trim()) {
+      orgsSet.add(meta['organization'].trim());
     }
-    if (meta?.position && typeof meta.position === "string" && meta.position.trim()) {
-      rolesSet.add(meta.position.trim());
+    if (meta?.['position'] && typeof meta['position'] === "string" && meta['position'].trim()) {
+      rolesSet.add(meta['position'].trim());
     }
-    if (meta?.role_title && typeof meta.role_title === "string" && meta.role_title.trim()) {
-      rolesSet.add(meta.role_title.trim());
+    if (meta?.['role_title'] && typeof meta['role_title'] === "string" && meta['role_title'].trim()) {
+      rolesSet.add(meta['role_title'].trim());
     }
   });
 
@@ -795,7 +795,7 @@ export async function createQuestion(input: CreateQuestionInput): Promise<Questi
   const userId = await requireUser();
 
   const hash =
-    (input.metadata?.content_hash as string) ||
+    (input.metadata?.['content_hash'] as string) ||
     computeQuestionContentHash(
       input.statement,
       (input.alternatives as Array<{
@@ -821,7 +821,7 @@ export async function createQuestion(input: CreateQuestionInput): Promise<Questi
     content_hash: hash,
   };
 
-  const insertPayload: Record<string, unknown> = {
+  const insertPayload: any = {
     user_id: userId,
     statement: input.statement,
     alternatives: input.alternatives ?? [],
@@ -879,7 +879,7 @@ export async function createQuestionWithClient(
   const userId = await requireUserFromClient(client);
 
   const hash =
-    (input.metadata?.content_hash as string) ||
+    (input.metadata?.['content_hash'] as string) ||
     computeQuestionContentHash(
       input.statement,
       (input.alternatives as Array<{
@@ -905,7 +905,7 @@ export async function createQuestionWithClient(
     content_hash: hash,
   };
 
-  const insertPayload: Record<string, unknown> = {
+  const insertPayload: any = {
     user_id: userId,
     statement: input.statement,
     alternatives: input.alternatives ?? [],

@@ -26,7 +26,7 @@ export type ServerAiTaskInput = {
   forceRefresh?: boolean;
 };
 
-export type ServerAiTaskResult<T = unknown> = {
+export type ServerAiTaskResult<T = any> = {
   output: T | null;
   cached: boolean;
   status: "processado" | "erro" | "pendente";
@@ -68,7 +68,7 @@ export const serverExecuteAiTask = createServerFn({
     }
     return input;
   })
-  .handler(async ({ data, context }): Promise<ServerAiTaskResult> => {
+  .handler(async ({ data, context }): Promise<ServerAiTaskResult<any>> => {
     const startTime = Date.now();
     const supabase = context.supabase;
     const userId = context.userId;
@@ -90,13 +90,14 @@ export const serverExecuteAiTask = createServerFn({
           cachedRow.status === "processado" &&
           cachedRow.output !== null
         ) {
-          return {
+          const res: ServerAiTaskResult<any> = {
             output: cachedRow.output,
             cached: true,
             status: "processado",
-            model: cachedRow.model ?? undefined,
             durationMs: Date.now() - startTime,
           };
+          if (cachedRow.model) res.model = cachedRow.model;
+          return res;
         }
       } catch {
         // Falha no cache não interrompe a execução do modelo
@@ -104,7 +105,7 @@ export const serverExecuteAiTask = createServerFn({
     }
 
     // 2. Verificar API key no servidor
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env['GEMINI_API_KEY'];
     if (!apiKey || apiKey.trim().length === 0) {
       return {
         output: null,

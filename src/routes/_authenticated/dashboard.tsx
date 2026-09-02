@@ -322,7 +322,7 @@ function CommandCenterPage() {
 
   const handleSaveComplete = () => {
     if (!taskToComplete) return;
-    completeTaskMutation.mutate({
+    const completePayload: any = {
       taskId: taskToComplete.id,
       status: completeStatus,
       grossMinutes: Number(grossMinutes) || 0,
@@ -330,8 +330,10 @@ function CommandCenterPage() {
       questionsCount: Number(questionsCount) || 0,
       correctCount: Number(correctCount) || 0,
       wrongCount: Math.max(0, (Number(questionsCount) || 0) - (Number(correctCount) || 0)),
-      notes: notes.trim() || undefined,
-    });
+    };
+    if (notes.trim()) completePayload.notes = notes.trim();
+
+    completeTaskMutation.mutate(completePayload);
   };
 
   if (isLoading) {
@@ -442,7 +444,7 @@ function CommandCenterPage() {
         <CoachMotivationalWidget
           accuracy={data.accuracy}
           daysToExam={daysToExam}
-          contestName={data.activeContest?.name}
+          contestName={data.activeContest?.name || null}
           completedTasksToday={data.completedTasksToday}
           totalTasksToday={data.todayTasks.length}
         />
@@ -638,8 +640,8 @@ function CommandCenterPage() {
 
         {/* ── CARD ORIENTADO À AÇÃO: O QUE ESTUDAR AGORA ───────────────────────── */}
         <WhatToStudyNowCard
-          activePlanId={data.activePlan?.id}
-          contestId={data.activeContest?.id}
+          activePlanId={data.activePlan?.id || null}
+          contestId={data.activeContest?.id || null}
           onStartTask={(taskId) => startTaskMutation.mutate(taskId)}
         />
 

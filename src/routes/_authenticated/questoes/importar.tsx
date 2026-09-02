@@ -142,7 +142,7 @@ function ImportarQuestaoPage() {
 
       const yearNum = year.trim() ? parseInt(year.trim(), 10) : null;
 
-      const extractionResult = await serverExtractAndCreateQuestions({
+      const extractionResult = (await serverExtractAndCreateQuestions({
         data: {
           imageBase64: base64,
           mimeType: imageFile.type,
@@ -156,7 +156,7 @@ function ImportarQuestaoPage() {
             organization: organization.trim() || null,
           },
         },
-      });
+      })) as unknown as ExtractAndCreateResult;
 
       setResult(extractionResult);
 

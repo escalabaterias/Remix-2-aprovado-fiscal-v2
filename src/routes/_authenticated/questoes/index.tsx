@@ -33,17 +33,17 @@ import { useCoachDrawer } from "@/components/coach/CoachContext";
 
 export const Route = createFileRoute("/_authenticated/questoes/")({
   validateSearch: (search: Record<string, unknown>) => ({
-    subject: typeof search.subject === "string" ? search.subject : undefined,
-    topic: typeof search.topic === "string" ? search.topic : undefined,
-    board: typeof search.board === "string" ? search.board : undefined,
-    year: typeof search.year === "string" ? search.year : undefined,
-    contest: typeof search.contest === "string" ? search.contest : undefined,
-    organization: typeof search.organization === "string" ? search.organization : undefined,
-    role: typeof search.role === "string" ? search.role : undefined,
-    type: typeof search.type === "string" ? search.type : undefined,
-    difficulty: typeof search.difficulty === "string" ? search.difficulty : undefined,
-    source: typeof search.source === "string" ? search.source : undefined,
-    tags: typeof search.tags === "string" ? search.tags : undefined,
+    subject: typeof search['subject'] === "string" ? search['subject'] : undefined,
+    topic: typeof search['topic'] === "string" ? search['topic'] : undefined,
+    board: typeof search['board'] === "string" ? search['board'] : undefined,
+    year: typeof search['year'] === "string" ? search['year'] : undefined,
+    contest: typeof search['contest'] === "string" ? search['contest'] : undefined,
+    organization: typeof search['organization'] === "string" ? search['organization'] : undefined,
+    role: typeof search['role'] === "string" ? search['role'] : undefined,
+    type: typeof search['type'] === "string" ? search['type'] : undefined,
+    difficulty: typeof search['difficulty'] === "string" ? search['difficulty'] : undefined,
+    source: typeof search['source'] === "string" ? search['source'] : undefined,
+    tags: typeof search['tags'] === "string" ? search['tags'] : undefined,
   }),
   head: () => ({
     meta: [
@@ -72,14 +72,14 @@ function parseAlternatives(raw: unknown[]): Alternative[] {
       if (typeof item === "object" && item !== null) {
         const obj = item as Record<string, unknown>;
         let lbl = String.fromCharCode(65 + idx);
-        if (typeof obj.label === "string" && obj.label.trim() !== "") {
-          lbl = obj.label.trim();
-        } else if (typeof obj.letter === "string" && obj.letter.trim() !== "") {
-          lbl = obj.letter.trim();
+        if (typeof obj['label'] === "string" && obj['label'].trim() !== "") {
+          lbl = obj['label'].trim();
+        } else if (typeof obj['letter'] === "string" && obj['letter'].trim() !== "") {
+          lbl = obj['letter'].trim();
         }
         return {
           label: lbl,
-          text: typeof obj.text === "string" ? obj.text : String(obj.text ?? ""),
+          text: typeof obj['text'] === "string" ? obj['text'] : String(obj['text'] ?? ""),
         };
       }
       if (typeof item === "string") {
@@ -807,18 +807,20 @@ function QuestionView({
   const isLocked = hasResult || alreadyAnswered;
 
   const handleCoachPegadinha = () => {
+    const coachData: any = {
+      questionId: question.questionId,
+      statement: question.statement,
+    };
+    if (question.examBoard) coachData.examBoard = question.examBoard;
+    if (question.subjectId) coachData.subjectName = question.subjectId;
+
     openCoach(
       `Coach, por favor analise as pegadinhas e distratores da banca ${
         question.examBoard || "FGV"
       } nesta questão de ${question.subjectId || "Carreira Fiscal"}:\n\nEnunciado: ${
         question.statement
       }`,
-      {
-        questionId: question.questionId,
-        statement: question.statement,
-        examBoard: question.examBoard || undefined,
-        subjectName: question.subjectId || undefined,
-      },
+      coachData,
     );
   };
 
@@ -951,12 +953,12 @@ function QuestionView({
         <ProfessorFiscalSocraticTutor
           topicId={question.topicId || "topico_geral"}
           topicName={question.subjectId || "Direito Tributário"}
-          subjectName={question.subjectId || undefined}
+          {...(question.subjectId ? { subjectName: question.subjectId } : {})}
           questionContext={{
-            questionId: question.questionId,
+            ...(question.questionId ? { questionId: question.questionId } : {}),
             statement: question.statement,
             options: alternatives.map((a) => `${a.label}) ${a.text}`),
-            correctAnswer: question.correctAnswer || undefined,
+            ...(question.correctAnswer ? { correctAnswer: question.correctAnswer } : {}),
           }}
         />
 
