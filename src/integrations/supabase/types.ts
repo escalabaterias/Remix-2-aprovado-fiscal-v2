@@ -901,6 +901,7 @@ export type Database = {
           notes: string | null;
           question_id: string;
           session_id: string | null;
+          set_item_id: string | null;
           time_spent_seconds: number | null;
           user_id: string;
         };
@@ -917,6 +918,7 @@ export type Database = {
           notes?: string | null;
           question_id: string;
           session_id?: string | null;
+          set_item_id?: string | null;
           time_spent_seconds?: number | null;
           user_id: string;
         };
@@ -933,6 +935,7 @@ export type Database = {
           notes?: string | null;
           question_id?: string;
           session_id?: string | null;
+          set_item_id?: string | null;
           time_spent_seconds?: number | null;
           user_id?: string;
         };
@@ -956,6 +959,13 @@ export type Database = {
             columns: ["session_id"];
             isOneToOne: false;
             referencedRelation: "study_sessions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "question_attempts_set_item_id_fkey";
+            columns: ["set_item_id"];
+            isOneToOne: false;
+            referencedRelation: "question_set_items";
             referencedColumns: ["id"];
           },
         ];
@@ -1043,6 +1053,7 @@ export type Database = {
           metadata: Json;
           name: string;
           score: number | null;
+          started_at: string | null;
           subject_id: string | null;
           tags: string[];
           time_limit_minutes: number | null;
@@ -1065,6 +1076,7 @@ export type Database = {
           metadata?: Json;
           name: string;
           score?: number | null;
+          started_at?: string | null;
           subject_id?: string | null;
           tags?: string[];
           time_limit_minutes?: number | null;
@@ -1087,6 +1099,7 @@ export type Database = {
           metadata?: Json;
           name?: string;
           score?: number | null;
+          started_at?: string | null;
           subject_id?: string | null;
           tags?: string[];
           time_limit_minutes?: number | null;

@@ -158,6 +158,8 @@ export type QuestionSet = {
   timeLimitMinutes: number | null;
   /** Se é cronometrado */
   isTimed: boolean;
+  /** Instante real de início do simulado */
+  startedAt?: string | null;
   /** Se foi concluído */
   isCompleted: boolean;
   /** Data de conclusão */

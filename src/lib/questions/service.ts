@@ -94,6 +94,7 @@ type QuestionSetRow = {
   topic_id: string | null;
   time_limit_minutes: number | null;
   is_timed: boolean;
+  started_at?: string | null;
   is_completed: boolean;
   completed_at: string | null;
   total_questions: number;
@@ -187,6 +188,7 @@ export function toQuestionSet(row: QuestionSetRow): QuestionSet {
     topicId: row.topic_id,
     timeLimitMinutes: row.time_limit_minutes,
     isTimed: row.is_timed,
+    startedAt: row.started_at ?? null,
     isCompleted: row.is_completed,
     completedAt: row.completed_at,
     totalQuestions: safeNum(row.total_questions, 0),
