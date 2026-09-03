@@ -170,8 +170,8 @@ export function validateLegalGrounding(
     citationMap,
     unfoundCitations,
     hasHallucination,
-    hallucinationReason,
-    sanitizedText,
+    ...(hallucinationReason ? { hallucinationReason } : {}),
+    ...(sanitizedText ? { sanitizedText } : {}),
   };
 }
 

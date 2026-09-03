@@ -115,11 +115,11 @@ describe("convertProviderResult", () => {
       const result = convertProviderResult(makeProviderResult(), makeRequest());
       const q = result.questions[0]!;
 
-      expect(q.contestMetadata.examBoard).toBe("CESPE");
-      expect(q.contestMetadata.contestName).toBe("TRF 1ª Região");
-      expect(q.contestMetadata.year).toBe(2024);
-      expect(q.contestMetadata.position).toBe("Analista Judiciário");
-      expect(q.contestMetadata.organization).toBe("TRF1");
+      expect(q.contestMetadata?.examBoard).toBe("CESPE");
+      expect(q.contestMetadata?.contestName).toBe("TRF 1ª Região");
+      expect(q.contestMetadata?.year).toBe(2024);
+      expect(q.contestMetadata?.position).toBe("Analista Judiciário");
+      expect(q.contestMetadata?.organization).toBe("TRF1");
     });
 
     it("converte alternativas com isCorrect preservado", () => {

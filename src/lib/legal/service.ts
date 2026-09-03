@@ -36,36 +36,42 @@ export function prepareLegalRetrievalContext(
 ): LegalRetrievalContext {
   const meta = socraticContext.contextMetadata || {};
 
-  const questionContext = socraticContext.currentQuestion
+  const q = socraticContext.currentQuestion;
+  const questionContext = q
     ? {
-        questionId: socraticContext.currentQuestion.id,
-        statement: socraticContext.currentQuestion.statement,
-        correctAnswer: socraticContext.currentQuestion.correctAnswer,
-        explanation: socraticContext.currentQuestion.explanation,
+        ...(q.questionId ? { questionId: q.questionId } : {}),
+        ...(q.statement ? { statement: q.statement } : {}),
+        ...(q.correctAnswer ? { correctAnswer: q.correctAnswer } : {}),
       }
     : undefined;
 
+  const rawErrorContext = meta["errorContext"] as LegalRetrievalContext["errorContext"] | undefined;
+  const rawErrorCategory = meta["errorCategory"] ? String(meta["errorCategory"]) : undefined;
+  const rawErrorPattern = meta["errorPattern"] ? String(meta["errorPattern"]) : undefined;
+  const rawIsRecurring =
+    meta["isRecurring"] !== undefined ? Boolean(meta["isRecurring"]) : undefined;
+
   const errorContext =
-    (meta.errorContext as LegalRetrievalContext["errorContext"]) ||
-    (meta.errorCategory
+    rawErrorContext ||
+    (rawErrorCategory
       ? {
-          errorCategory: String(meta.errorCategory),
-          errorPattern: meta.errorPattern ? String(meta.errorPattern) : undefined,
-          isRecurring: Boolean(meta.isRecurring),
+          errorCategory: rawErrorCategory,
+          ...(rawErrorPattern ? { errorPattern: rawErrorPattern } : {}),
+          ...(rawIsRecurring !== undefined ? { isRecurring: rawIsRecurring } : {}),
         }
       : undefined);
 
-  const reviewType = (meta.reviewType as string) || extra?.reviewType || undefined;
+  const reviewType = (meta["reviewType"] as string | undefined) || extra?.reviewType;
 
   return {
     topicId: socraticContext.topicId,
     topicName: socraticContext.topicName,
-    subjectName: socraticContext.subjectName,
+    ...(socraticContext.subjectName ? { subjectName: socraticContext.subjectName } : {}),
     targetConcept:
       socraticContext.currentQuestion?.targetConcept || socraticContext.pedagogicalGoal,
-    questionContext,
-    errorContext,
-    reviewType,
+    ...(questionContext ? { questionContext } : {}),
+    ...(errorContext ? { errorContext } : {}),
+    ...(reviewType ? { reviewType } : {}),
     ...extra,
   };
 }
@@ -116,7 +122,7 @@ export async function processLegalSocraticTurn(
   // 1. Atualizar contexto temporário com a resposta atual do aluno
   const currentContext: SocraticSessionContext = {
     ...context,
-    studentAnswerText: answer,
+    ...(answer !== undefined ? { studentAnswerText: answer } : {}),
   };
 
   // 2. Preparar o contexto de recuperação e recuperar fontes jurídicas auditadas
@@ -128,8 +134,10 @@ export async function processLegalSocraticTurn(
     relevantLegalSources: retrievedSources,
     targetLegalConcept:
       currentContext.currentQuestion?.targetConcept || currentContext.pedagogicalGoal,
-    reviewType: retrievalCtx.reviewType,
-    errorCategory: retrievalCtx.errorContext?.errorCategory,
+    ...(retrievalCtx.reviewType ? { reviewType: retrievalCtx.reviewType } : {}),
+    ...(retrievalCtx.errorContext?.errorCategory
+      ? { errorCategory: retrievalCtx.errorContext.errorCategory }
+      : {}),
     legalRetrievalMethod: retrievedSources.length > 0 ? "topic_match" : "fallback",
   };
 
@@ -151,7 +159,10 @@ export async function processLegalSocraticTurn(
   // 6. Montar a requisição com assinatura do contexto jurídico no payload de cache
   const baseCachePayload = calculateSocraticCachePayload(enrichedContext, answer);
   const legalCacheKey = calculateLegalSourcesCacheKey(retrievedSources);
-  const cacheRefPayload = `${baseCachePayload}::legal[${legalCacheKey}]`;
+  const cacheRefPayload: Record<string, unknown> = {
+    ...baseCachePayload,
+    legalCacheKey,
+  };
 
   const userPrompt = `
 CONTEXTO DA SESSÃO SOCRÁTICA COM GROUNDING JURÍDICO:
@@ -205,17 +216,20 @@ Avalie a resposta do aluno e produza o JSON estrito. Se utilizar fundamentos jur
       status: "active",
       pedagogicalMode: currentContext.pedagogicalMode,
       action: deterministicPrediction.nextAction,
-      question:
-        deterministicPrediction.nextAction === "ASK" ||
-        deterministicPrediction.nextAction === "HINT"
-          ? `Vamos analisar os aspectos legais do tópico ${currentContext.topicName}. Qual princípio ou dispositivo tributário se aplica?`
-          : undefined,
-      explanation:
-        deterministicPrediction.nextAction === "EXPLAIN"
-          ? retrievedSources.length > 0
-            ? `De acordo com a norma [${retrievedSources[0]!.documentIdentifier} - ${retrievedSources[0]!.article || ""}]: ${retrievedSources[0]!.text}`
-            : `O tópico ${currentContext.topicName} possui regras específicas do edital. Vamos revisar seus princípios.`
-          : undefined,
+      ...(deterministicPrediction.nextAction === "ASK" ||
+      deterministicPrediction.nextAction === "HINT"
+        ? {
+            question: `Vamos analisar os aspectos legais do tópico ${currentContext.topicName}. Qual princípio ou dispositivo tributário se aplica?`,
+          }
+        : {}),
+      ...(deterministicPrediction.nextAction === "EXPLAIN"
+        ? {
+            explanation:
+              retrievedSources.length > 0
+                ? `De acordo com a norma [${retrievedSources[0]!.documentIdentifier} - ${retrievedSources[0]!.article || ""}]: ${retrievedSources[0]!.text}`
+                : `O tópico ${currentContext.topicName} possui regras específicas do edital. Vamos revisar seus princípios.`,
+          }
+        : {}),
       hintLevel: deterministicPrediction.nextHintLevel,
       confidenceScore: 0.8,
       shouldContinue: true,
@@ -282,8 +296,8 @@ Avalie a resposta do aluno e produza o JSON estrito. Se utilizar fundamentos jur
     updatedContext: finalEnrichedContext,
     cached: aiResult.cached || false,
     status: "processado",
-    model: aiResult.model,
-    durationMs: aiResult.durationMs,
+    ...(aiResult.model ? { model: aiResult.model } : {}),
+    ...(aiResult.durationMs !== undefined ? { durationMs: aiResult.durationMs } : {}),
     legalEvidenceMetadata: evidenceMetadata,
   };
 }

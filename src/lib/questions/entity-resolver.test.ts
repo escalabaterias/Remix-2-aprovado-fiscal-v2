@@ -380,10 +380,12 @@ describe("resolveContest", () => {
 describe("mapExtractedToCreateInput", () => {
   it("persiste cargo (position) e órgão (organization) em metadata", () => {
     const eq: ExtractedQuestion = {
+      extractionId: "ext-1",
+      payloadId: "payload-1",
       statement: "Enunciado da questão sobre ICMS",
       alternatives: [
-        { letter: "A", text: "Opção A" },
-        { letter: "B", text: "Opção B" },
+        { letter: "A", text: "Opção A", isCorrect: true },
+        { letter: "B", text: "Opção B", isCorrect: false },
       ],
       correctAnswer: "A",
       isTrueFalse: false,
@@ -397,6 +399,8 @@ describe("mapExtractedToCreateInput", () => {
         organization: "Secretaria da Fazenda de São Paulo",
       },
       difficulty: 4,
+      tags: [],
+      extractionConfidence: 1,
       explanation: "Explicação sobre a hipótese de incidência do ICMS.",
     };
 
@@ -409,17 +413,31 @@ describe("mapExtractedToCreateInput", () => {
     expect(input.contestName).toBe("SEFAZ-SP");
     expect(input.year).toBe(2024);
     expect(input.origin).toBe("ocr");
-    expect(input.metadata?.position).toBe("Auditor Fiscal da Receita Estadual");
-    expect(input.metadata?.organization).toBe("Secretaria da Fazenda de São Paulo");
-    expect(input.metadata?.content_hash).toBeDefined();
+    expect(input.metadata?.["position"]).toBe("Auditor Fiscal da Receita Estadual");
+    expect(input.metadata?.["organization"]).toBe("Secretaria da Fazenda de São Paulo");
+    expect(input.metadata?.["content_hash"]).toBeDefined();
   });
 
   it("normaliza examBoard removendo espaços e convertendo para uppercase canônico", () => {
     const eq: ExtractedQuestion = {
+      extractionId: "ext-2",
+      payloadId: "payload-2",
       statement: "Enunciado",
       alternatives: [],
+      correctAnswer: null,
+      isTrueFalse: false,
+      explanation: null,
+      subjectLabel: null,
+      topicLabel: null,
+      difficulty: null,
+      tags: [],
+      extractionConfidence: 1,
       contestMetadata: {
         examBoard: "   cespe   ",
+        contestName: null,
+        year: null,
+        position: null,
+        organization: null,
       },
     };
     const input = mapExtractedToCreateInput(eq);
@@ -428,19 +446,27 @@ describe("mapExtractedToCreateInput", () => {
 
   it("gera metadata com content_hash mesmo se position e organization estiverem ausentes", () => {
     const eq: ExtractedQuestion = {
+      extractionId: "ext-3",
+      payloadId: "payload-3",
       statement: "Enunciado simples",
       alternatives: [],
       correctAnswer: "C",
       isTrueFalse: true,
+      explanation: null,
+      subjectLabel: null,
+      topicLabel: null,
+      difficulty: null,
+      tags: [],
+      extractionConfidence: 1,
     };
 
     const input = mapExtractedToCreateInput(eq, null, null);
 
     expect(input.subjectId).toBeNull();
     expect(input.topicId).toBeNull();
-    expect(input.metadata?.content_hash).toBeDefined();
-    expect(input.metadata?.position).toBeUndefined();
-    expect(input.metadata?.organization).toBeUndefined();
+    expect(input.metadata?.["content_hash"]).toBeDefined();
+    expect(input.metadata?.["position"]).toBeUndefined();
+    expect(input.metadata?.["organization"]).toBeUndefined();
   });
 });
 
@@ -450,7 +476,7 @@ describe("mapExtractedToCreateInput", () => {
 
 describe("extractAndCreateQuestions com Entity Resolver", () => {
   beforeEach(() => {
-    process.env.GEMINI_API_KEY = "test-api-key";
+    process.env["GEMINI_API_KEY"] = "test-api-key";
   });
 
   it("Caso 5: fluxo completo com resolução de matéria, tópico e persistência", async () => {
@@ -473,8 +499,8 @@ describe("extractAndCreateQuestions com Entity Resolver", () => {
                       {
                         statement: "São direitos sociais a educação, a saúde...",
                         alternatives: [
-                          { letter: "A", text: "Correta" },
-                          { letter: "B", text: "Incorreta" },
+                          { letter: "A", text: "Correta", isCorrect: true },
+                          { letter: "B", text: "Incorreta", isCorrect: false },
                         ],
                         correctAnswer: "A",
                         isTrueFalse: false,
@@ -500,13 +526,8 @@ describe("extractAndCreateQuestions com Entity Resolver", () => {
 
     const request: ImageExtractionRequest = {
       payloadId: "req-1",
-      image: {
-        data: "base64data",
-        mimeType: "image/png",
-        byteSize: 1024,
-        width: 800,
-        height: 600,
-      },
+      contentType: "image_base64",
+      imageData: "base64data",
       contestMetadata: {
         examBoard: "CEBRASPE",
         contestName: "Auditor Fiscal",
@@ -514,8 +535,8 @@ describe("extractAndCreateQuestions com Entity Resolver", () => {
         position: "Auditor Fiscal",
         organization: "Receita Federal",
       },
-      source: "imagem_print",
-      options: {},
+      sourceMetadata: null,
+      receivedAt: "2026-09-02T12:00:00.000Z",
     };
 
     const result = await extractAndCreateQuestions(
@@ -531,12 +552,15 @@ describe("extractAndCreateQuestions com Entity Resolver", () => {
     // Verifica que a questão inserida recebeu subject_id e topic_id resolvidos
     expect(client.insertedQuestions).toHaveLength(1);
     const createdPayload = client.insertedQuestions[0];
-    expect(createdPayload.subject_id).toBe("sub-const-id"); // Encontrado existente
-    expect(createdPayload.topic_id).toBe("top-created-id"); // Criado novo tópico
-    expect(createdPayload.origin).toBe("ocr");
-    expect((createdPayload.metadata as any)?.position).toBe("Auditor Fiscal");
-    expect((createdPayload.metadata as any)?.organization).toBe("Receita Federal");
-    expect((createdPayload.metadata as any)?.content_hash).toBeDefined();
+    expect(createdPayload).toBeDefined();
+    if (!createdPayload) throw new Error("Expected createdPayload");
+    expect(createdPayload["subject_id"]).toBe("sub-const-id"); // Encontrado existente
+    expect(createdPayload["topic_id"]).toBe("top-created-id"); // Criado novo tópico
+    expect(createdPayload["origin"]).toBe("ocr");
+    const meta = createdPayload["metadata"] as Record<string, unknown> | undefined;
+    expect(meta?.["position"]).toBe("Auditor Fiscal");
+    expect(meta?.["organization"]).toBe("Receita Federal");
+    expect(meta?.["content_hash"]).toBeDefined();
   });
 
   it("Caso 6: sem subjectLabel, mantém subjectId = null e topicId = null sem criar entidades", async () => {
@@ -555,7 +579,7 @@ describe("extractAndCreateQuestions com Entity Resolver", () => {
                     questions: [
                       {
                         statement: "Questão sem identificação de matéria.",
-                        alternatives: [{ letter: "A", text: "Opção A" }],
+                        alternatives: [{ letter: "A", text: "Opção A", isCorrect: true }],
                         correctAnswer: "A",
                       },
                     ],
@@ -570,15 +594,17 @@ describe("extractAndCreateQuestions com Entity Resolver", () => {
 
     const request: ImageExtractionRequest = {
       payloadId: "req-2",
-      image: {
-        data: "base64data",
-        mimeType: "image/png",
-        byteSize: 1024,
-        width: 800,
-        height: 600,
+      contentType: "image_base64",
+      imageData: "base64data",
+      contestMetadata: {
+        examBoard: null,
+        contestName: null,
+        year: null,
+        position: null,
+        organization: null,
       },
-      source: "imagem_print",
-      options: {},
+      sourceMetadata: null,
+      receivedAt: "2026-09-02T12:00:00.000Z",
     };
 
     const result = await extractAndCreateQuestions(
@@ -590,7 +616,10 @@ describe("extractAndCreateQuestions com Entity Resolver", () => {
     expect(result.created).toHaveLength(1);
     expect(client.insertedSubjects).toHaveLength(0);
     expect(client.insertedTopics).toHaveLength(0);
-    expect(client.insertedQuestions[0].subject_id).toBeNull();
-    expect(client.insertedQuestions[0].topic_id).toBeNull();
+    const firstInserted = client.insertedQuestions[0];
+    expect(firstInserted).toBeDefined();
+    if (!firstInserted) throw new Error("Expected inserted question");
+    expect(firstInserted["subject_id"]).toBeNull();
+    expect(firstInserted["topic_id"]).toBeNull();
   });
 });

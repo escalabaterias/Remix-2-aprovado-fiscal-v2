@@ -23,9 +23,9 @@ const filterMock = vi.fn(() => ({ maybeSingle: maybeSingleMock }));
 const selectQueryMock = vi.fn(() => ({ filter: filterMock, maybeSingle: maybeSingleMock }));
 
 const singleMock = vi.fn();
-const selectMock = vi.fn(() => ({ single: singleMock }));
-const insertMock = vi.fn(() => ({ select: selectMock }));
-const fromMock = vi.fn(() => ({
+const selectMock = vi.fn((_columns?: string) => ({ single: singleMock }));
+const insertMock = vi.fn((_payload?: unknown) => ({ select: selectMock }));
+const fromMock = vi.fn((_table?: string) => ({
   insert: insertMock,
   select: selectQueryMock,
 }));
@@ -34,7 +34,7 @@ const getUserMock = vi.fn();
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
     auth: { getUser: () => getUserMock() },
-    from: (...args: unknown[]) => fromMock(...args),
+    from: (table: string) => fromMock(table),
   },
 }));
 
@@ -245,7 +245,8 @@ describe("createQuestion", () => {
       expect(fromMock).toHaveBeenCalledWith("questions");
       expect(insertMock).toHaveBeenCalledTimes(1);
 
-      const insertedPayload = insertMock.mock.calls[0]![0];
+      const insertedPayload = insertMock.mock.calls[0]?.[0] as Record<string, unknown> | undefined;
+      expect(insertedPayload).toBeDefined();
       expect(insertedPayload).toEqual({
         user_id: FAKE_USER_ID,
         statement: "Qual é a capital do Brasil?",
@@ -298,7 +299,8 @@ describe("createQuestion", () => {
 
       await createQuestion({ statement: "Só o enunciado" });
 
-      const insertedPayload = insertMock.mock.calls[0]![0];
+      const insertedPayload = insertMock.mock.calls[0]?.[0] as Record<string, unknown> | undefined;
+      expect(insertedPayload).toBeDefined();
       expect(insertedPayload).toEqual({
         user_id: FAKE_USER_ID,
         statement: "Só o enunciado",
@@ -334,7 +336,8 @@ describe("createQuestion", () => {
       await createQuestion(makeFullInput());
 
       expect(selectMock).toHaveBeenCalledTimes(1);
-      const selectArg = selectMock.mock.calls[0]![0] as string;
+      const selectArg = selectMock.mock.calls[0]?.[0] as string | undefined;
+      expect(selectArg).toBeDefined();
       // Verifica que seleciona os campos principais
       expect(selectArg).toContain("id");
       expect(selectArg).toContain("statement");
@@ -358,8 +361,9 @@ describe("createQuestion", () => {
 
       await createQuestion({ statement: "Teste user_id" });
 
-      const insertedPayload = insertMock.mock.calls[0]![0];
-      expect(insertedPayload.user_id).toBe(FAKE_USER_ID);
+      const insertedPayload = insertMock.mock.calls[0]?.[0] as Record<string, unknown> | undefined;
+      expect(insertedPayload).toBeDefined();
+      expect(insertedPayload?.["user_id"]).toBe(FAKE_USER_ID);
     });
 
     it("usa user_id diferente para usuários diferentes", async () => {
@@ -375,8 +379,9 @@ describe("createQuestion", () => {
 
       await createQuestion({ statement: "Teste outro user" });
 
-      const insertedPayload = insertMock.mock.calls[0]![0];
-      expect(insertedPayload.user_id).toBe(otherUserId);
+      const insertedPayload = insertMock.mock.calls[0]?.[0] as Record<string, unknown> | undefined;
+      expect(insertedPayload).toBeDefined();
+      expect(insertedPayload?.["user_id"]).toBe(otherUserId);
     });
 
     it("não aceita user_id arbitrário no input (campo não existe)", () => {

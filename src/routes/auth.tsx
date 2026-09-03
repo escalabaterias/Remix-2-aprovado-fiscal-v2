@@ -83,7 +83,7 @@ function AuthPage() {
         options: {
           redirectTo: `${window.location.origin}/auth`,
           queryParams: {
-            apikey: import.meta.env['VITE_SUPABASE_PUBLISHABLE_KEY'] || "",
+            apikey: import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"] || "",
           },
         },
       });

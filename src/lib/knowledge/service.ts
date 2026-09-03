@@ -287,18 +287,20 @@ export async function recordReviewKnowledge(
       };
 
       if (input.lastReviewResult !== undefined && input.lastReviewResult !== null) {
-        updateData.last_review_result = input.lastReviewResult;
+        updateData["last_review_result"] = input.lastReviewResult;
       }
       if (input.nextReviewAt !== undefined && input.nextReviewAt !== null) {
-        updateData.next_review_at = input.nextReviewAt;
+        updateData["next_review_at"] = input.nextReviewAt;
       }
       if (input.reviewCount !== undefined && input.reviewCount !== null) {
-        updateData.review_count = input.reviewCount;
+        updateData["review_count"] = input.reviewCount;
       }
 
       const builder = supabase.from("user_topic_knowledge");
       if (typeof builder?.update === "function") {
-        const { error: updateError } = await builder.update(updateData).eq("id", existing.id);
+        const { error: updateError } = await builder
+          .update(updateData as any)
+          .eq("id", existing.id);
 
         if (updateError) throw updateError;
       }
@@ -318,13 +320,13 @@ export async function recordReviewKnowledge(
     };
 
     if (input.lastReviewResult !== undefined && input.lastReviewResult !== null) {
-      insertData.last_review_result = input.lastReviewResult;
+      insertData["last_review_result"] = input.lastReviewResult;
     }
     if (input.nextReviewAt !== undefined && input.nextReviewAt !== null) {
-      insertData.next_review_at = input.nextReviewAt;
+      insertData["next_review_at"] = input.nextReviewAt;
     }
     if (input.reviewCount !== undefined && input.reviewCount !== null) {
-      insertData.review_count = input.reviewCount;
+      insertData["review_count"] = input.reviewCount;
     }
 
     const builder = supabase.from("user_topic_knowledge");

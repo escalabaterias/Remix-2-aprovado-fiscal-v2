@@ -160,18 +160,16 @@ export function queryLegalSources(
   query: LegalSearchQuery,
   availableSources?: LegalSource[],
 ): LegalSource[] {
-  return retrieveLegalSources(
-    {
-      topicId: query.topicId,
-      topicName: query.topicName,
-      subjectName: query.subjectName,
-      targetConcept: query.concept,
-      articleSearch: query.article,
-      keywords: query.keywords,
-      validityStatusFilter: query.validityStatus,
-      jurisdictionFilter: query.jurisdiction,
-      limit: query.limit,
-    },
-    availableSources,
-  );
+  const ctx: LegalRetrievalContext = {
+    ...(query.topicId ? { topicId: query.topicId } : {}),
+    ...(query.topicName ? { topicName: query.topicName } : {}),
+    ...(query.subjectName ? { subjectName: query.subjectName } : {}),
+    ...(query.concept ? { targetConcept: query.concept } : {}),
+    ...(query.article ? { articleSearch: query.article } : {}),
+    ...(query.keywords ? { keywords: query.keywords } : {}),
+    ...(query.validityStatus ? { validityStatusFilter: query.validityStatus } : {}),
+    ...(query.jurisdiction ? { jurisdictionFilter: query.jurisdiction } : {}),
+    ...(query.limit !== undefined ? { limit: query.limit } : {}),
+  };
+  return retrieveLegalSources(ctx, availableSources);
 }

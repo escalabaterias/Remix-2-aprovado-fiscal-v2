@@ -32,6 +32,17 @@ import {
 import { computeQuestionContentHash, normalizeExamBoard } from "./normalizer";
 import { resolveSubject, resolveTopic } from "./entity-resolver";
 
+const DEFAULT_CONTEST_METADATA: ContestMetadata = {
+  examBoard: "CEBRASPE",
+  contestName: "Receita Federal 2023",
+  year: 2023,
+  organization: "Receita Federal",
+  position: "Auditor Fiscal",
+  sourceTitle: "Prova de Direito Tributário",
+  sourceUrl: "https://exemplo.com/prova.pdf",
+  externalId: "EXT-123456",
+};
+
 function makeExtractedQuestion(overrides: Partial<ExtractedQuestion> = {}): ExtractedQuestion {
   return {
     extractionId: "ext-100",
@@ -44,16 +55,7 @@ function makeExtractedQuestion(overrides: Partial<ExtractedQuestion> = {}): Extr
     correctAnswer: "A",
     isTrueFalse: true,
     explanation: "Conforme art. 3º do CTN.",
-    contestMetadata: {
-      examBoard: "CEBRASPE",
-      contestName: "Receita Federal 2023",
-      year: 2023,
-      organization: "Receita Federal",
-      position: "Auditor Fiscal",
-      sourceTitle: "Prova de Direito Tributário",
-      sourceUrl: "https://exemplo.com/prova.pdf",
-      externalId: "EXT-123456",
-    },
+    contestMetadata: { ...DEFAULT_CONTEST_METADATA },
     subjectLabel: "Direito Tributário",
     topicLabel: "Conceito de Tributo",
     difficulty: 3,
@@ -74,7 +76,7 @@ describe("Etapa 6.10 — Consolidação e Qualidade da Questão", () => {
 
   it("2. aceita ausência de banca como INCOMPLETE (sem impedir ingestão)", () => {
     const q = makeExtractedQuestion({
-      contestMetadata: { ...makeExtractedQuestion().contestMetadata, examBoard: null },
+      contestMetadata: { ...DEFAULT_CONTEST_METADATA, examBoard: null },
     });
     expect(classifyQuestionQuality(q)).toBe("INCOMPLETE");
     const v = validateExtractedQuestion(q);
@@ -84,7 +86,7 @@ describe("Etapa 6.10 — Consolidação e Qualidade da Questão", () => {
 
   it("3. aceita ausência de ano como INCOMPLETE (sem impedir ingestão)", () => {
     const q = makeExtractedQuestion({
-      contestMetadata: { ...makeExtractedQuestion().contestMetadata, year: null },
+      contestMetadata: { ...DEFAULT_CONTEST_METADATA, year: null },
     });
     expect(classifyQuestionQuality(q)).toBe("INCOMPLETE");
     const v = validateExtractedQuestion(q);
@@ -94,7 +96,7 @@ describe("Etapa 6.10 — Consolidação e Qualidade da Questão", () => {
 
   it("4. aceita ausência de concurso como INCOMPLETE (sem impedir ingestão)", () => {
     const q = makeExtractedQuestion({
-      contestMetadata: { ...makeExtractedQuestion().contestMetadata, contestName: null },
+      contestMetadata: { ...DEFAULT_CONTEST_METADATA, contestName: null },
     });
     const v = validateExtractedQuestion(q);
     expect(v.isValid).toBe(true);
@@ -105,7 +107,7 @@ describe("Etapa 6.10 — Consolidação e Qualidade da Questão", () => {
   it("5. aceita ausência de fonte como INCOMPLETE (sem impedir ingestão)", () => {
     const q = makeExtractedQuestion({
       contestMetadata: {
-        ...makeExtractedQuestion().contestMetadata,
+        ...DEFAULT_CONTEST_METADATA,
         sourceTitle: null,
         sourceUrl: null,
       },

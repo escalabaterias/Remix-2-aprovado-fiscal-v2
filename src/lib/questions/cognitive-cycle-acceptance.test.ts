@@ -93,20 +93,20 @@ describe("SUÍTE DE ACEITAÇÃO COGNITIVA — CICLO COMPLETO DO APROVADO FISCAL"
       }
 
       // Assertions
-      expect(snapshots[0].mastery).toBeGreaterThan(0);
-      expect(snapshots[0].confidence).toBeGreaterThan(0);
-      expect(snapshots[0].stateName).toBe("SEM_EVIDENCIA"); // 1 questão < MIN_QUESTIONS_FOR_EVIDENCE (2)
+      expect(snapshots[0]?.mastery).toBeGreaterThan(0);
+      expect(snapshots[0]?.confidence).toBeGreaterThan(0);
+      expect(snapshots[0]?.stateName).toBe("SEM_EVIDENCIA"); // 1 questão < MIN_QUESTIONS_FOR_EVIDENCE (2)
 
-      expect(snapshots[1].total).toBe(2);
-      expect(snapshots[1].stateName).toBe("APRENDIZAGEM"); // 2 questões: mastery ~0.67 < HIGH_MASTERY_THRESHOLD (0.70)
+      expect(snapshots[1]?.total).toBe(2);
+      expect(snapshots[1]?.stateName).toBe("APRENDIZAGEM"); // 2 questões: mastery ~0.67 < HIGH_MASTERY_THRESHOLD (0.70)
 
-      expect(snapshots[2].total).toBe(3);
-      expect(snapshots[2].stateName).toBe("CONSOLIDANDO"); // 3 questões: mastery >= 0.70, confidence < 0.75
+      expect(snapshots[2]?.total).toBe(3);
+      expect(snapshots[2]?.stateName).toBe("CONSOLIDANDO"); // 3 questões: mastery >= 0.70, confidence < 0.75
 
-      expect(snapshots[4].total).toBe(5);
-      expect(snapshots[4].mastery).toBeGreaterThan(0.7);
+      expect(snapshots[4]?.total).toBe(5);
+      expect(snapshots[4]?.mastery).toBeGreaterThan(0.7);
       // Com 5 questões, confidence é ~0.39 < 0.75 (HIGH_CONFIDENCE_THRESHOLD), logo o estado permanece CONSOLIDANDO
-      expect(snapshots[4].stateName).toBe("CONSOLIDANDO");
+      expect(snapshots[4]?.stateName).toBe("CONSOLIDANDO");
     });
   });
 
@@ -133,6 +133,8 @@ describe("SUÍTE DE ACEITAÇÃO COGNITIVA — CICLO COMPLETO DO APROVADO FISCAL"
           recurringErrors: 2,
           lastErrorDate: now,
           daysSinceLastError: 0,
+          categoryFrequency: new Map([["interpretacao", 3]]),
+          topCategory: "interpretacao",
         },
         0,
         now,
@@ -277,6 +279,8 @@ describe("SUÍTE DE ACEITAÇÃO COGNITIVA — CICLO COMPLETO DO APROVADO FISCAL"
           recurringErrors: 0,
           lastErrorDate: now,
           daysSinceLastError: 0,
+          categoryFrequency: new Map([["atencao", 1]]),
+          topCategory: "atencao",
         },
         0,
         now,

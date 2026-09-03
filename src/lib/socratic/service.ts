@@ -97,7 +97,10 @@ Avalie a resposta do aluno (se presente), identifique a qualidade do raciocínio
       shouldContinue: deterministicPrediction.shouldContinue,
       generatedAt: new Date().toISOString(),
     };
-    if (deterministicPrediction.nextAction === "ASK" || deterministicPrediction.nextAction === "HINT") {
+    if (
+      deterministicPrediction.nextAction === "ASK" ||
+      deterministicPrediction.nextAction === "HINT"
+    ) {
       fallbackResponse.question = `Vamos analisar o conceito de ${currentContext.topicName}. O que você recorda sobre as regras principais deste tópico?`;
     }
     if (deterministicPrediction.nextAction === "EXPLAIN") {

@@ -173,11 +173,11 @@ export async function resolveContest(
     if (normalizeName(contest.name) === normalizedInput) {
       // Se houver metadados novos e o concurso existente tiver campos vazios, atualiza
       const updates: Record<string, unknown> = {};
-      if (organization && !contest.organization) updates.organization = organization;
-      if (roleTitle && !contest.role_title) updates.role_title = roleTitle;
-      if (examBoard && !contest.exam_board) updates.exam_board = examBoard;
-      if (examDate && !contest.exam_date) updates.exam_date = examDate;
-      if (description && !contest.description) updates.description = description;
+      if (organization && !contest["organization"]) updates["organization"] = organization;
+      if (roleTitle && !contest["role_title"]) updates["role_title"] = roleTitle;
+      if (examBoard && !contest["exam_board"]) updates["exam_board"] = examBoard;
+      if (examDate && !contest["exam_date"]) updates["exam_date"] = examDate;
+      if (description && !contest["description"]) updates["description"] = description;
 
       if (Object.keys(updates).length > 0) {
         await client.from("contests").update(updates).eq("id", contest.id);

@@ -118,12 +118,18 @@ export function startStudySocraticSession(
 
   const questionCtx: SocraticQuestionContext | undefined = input.questionContext
     ? {
-        ...(input.questionContext.questionId ? { questionId: input.questionContext.questionId } : {}),
+        ...(input.questionContext.questionId
+          ? { questionId: input.questionContext.questionId }
+          : {}),
         statement: input.questionContext.statement,
         ...(input.questionContext.options ? { options: input.questionContext.options } : {}),
-        ...(input.questionContext.correctAnswer ? { correctAnswer: input.questionContext.correctAnswer } : {}),
+        ...(input.questionContext.correctAnswer
+          ? { correctAnswer: input.questionContext.correctAnswer }
+          : {}),
         targetConcept: input.questionContext.targetConcept || input.topicName,
-        ...(input.questionContext.expectedReasoning ? { expectedReasoning: input.questionContext.expectedReasoning } : {}),
+        ...(input.questionContext.expectedReasoning
+          ? { expectedReasoning: input.questionContext.expectedReasoning }
+          : {}),
       }
     : undefined;
 
@@ -192,7 +198,8 @@ export async function executeStudySocraticTurn(
   };
   if (lastTurn) emitParams.lastTurn = lastTurn;
   if (socraticResult.response) emitParams.socraticResponse = socraticResult.response;
-  if (socraticResult.legalEvidenceMetadata) emitParams.legalEvidenceMetadata = socraticResult.legalEvidenceMetadata;
+  if (socraticResult.legalEvidenceMetadata)
+    emitParams.legalEvidenceMetadata = socraticResult.legalEvidenceMetadata;
 
   const emitResult = await emitSocraticCognitiveEvidence(emitParams);
 

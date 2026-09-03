@@ -46,18 +46,18 @@ describe("Persistência Cognitiva do Professor Fiscal — Fase 7.3.4", () => {
 
       const sanitized = sanitizeSocraticMetadata(rawMeta);
 
-      expect(sanitized['topicId']).toBe("top-101");
-      expect(sanitized['apiKey']).toBeUndefined();
-      expect(sanitized['bearerToken']).toBeUndefined();
-      expect(sanitized['password']).toBeUndefined();
-      expect(sanitized['privatePrompt']).toBeUndefined();
+      expect(sanitized["topicId"]).toBe("top-101");
+      expect(sanitized["apiKey"]).toBeUndefined();
+      expect(sanitized["bearerToken"]).toBeUndefined();
+      expect(sanitized["password"]).toBeUndefined();
+      expect(sanitized["privatePrompt"]).toBeUndefined();
 
-      const nestedLegal = sanitized['legalMetadata'] as any;
+      const nestedLegal = sanitized["legalMetadata"] as any;
       expect(nestedLegal.legalSourceUsed).toEqual(["CF88_ART150"]);
       expect(nestedLegal.legalGrounded).toBe(true);
       expect(nestedLegal.systemPrompt).toBeUndefined();
 
-      const nestedCreds = sanitized['userCredentials'] as any;
+      const nestedCreds = sanitized["userCredentials"] as any;
       expect(nestedCreds.role).toBe("student");
       expect(nestedCreds.jwt).toBeUndefined();
     });

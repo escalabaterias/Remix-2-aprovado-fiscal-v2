@@ -55,7 +55,7 @@ describe("Integração do Professor Fiscal ao Fluxo Real de Estudo — Fase 7.3.
       });
 
       expect(ctx.pedagogicalMode).toBe("ERROR_REMEDIATION");
-      expect(ctx.contextMetadata?.['errorContext']).toEqual({
+      expect(ctx.contextMetadata?.["errorContext"]).toEqual({
         errorEntryId: "err-999",
         errorCategory: "excecao_normativa",
         isRecurring: true,

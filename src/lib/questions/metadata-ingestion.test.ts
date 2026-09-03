@@ -39,6 +39,8 @@ describe("ETAPA 6.7 — Ingestão Inteligente e Completa de Metadados", () => {
     expect(extraction.questions.length).toBe(1);
 
     const extracted = extraction.questions[0];
+    expect(extracted).toBeDefined();
+    if (!extracted) throw new Error("Expected extracted question");
     expect(extracted.statement).toBe("Quanto ao ICMS, assinale a opção correta.");
     expect(extracted.subjectLabel).toBe("Direito Tributário");
     expect(extracted.topicLabel).toBe("ICMS");
@@ -59,17 +61,23 @@ describe("ETAPA 6.7 — Ingestão Inteligente e Completa de Metadados", () => {
   // ── 2. Precedência de metadados da UI / Request sobre o OCR da imagem ──
   it("Cenário 2: Metadados da UI prevalecem sobre os extraídos da imagem", () => {
     const request: ImageExtractionRequest = {
-      image: "data:image/png;base64,mock",
-      contestName: "SEFAZ-RJ (Informado pelo Usuário)",
-      examBoard: "FGV",
-      year: 2025,
-      organization: "SEFAZ-RJ",
-      position: "Auditor",
-      examName: "Prova Objetiva 2025",
-      questionNumber: 15,
-      sourceTitle: "Upload Manual",
-      sourceUrl: "https://usuario.org/prova.pdf",
-      externalId: "USR-001",
+      payloadId: "req-usr-001",
+      contentType: "image_base64",
+      imageData: "data:image/png;base64,mock",
+      contestMetadata: {
+        contestName: "SEFAZ-RJ (Informado pelo Usuário)",
+        examBoard: "FGV",
+        year: 2025,
+        organization: "SEFAZ-RJ",
+        position: "Auditor",
+        examName: "Prova Objetiva 2025",
+        questionNumber: 15,
+        sourceTitle: "Upload Manual",
+        sourceUrl: "https://usuario.org/prova.pdf",
+        externalId: "USR-001",
+      },
+      sourceMetadata: null,
+      receivedAt: "2026-09-02T12:00:00.000Z",
     };
 
     const imageExtracted: ExtractedQuestionData = {
@@ -86,6 +94,8 @@ describe("ETAPA 6.7 — Ingestão Inteligente e Completa de Metadados", () => {
     expect(extraction.success).toBe(true);
 
     const extracted = extraction.questions[0];
+    expect(extracted).toBeDefined();
+    if (!extracted) throw new Error("Expected extracted question");
     expect(extracted.contestMetadata?.contestName).toBe("SEFAZ-RJ (Informado pelo Usuário)");
     expect(extracted.contestMetadata?.examBoard).toBe("FGV");
     expect(extracted.contestMetadata?.year).toBe(2025);
@@ -114,6 +124,8 @@ describe("ETAPA 6.7 — Ingestão Inteligente e Completa de Metadados", () => {
     expect(extraction.success).toBe(true);
 
     const extracted = extraction.questions[0];
+    expect(extracted).toBeDefined();
+    if (!extracted) throw new Error("Expected extracted question");
     expect(extracted.statement).toBe("A CF/88 consagra o princípio da legalidade estrita?");
     expect(extracted.isTrueFalse).toBe(true);
     expect(extracted.contestMetadata).toBeUndefined();
@@ -123,7 +135,7 @@ describe("ETAPA 6.7 — Ingestão Inteligente e Completa de Metadados", () => {
     expect(input.examBoard).toBeNull();
     expect(input.contestName).toBeNull();
     expect(input.year).toBeNull();
-    expect(input.metadata?.content_hash).toBeDefined();
+    expect(input.metadata?.["content_hash"]).toBeDefined();
   });
 
   // ── 4. Deduplicação com hash determinístico ──
@@ -260,11 +272,14 @@ describe("ETAPA 6.7 — Ingestão Inteligente e Completa de Metadados", () => {
 
     expect(resolvedNewId).toBe("new-contest-id");
     expect(insertedRows.length).toBe(1);
-    expect(insertedRows[0].name).toBe("Receita Federal 2026");
-    expect(insertedRows[0].organization).toBe("RFB");
-    expect(insertedRows[0].role_title).toBe("Auditor Fiscal da RFB");
-    expect(insertedRows[0].exam_board).toBe("FGV");
-    expect(insertedRows[0].exam_date).toBe("2026-01-01");
+    const firstRow = insertedRows[0];
+    expect(firstRow).toBeDefined();
+    if (!firstRow) throw new Error("Expected inserted row");
+    expect(firstRow["name"]).toBe("Receita Federal 2026");
+    expect(firstRow["organization"]).toBe("RFB");
+    expect(firstRow["role_title"]).toBe("Auditor Fiscal da RFB");
+    expect(firstRow["exam_board"]).toBe("FGV");
+    expect(firstRow["exam_date"]).toBe("2026-01-01");
   });
 
   // ── 8. Resolução de fonte (resolveSource) ──
@@ -330,9 +345,12 @@ describe("ETAPA 6.7 — Ingestão Inteligente e Completa de Metadados", () => {
       mockClient as any,
     );
     expect(newId).toBe("new-source-id");
-    expect(insertedSources[0].title).toBe("Prova Tribunal de Contas 2025");
-    expect(insertedSources[0].url).toBe("https://tce.gov.br/prova.pdf");
-    expect(insertedSources[0].contest_id).toBe("contest-123");
+    const firstSource = insertedSources[0];
+    expect(firstSource).toBeDefined();
+    if (!firstSource) throw new Error("Expected inserted source");
+    expect(firstSource["title"]).toBe("Prova Tribunal de Contas 2025");
+    expect(firstSource["url"]).toBe("https://tce.gov.br/prova.pdf");
+    expect(firstSource["contest_id"]).toBe("contest-123");
 
     // Caso C: Retorna null se não houver dados de fonte
     const nullId = await resolveSource({}, mockClient as any);
@@ -342,6 +360,9 @@ describe("ETAPA 6.7 — Ingestão Inteligente e Completa de Metadados", () => {
   // ── 9. Mapeamento de ExtractedQuestion para CreateQuestionInput ──
   it("Cenário 9: mapExtractedToCreateInput estrutura todos os metadados para persistência", () => {
     const eq: ExtractedQuestion = {
+      extractionId: "ext-test-1",
+      payloadId: "payload-test-1",
+      extractionConfidence: 0.95,
       statement: "Acerca do Direito Tributário, julgue o item.",
       alternatives: [
         { letter: "C", text: "Certo", isCorrect: true },
@@ -384,14 +405,14 @@ describe("ETAPA 6.7 — Ingestão Inteligente e Completa de Metadados", () => {
     expect(input.examBoard).toBe("FGV"); // Normalizado
     expect(input.year).toBe(2024);
     expect(input.origin).toBe("ocr");
-    expect(input.metadata?.position).toBe("Auditor Fiscal");
-    expect(input.metadata?.organization).toBe("SEFAZ-MG");
-    expect(input.metadata?.exam_name).toBe("Prova Tipo 2");
-    expect(input.metadata?.question_number).toBe(88);
-    expect(input.metadata?.source_title).toBe("Caderno Amarelo");
-    expect(input.metadata?.source_url).toBe("https://fgv.br/prova.pdf");
-    expect(input.metadata?.external_id).toBe("Q-888");
-    expect(input.metadata?.content_hash).toMatch(/^[a-f0-9]{64}$/);
+    expect(input.metadata?.["position"]).toBe("Auditor Fiscal");
+    expect(input.metadata?.["organization"]).toBe("SEFAZ-MG");
+    expect(input.metadata?.["exam_name"]).toBe("Prova Tipo 2");
+    expect(input.metadata?.["question_number"]).toBe(88);
+    expect(input.metadata?.["source_title"]).toBe("Caderno Amarelo");
+    expect(input.metadata?.["source_url"]).toBe("https://fgv.br/prova.pdf");
+    expect(input.metadata?.["external_id"]).toBe("Q-888");
+    expect(input.metadata?.["content_hash"]).toMatch(/^[a-f0-9]{64}$/);
   });
 
   // ── 10. Fluxo ponta a ponta com resolução de entidades e deduplicação ──
@@ -516,16 +537,32 @@ describe("ETAPA 6.7 — Ingestão Inteligente e Completa de Metadados", () => {
     const mockExtractFn = vi.fn().mockResolvedValue(extractionResult);
 
     const result = await extractAndCreateQuestions(
-      { image: "data:image/png;base64,abc" },
+      {
+        payloadId: "img-test-1",
+        contentType: "image_base64",
+        imageData: "data:image/png;base64,abc",
+        contestMetadata: {
+          examBoard: null,
+          contestName: null,
+          year: null,
+          position: null,
+          organization: null,
+        },
+        sourceMetadata: null,
+        receivedAt: new Date().toISOString(),
+      },
       { extractFn: mockExtractFn },
       mockClient as any,
     );
 
     expect(result.created.length).toBe(1);
     expect(result.creationErrors.length).toBe(0);
-    expect(result.created[0].questionId).toBe("created-question-id");
-    expect(result.created[0].subjectId).toBe("sub-trib");
-    expect(result.created[0].topicId).toBe("top-icms");
-    expect(result.created[0].contestId).toBe("cont-sefaz");
+    const createdItem = result.created[0];
+    expect(createdItem).toBeDefined();
+    if (!createdItem) throw new Error("Expected created item");
+    expect(createdItem.questionId).toBe("created-question-id");
+    expect(createdItem.subjectId).toBe("sub-trib");
+    expect(createdItem.topicId).toBe("top-icms");
+    expect(createdItem.contestId).toBe("cont-sefaz");
   });
 });

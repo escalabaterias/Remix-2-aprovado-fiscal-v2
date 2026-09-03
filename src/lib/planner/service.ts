@@ -16,6 +16,7 @@ import {
   todayISO,
   weekStartOf,
   weekStartsBetween,
+  weekTotalMinutes,
   type AvailabilityWeek,
 } from "./availability";
 import {
@@ -36,6 +37,15 @@ import { getUserReviewQueue } from "@/lib/review/service";
 import { buildUnifiedSchedule, DEFAULT_REVIEW_MINUTES } from "@/lib/scheduler/engine";
 import { adaptReviewQueue, buildTopicMetaMap } from "@/lib/scheduler/service";
 import type { UnifiedSchedulerConfig, UnifiedTask } from "@/lib/scheduler/types";
+
+// [Fase 7.7] Imports para Adaptive Deficit, Time Estimator e Adaptive Delta
+import { computeDeficitSummaries, type OverdueTaskInfo } from "./deficit-engine";
+import { type HistoricalExecutionObservation } from "./time-estimator";
+import {
+  reconcilePlanDelta,
+  type CandidateTaskRecord,
+  type ScheduledTaskRecord,
+} from "./delta-engine";
 
 export type PlanSettings = {
   blockMinutes?: number;
@@ -346,12 +356,37 @@ export async function generatePlanTasks(planId: string): Promise<GenerateResult>
 
   const examDate = (plan.contests as { exam_date: string | null } | null)?.exam_date ?? null;
 
+  // ── [Fase 7.7.2] Buscar tarefas atrasadas pendentes para Adaptive Deficit ──
+  const { data: pastPendingTasks } = await supabase
+    .from("plan_tasks")
+    .select("id, subject_id, topic_id, scheduled_date, planned_minutes, actual_minutes, status")
+    .eq("plan_id", planId)
+    .eq("status", "pendente")
+    .lt("scheduled_date", from)
+    .is("actual_minutes", null);
+
+  const overdueInfos: OverdueTaskInfo[] = (pastPendingTasks ?? []).map((t) => ({
+    id: t.id,
+    subjectId: t.subject_id ?? "",
+    topicId: t.topic_id,
+    scheduledDate: t.scheduled_date ?? "",
+    plannedMinutes: t.planned_minutes ?? 0,
+    actualMinutes: t.actual_minutes,
+    status: t.status as any,
+  }));
+
+  const subjectDeficits = computeDeficitSummaries(overdueInfos, from);
+  const weeklyCapacityMinutes =
+    Array.from(weeks.values()).reduce((s, w) => s + weekTotalMinutes(w), 0) || 600;
+
   // ── [Etapa 5, Fase 4] Tentar caminho unificado ──────────────────────
-  // Pontua candidatos (mesmo motor do buildPlan, sem duplicar regra)
+  // Pontua candidatos (mesmo motor do buildPlan, com diagnóstico e déficit)
   const scored = scoreCandidates(candidates, {
     startDate: from,
     examDate,
     diagnosticData,
+    subjectDeficits,
+    weeklyCapacityMinutes,
   });
 
   // Busca fila de revisão (2 queries: user_topic_knowledge + error_entries)
@@ -468,15 +503,51 @@ async function generateUnifiedPath(args: UnifiedPathArgs): Promise<GenerateResul
     config,
   });
 
-  // Remove apenas o que ainda está pendente e não teve nenhum tempo realizado.
-  const { error: deleteError } = await supabase
+  // ── [Fase 7.7.3] Reconciliação via Adaptive Delta (Anti-Churn) ──────
+  const { data: existingPendingRows } = await supabase
     .from("plan_tasks")
-    .delete()
+    .select(
+      "id, plan_id, topic_id, subject_id, activity, scheduled_date, planned_minutes, priority_score, status",
+    )
     .eq("plan_id", planId)
     .eq("status", "pendente")
     .gte("scheduled_date", from)
     .is("actual_minutes", null);
-  if (deleteError) throw deleteError;
+
+  const existingPending: ScheduledTaskRecord[] = (existingPendingRows ?? []).map((t) => ({
+    id: t.id,
+    planId: t.plan_id,
+    topicId: t.topic_id,
+    subjectId: t.subject_id,
+    activity: t.activity ?? "",
+    scheduledDate: t.scheduled_date ?? "",
+    plannedMinutes: t.planned_minutes ?? 0,
+    priorityScore: t.priority_score ?? 0,
+    status: t.status,
+  }));
+
+  const candidateTasks: CandidateTaskRecord[] = schedule.tasks.map((t) => ({
+    topicId: t.topicId,
+    subjectId: t.subjectId,
+    activity: t.activity,
+    scheduledDate: t.scheduledDate,
+    plannedMinutes: t.plannedMinutes,
+    priorityScore: t.unifiedPriorityScore,
+    isUrgent: t.source === "review_engine" && t.unifiedPriorityScore >= 8.0,
+  }));
+
+  const deltaResult = reconcilePlanDelta({
+    existingPendingTasks: existingPending,
+    newCandidateTasks: candidateTasks,
+  });
+
+  if (deltaResult.tasksToDelete.length > 0) {
+    const { error: deleteError } = await supabase
+      .from("plan_tasks")
+      .delete()
+      .in("id", deltaResult.tasksToDelete);
+    if (deleteError) throw deleteError;
+  }
 
   if (!schedule.tasks.length) {
     return {
@@ -518,7 +589,19 @@ async function generateUnifiedPath(args: UnifiedPathArgs): Promise<GenerateResul
     if (block.week_start) blockByWeek.set(block.week_start, block.id);
   }
 
-  const taskRows = schedule.tasks.map((task) => ({
+  const insertCandidateKeys = new Set(
+    deltaResult.tasksToInsert.map(
+      (c) => `${c.topicId || c.subjectId || "gen"}_${c.activity}_${c.scheduledDate}`,
+    ),
+  );
+
+  const tasksToInsertSchedule = schedule.tasks.filter((t) =>
+    insertCandidateKeys.has(
+      `${t.topicId || t.subjectId || "gen"}_${t.activity}_${t.scheduledDate}`,
+    ),
+  );
+
+  const taskRows = tasksToInsertSchedule.map((task) => ({
     user_id: userId,
     plan_id: planId,
     block_id: blockByWeek.get(weekStartOf(task.scheduledDate)) ?? null,
@@ -546,7 +629,7 @@ async function generateUnifiedPath(args: UnifiedPathArgs): Promise<GenerateResul
   const reviewTasks = schedule.tasks.filter((t) => t.source === "review_engine").length;
 
   return {
-    tasksCreated: taskRows.length,
+    tasksCreated: deltaResult.preservedCount + taskRows.length,
     capacityMinutes: schedule.totalCapacityMinutes,
     allocatedMinutes: schedule.studyMinutes + schedule.reviewMinutes,
     skippedPast: startDate < from ? 1 : 0,
@@ -598,15 +681,50 @@ async function generateLegacyPath(args: LegacyPathArgs): Promise<GenerateResult>
     diagnosticData,
   });
 
-  // Remove apenas o que ainda está pendente e não teve nenhum tempo realizado.
-  const { error: deleteError } = await supabase
+  // ── [Fase 7.7.3] Reconciliação via Adaptive Delta (Anti-Churn) ──────
+  const { data: existingPendingRows } = await supabase
     .from("plan_tasks")
-    .delete()
+    .select(
+      "id, plan_id, topic_id, subject_id, activity, scheduled_date, planned_minutes, priority_score, status",
+    )
     .eq("plan_id", planId)
     .eq("status", "pendente")
     .gte("scheduled_date", from)
     .is("actual_minutes", null);
-  if (deleteError) throw deleteError;
+
+  const existingPending: ScheduledTaskRecord[] = (existingPendingRows ?? []).map((t) => ({
+    id: t.id,
+    planId: t.plan_id,
+    topicId: t.topic_id,
+    subjectId: t.subject_id,
+    activity: t.activity ?? "",
+    scheduledDate: t.scheduled_date ?? "",
+    plannedMinutes: t.planned_minutes ?? 0,
+    priorityScore: t.priority_score ?? 0,
+    status: t.status,
+  }));
+
+  const candidateTasks: CandidateTaskRecord[] = result.tasks.map((t) => ({
+    topicId: t.candidate.topicId,
+    subjectId: t.candidate.subjectId,
+    activity: t.activity,
+    scheduledDate: t.date,
+    plannedMinutes: t.minutes,
+    priorityScore: t.priorityScore,
+  }));
+
+  const deltaResult = reconcilePlanDelta({
+    existingPendingTasks: existingPending,
+    newCandidateTasks: candidateTasks,
+  });
+
+  if (deltaResult.tasksToDelete.length > 0) {
+    const { error: deleteError } = await supabase
+      .from("plan_tasks")
+      .delete()
+      .in("id", deltaResult.tasksToDelete);
+    if (deleteError) throw deleteError;
+  }
 
   if (!result.tasks.length) {
     return {
@@ -644,7 +762,19 @@ async function generateLegacyPath(args: LegacyPathArgs): Promise<GenerateResult>
     if (block.week_start) blockByWeek.set(block.week_start, block.id);
   }
 
-  const taskRows = result.tasks.map((task) => ({
+  const insertCandidateKeys = new Set(
+    deltaResult.tasksToInsert.map(
+      (c) => `${c.topicId || c.subjectId || "gen"}_${c.activity}_${c.scheduledDate}`,
+    ),
+  );
+
+  const tasksToInsertResult = result.tasks.filter((t) =>
+    insertCandidateKeys.has(
+      `${t.candidate.topicId || t.candidate.subjectId || "gen"}_${t.activity}_${t.date}`,
+    ),
+  );
+
+  const taskRows = tasksToInsertResult.map((task) => ({
     user_id: userId,
     plan_id: planId,
     block_id: blockByWeek.get(weekStartOf(task.date)) ?? null,
@@ -671,7 +801,7 @@ async function generateLegacyPath(args: LegacyPathArgs): Promise<GenerateResult>
   }
 
   return {
-    tasksCreated: taskRows.length,
+    tasksCreated: deltaResult.preservedCount + taskRows.length,
     capacityMinutes: result.totalCapacityMinutes,
     allocatedMinutes: result.allocatedMinutes,
     skippedPast: startDate < from ? 1 : 0,

@@ -105,7 +105,7 @@ export const serverExecuteAiTask = createServerFn({
     }
 
     // 2. Verificar API key no servidor
-    const apiKey = process.env['GEMINI_API_KEY'];
+    const apiKey = process.env["GEMINI_API_KEY"];
     if (!apiKey || apiKey.trim().length === 0) {
       return {
         output: null,

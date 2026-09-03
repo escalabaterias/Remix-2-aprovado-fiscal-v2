@@ -114,7 +114,12 @@ function makeQuestionBankItem(overrides: Partial<QuestionBankItem> = {}): Questi
     questionId: "q-1",
     sourceId: null,
     statement: "Qual é a capital do Brasil?",
-    alternatives: ["A", "B", "C", "D"],
+    alternatives: [
+      { letter: "A", text: "A" },
+      { letter: "B", text: "B" },
+      { letter: "C", text: "C" },
+      { letter: "D", text: "D" },
+    ],
     correctAnswer: "A",
     isTrueFalse: false,
     examBoard: "CESPE",

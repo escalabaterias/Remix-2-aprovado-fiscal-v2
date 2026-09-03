@@ -41,7 +41,7 @@ describe("Fase 7.3.2 — Banco de Legislação + RAG Jurídico + Contexto do Pro
     pedagogicalGoal: "Compreender a regra da anterioridade tributária e noventena",
     pedagogicalMode: "ACTIVE_RECALL",
     turnHistory: [],
-    constraints: { maxHints: 3, maxTurns: 6 },
+    constraints: { maxHints: 3, maxTurns: 6, allowDirectExplanationAfterMaxHints: true },
     validTopicNames: [
       "Princípios Tributários e Limitações ao Poder de Tributar",
       "Lançamento Tributário",
@@ -263,7 +263,7 @@ describe("Fase 7.3.2 — Banco de Legislação + RAG Jurídico + Contexto do Pro
       const socraticCtx = createBaseSocraticContext();
 
       mockRunAiTask.mockResolvedValueOnce({
-        status: "sucesso",
+        status: "processado",
         output: {
           status: "active",
           pedagogicalMode: "ACTIVE_RECALL",
@@ -292,9 +292,9 @@ describe("Fase 7.3.2 — Banco de Legislação + RAG Jurídico + Contexto do Pro
 
       expect(result.status).toBe("processado");
       expect(result.response?.question).toContain("CF/88");
-      expect(result.updatedContext.contextMetadata?.legalContext).toBeDefined();
+      expect(result.updatedContext.contextMetadata?.["legalContext"]).toBeDefined();
 
-      const legalCtx = result.updatedContext.contextMetadata?.legalContext as unknown as {
+      const legalCtx = result.updatedContext.contextMetadata?.["legalContext"] as unknown as {
         relevantLegalSources: LegalSource[];
       };
       expect(legalCtx.relevantLegalSources.length).toBeGreaterThan(0);
@@ -318,7 +318,7 @@ describe("Fase 7.3.2 — Banco de Legislação + RAG Jurídico + Contexto do Pro
 
       expect(result.status).toBe("erro");
       expect(result.response?.status).toBe("active");
-      expect(result.updatedContext.contextMetadata?.legalContext).toBeDefined();
+      expect(result.updatedContext.contextMetadata?.["legalContext"]).toBeDefined();
     });
 
     it("6.3 garante que motores determinísticos existentes permanecem 100% intactos", () => {

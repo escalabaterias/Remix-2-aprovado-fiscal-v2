@@ -1,0 +1,269 @@
+src/components/analytics/ReadinessAuditor.tsx(30,64): error TS2532: Object is possibly 'undefined'.
+src/components/analytics/ReadinessAuditor.tsx(35,16): error TS18048: 'selectedBenchmark' is possibly 'undefined'.
+src/components/analytics/ReadinessAuditor.tsx(38,16): error TS18048: 'selectedBenchmark' is possibly 'undefined'.
+src/components/analytics/ReadinessAuditor.tsx(48,28): error TS18048: 'bench' is possibly 'undefined'.
+src/components/analytics/ReadinessAuditor.tsx(49,29): error TS18048: 'bench' is possibly 'undefined'.
+src/components/analytics/ReadinessAuditor.tsx(226,45): error TS18048: 'selectedBenchmark' is possibly 'undefined'.
+src/components/analytics/ReadinessAuditor.tsx(232,22): error TS18048: 'selectedBenchmark' is possibly 'undefined'.
+src/components/analytics/ReadinessAuditor.tsx(242,47): error TS18048: 'selectedBenchmark' is possibly 'undefined'.
+src/components/analytics/ReadinessAuditor.tsx(248,22): error TS18048: 'selectedBenchmark' is possibly 'undefined'.
+src/components/analytics/ReadinessAuditor.tsx(260,20): error TS18048: 'selectedBenchmark' is possibly 'undefined'.
+src/components/analytics/ReadinessAuditor.tsx(261,20): error TS18048: 'selectedBenchmark' is possibly 'undefined'.
+src/components/analytics/ReadinessAuditor.tsx(267,20): error TS18048: 'selectedBenchmark' is possibly 'undefined'.
+src/components/analytics/ReadinessAuditor.tsx(282,20): error TS18048: 'selectedBenchmark' is possibly 'undefined'.
+src/components/analytics/ReadinessAuditor.tsx(282,61): error TS18048: 'selectedBenchmark' is possibly 'undefined'.
+src/components/analytics/ReadinessAuditor.tsx(313,16): error TS18048: 'selectedBenchmark' is possibly 'undefined'.
+src/components/analytics/ReadinessAuditor.tsx(393,20): error TS2741: Property 'search' is missing in type '{ children: (string | Element)[]; to: "/questoes"; className: string; }' but required in type 'MakeRequiredSearchParams<RouterCore<Route<Register, any, "/", "/", string, "__root__", undefined, {}, { queryClient: QueryClient; }, AnyContext, AnyContext, ... 6 more ..., undefined>, "never", false, RouterHistory, Record<...>>, string, "/questoes">'.
+src/components/bancas/BancasPanel.tsx(575,27): error TS18048: 'board' is possibly 'undefined'.
+src/components/bancas/BancasPanel.tsx(580,9): error TS18048: 'board' is possibly 'undefined'.
+src/components/bancas/BancasPanel.tsx(581,9): error TS18048: 'board' is possibly 'undefined'.
+src/components/bancas/BancasPanel.tsx(687,20): error TS18048: 'board' is possibly 'undefined'.
+src/components/bancas/BancasPanel.tsx(689,78): error TS18048: 'board' is possibly 'undefined'.
+src/components/bancas/BancasPanel.tsx(692,18): error TS18048: 'board' is possibly 'undefined'.
+src/components/bancas/BancasPanel.tsx(695,18): error TS18048: 'board' is possibly 'undefined'.
+src/components/bancas/BancasPanel.tsx(703,20): error TS18048: 'board' is possibly 'undefined'.
+src/components/bancas/BancasPanel.tsx(706,16): error TS18048: 'board' is possibly 'undefined'.
+src/components/bancas/BancasPanel.tsx(746,26): error TS18048: 'board' is possibly 'undefined'.
+src/components/bancas/BancasPanel.tsx(840,32): error TS18048: 'board' is possibly 'undefined'.
+src/components/bancas/BancasPanel.tsx(844,36): error TS18048: 'board' is possibly 'undefined'.
+src/components/bancas/BancasPanel.tsx(855,32): error TS18048: 'board' is possibly 'undefined'.
+src/components/bancas/BancasPanel.tsx(859,36): error TS18048: 'board' is possibly 'undefined'.
+src/components/bancas/BancasPanel.tsx(870,32): error TS18048: 'board' is possibly 'undefined'.
+src/components/bancas/BancasPanel.tsx(874,36): error TS18048: 'board' is possibly 'undefined'.
+src/components/bancas/BancasPanel.tsx(886,32): error TS18048: 'board' is possibly 'undefined'.
+src/components/bancas/BancasPanel.tsx(890,36): error TS18048: 'board' is possibly 'undefined'.
+src/components/bancas/BancasPanel.tsx(902,70): error TS18048: 'board' is possibly 'undefined'.
+src/components/bancas/BancasPanel.tsx(916,49): error TS18048: 'board' is possibly 'undefined'.
+src/components/bancas/BancasPanel.tsx(942,59): error TS18048: 'board' is possibly 'undefined'.
+src/components/bancas/BancasPanel.tsx(951,18): error TS18048: 'board' is possibly 'undefined'.
+src/components/bancas/BancasPanel.tsx(1004,85): error TS18048: 'board' is possibly 'undefined'.
+src/components/bancas/BancasPanel.tsx(1009,18): error TS18048: 'board' is possibly 'undefined'.
+src/components/coach/CoachContext.tsx(31,20): error TS2345: Argument of type '{ customPrompt: string | undefined; questionId?: string; statement?: string; options?: string[]; correctAnswer?: string; examBoard?: string; subjectName?: string; topicName?: string; errorId?: string; planId?: string; }' is not assignable to parameter of type 'SetStateAction<CoachContextData | null>'.
+  Type '{ customPrompt: string | undefined; questionId?: string; statement?: string; options?: string[]; correctAnswer?: string; examBoard?: string; subjectName?: string; topicName?: string; errorId?: string; planId?: string; }' is not assignable to type 'CoachContextData' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+    Types of property 'customPrompt' are incompatible.
+      Type 'string | undefined' is not assignable to type 'string'.
+        Type 'undefined' is not assignable to type 'string'.
+src/components/coach/CoachDrawerWidget.tsx(138,16): error TS2375: Type '{ initialCustomPrompt: string | undefined; }' is not assignable to type '{ initialCustomPrompt?: string; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'initialCustomPrompt' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/components/coach/CoachMotivationalWidget.tsx(137,19): error TS18048: 'currentQuote' is possibly 'undefined'.
+src/components/coach/CoachMotivationalWidget.tsx(141,18): error TS18048: 'currentQuote' is possibly 'undefined'.
+src/components/coach/CoachMotivationalWidget.tsx(142,61): error TS18048: 'currentQuote' is possibly 'undefined'.
+src/components/flashcards/CreateFlashcardDialog.tsx(66,37): error TS2379: Argument of type '{ frontContent: string; backContent: string; subject: string; lawTagId: string | undefined; errorEntryId: string | undefined; }' is not assignable to parameter of type '{ frontContent: string; backContent: string; subject: string; lawTagId?: string; questionId?: string; errorEntryId?: string; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'lawTagId' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/components/study/ProfessorFiscalSocraticTutor.tsx(61,33): error TS2379: Argument of type '{ topicId: string; topicName: string; subjectName: string | undefined; questionContext: { questionId?: string; statement: string; options?: string[]; correctAnswer?: string; targetConcept?: string; } | undefined; errorContext: { ...; } | undefined; }' is not assignable to parameter of type 'StartSocraticSessionInput' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'subjectName' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/components/study/WhatToStudyNowCard.test.ts(91,12): error TS18048: 'primary' is possibly 'undefined'.
+src/components/study/WhatToStudyNowCard.test.ts(92,12): error TS18048: 'primary' is possibly 'undefined'.
+src/components/study/WhatToStudyNowCard.test.ts(93,12): error TS18048: 'primary' is possibly 'undefined'.
+src/components/study/WhatToStudyNowCard.test.ts(98,12): error TS2532: Object is possibly 'undefined'.
+src/components/study/WhatToStudyNowCard.test.ts(99,12): error TS2532: Object is possibly 'undefined'.
+src/components/study/WhatToStudyNowCard.tsx(219,11): error TS2322: Type 'Map<string, DiagnosticData>' is not assignable to type 'Map<string, DiagnosticInfo>'.
+  Type 'DiagnosticData' is not assignable to type 'DiagnosticInfo'.
+    Types of property 'knowledgeState' are incompatible.
+      Type 'KnowledgeStateName | null' is not assignable to type 'KnowledgeStateName'.
+        Type 'null' is not assignable to type 'KnowledgeStateName'.
+src/components/study/WhatToStudyNowCard.tsx(281,9): error TS2322: Type '{ topic: string | undefined; subject: string | undefined; }' is not assignable to type '{ subject: string | undefined; topic: string | undefined; board: string | undefined; year: string | undefined; contest: string | undefined; organization: string | undefined; ... 4 more ...; tags: string | undefined; } | ParamsReducerFn<...>'.
+  Type '{ topic: string | undefined; subject: string | undefined; }' is missing the following properties from type '{ subject: string | undefined; topic: string | undefined; board: string | undefined; year: string | undefined; contest: string | undefined; organization: string | undefined; role: string | undefined; type: string | undefined; difficulty: string | undefined; source: string | undefined; tags: string | undefined; }': board, year, contest, organization, and 5 more.
+src/components/study/WhatToStudyNowCard.tsx(300,13): error TS2322: Type '{ children: Element[]; variant: string; className: string; }' is not assignable to type 'IntrinsicAttributes & HTMLAttributes<HTMLDivElement> & RefAttributes<HTMLDivElement>'.
+  Property 'variant' does not exist on type 'IntrinsicAttributes & HTMLAttributes<HTMLDivElement> & RefAttributes<HTMLDivElement>'.
+src/components/study/WhatToStudyNowCard.tsx(330,9): error TS2322: Type '{ children: Element[]; variant: string; className: string; }' is not assignable to type 'IntrinsicAttributes & HTMLAttributes<HTMLDivElement> & RefAttributes<HTMLDivElement>'.
+  Property 'variant' does not exist on type 'IntrinsicAttributes & HTMLAttributes<HTMLDivElement> & RefAttributes<HTMLDivElement>'.
+src/components/study/WhatToStudyNowCard.tsx(357,9): error TS2322: Type '{ children: Element[]; variant: string; className: string; }' is not assignable to type 'IntrinsicAttributes & HTMLAttributes<HTMLDivElement> & RefAttributes<HTMLDivElement>'.
+  Property 'variant' does not exist on type 'IntrinsicAttributes & HTMLAttributes<HTMLDivElement> & RefAttributes<HTMLDivElement>'.
+src/components/study/WhatToStudyNowCard.tsx(372,14): error TS2741: Property 'search' is missing in type '{ children: (string | Element)[]; to: "/questoes"; }' but required in type 'MakeRequiredSearchParams<RouterCore<Route<Register, any, "/", "/", string, "__root__", undefined, {}, { queryClient: QueryClient; }, AnyContext, AnyContext, ... 6 more ..., undefined>, "never", false, RouterHistory, Record<...>>, string, "/questoes">'.
+src/components/study/WhatToStudyNowCard.tsx(392,50): error TS18048: 'primary' is possibly 'undefined'.
+src/components/study/WhatToStudyNowCard.tsx(394,50): error TS18048: 'primary' is possibly 'undefined'.
+src/components/study/WhatToStudyNowCard.tsx(394,72): error TS18048: 'primary' is possibly 'undefined'.
+src/components/study/WhatToStudyNowCard.tsx(397,5): error TS18048: 'primary' is possibly 'undefined'.
+src/components/study/WhatToStudyNowCard.tsx(397,60): error TS18048: 'primary' is possibly 'undefined'.
+src/components/study/WhatToStudyNowCard.tsx(400,5): error TS18048: 'primary' is possibly 'undefined'.
+src/components/study/WhatToStudyNowCard.tsx(401,20): error TS18048: 'primary' is possibly 'undefined'.
+src/components/study/WhatToStudyNowCard.tsx(408,9): error TS2322: Type '{ children: Element[]; variant: string; className: string; }' is not assignable to type 'IntrinsicAttributes & HTMLAttributes<HTMLDivElement> & RefAttributes<HTMLDivElement>'.
+  Property 'variant' does not exist on type 'IntrinsicAttributes & HTMLAttributes<HTMLDivElement> & RefAttributes<HTMLDivElement>'.
+src/components/study/WhatToStudyNowCard.tsx(436,16): error TS18048: 'primary' is possibly 'undefined'.
+src/components/study/WhatToStudyNowCard.tsx(438,32): error TS18048: 'primary' is possibly 'undefined'.
+src/components/study/WhatToStudyNowCard.tsx(449,18): error TS18048: 'primary' is possibly 'undefined'.
+src/components/study/WhatToStudyNowCard.tsx(452,18): error TS18048: 'primary' is possibly 'undefined'.
+src/components/study/WhatToStudyNowCard.tsx(462,20): error TS18048: 'primary' is possibly 'undefined'.
+src/components/study/WhatToStudyNowCard.tsx(506,24): error TS18048: 'primary' is possibly 'undefined'.
+src/components/study/WhatToStudyNowCard.tsx(512,38): error TS18048: 'primary' is possibly 'undefined'.
+src/components/study/WhatToStudyNowCard.tsx(532,65): error TS18048: 'primary' is possibly 'undefined'.
+src/components/study/WhatToStudyNowCard.tsx(541,52): error TS2345: Argument of type 'RecommendationItem | undefined' is not assignable to parameter of type 'RecommendationItem'.
+  Type 'undefined' is not assignable to type 'RecommendationItem'.
+src/components/study/WhatToStudyNowCard.tsx(571,19): error TS2322: Type '{ children: Element[]; key: string; variant: string; className: string; }' is not assignable to type 'IntrinsicAttributes & HTMLAttributes<HTMLDivElement> & RefAttributes<HTMLDivElement>'.
+  Property 'variant' does not exist on type 'IntrinsicAttributes & HTMLAttributes<HTMLDivElement> & RefAttributes<HTMLDivElement>'.
+src/lib/analytics/readiness.test.ts(25,39): error TS18048: 'exam' is possibly 'undefined'.
+src/lib/analytics/readiness.test.ts(35,39): error TS18048: 'exam' is possibly 'undefined'.
+src/lib/analytics/readiness.test.ts(46,12): error TS2532: Object is possibly 'undefined'.
+src/lib/analytics/readiness.test.ts(47,12): error TS2532: Object is possibly 'undefined'.
+src/lib/analytics/readiness.test.ts(48,12): error TS2532: Object is possibly 'undefined'.
+src/lib/analytics/readiness.test.ts(49,42): error TS2532: Object is possibly 'undefined'.
+src/lib/analytics/readiness.test.ts(50,76): error TS2532: Object is possibly 'undefined'.
+src/lib/analytics/readinessEngine.ts(122,61): error TS18048: 'exam' is possibly 'undefined'.
+src/lib/analytics/readinessEngine.ts(123,63): error TS18048: 'exam' is possibly 'undefined'.
+src/lib/analytics/readinessEngine.ts(126,21): error TS18048: 'exam' is possibly 'undefined'.
+src/lib/analytics/readinessEngine.ts(126,49): error TS18048: 'exam' is possibly 'undefined'.
+src/lib/analytics/readinessEngine.ts(129,53): error TS18048: 'exam' is possibly 'undefined'.
+src/lib/analytics/readinessEngine.ts(133,43): error TS18048: 'exam' is possibly 'undefined'.
+src/lib/analytics/readinessEngine.ts(137,84): error TS18048: 'exam' is possibly 'undefined'.
+src/lib/analytics/readinessEngine.ts(139,78): error TS18048: 'exam' is possibly 'undefined'.
+src/lib/analytics/readinessEngine.ts(139,112): error TS18048: 'exam' is possibly 'undefined'.
+src/lib/analytics/readinessEngine.ts(142,30): error TS18048: 'exam' is possibly 'undefined'.
+src/lib/analytics/readinessEngine.ts(147,19): error TS18048: 'exam' is possibly 'undefined'.
+src/lib/analytics/readinessEngine.ts(148,21): error TS18048: 'exam' is possibly 'undefined'.
+src/lib/analytics/readinessEngine.ts(153,29): error TS18048: 'exam' is possibly 'undefined'.
+src/lib/analytics/readinessEngine.ts(222,61): error TS2367: This comparison appears to be unintentional because the types 'SyllabusStatus' and '"reviewing"' have no overlap.
+src/lib/coach/coach.test.ts(52,13): error TS2322: Type '"ELEVADO"' is not assignable to type 'RiskLevel'.
+src/lib/coach/coach.test.ts(57,13): error TS2322: Type '"FRAGIL"' is not assignable to type 'KnowledgeStateName'.
+src/lib/coach/coach.test.ts(64,15): error TS2353: Object literal may only specify known properties, and 'attemptCount' does not exist in type 'PlannerSignals'.
+src/lib/coach/coach.test.ts(85,15): error TS2322: Type '"FRAGIL"' is not assignable to type 'KnowledgeStateName | null'.
+src/lib/coach/coach.test.ts(103,13): error TS2353: Object literal may only specify known properties, and 'unresolvedCount' does not exist in type 'TopicErrorSummaryWithMeta'.
+src/lib/coach/coach.test.ts(135,14): error TS18048: 'topCrit' is possibly 'undefined'.
+src/lib/coach/coach.test.ts(136,14): error TS18048: 'topCrit' is possibly 'undefined'.
+src/lib/coach/coach.test.ts(137,14): error TS18048: 'topCrit' is possibly 'undefined'.
+src/lib/coach/coach.test.ts(138,14): error TS18048: 'topCrit' is possibly 'undefined'.
+src/lib/coach/coach.test.ts(139,14): error TS18048: 'topCrit' is possibly 'undefined'.
+src/lib/coach/coach.test.ts(140,14): error TS18048: 'topCrit' is possibly 'undefined'.
+src/lib/coach/coach.test.ts(141,14): error TS18048: 'topCrit' is possibly 'undefined'.
+src/lib/coach/coach.test.ts(143,14): error TS2532: Object is possibly 'undefined'.
+src/lib/coach/coach.test.ts(206,13): error TS2322: Type '"ELEVADO"' is not assignable to type 'RiskLevel'.
+src/lib/coach/coach.test.ts(211,13): error TS2322: Type '"FRAGIL"' is not assignable to type 'KnowledgeStateName'.
+src/lib/coach/coach.test.ts(246,13): error TS2322: Type '"ELEVADO"' is not assignable to type 'RiskLevel'.
+src/lib/coach/coach.test.ts(251,13): error TS2322: Type '"FRAGIL"' is not assignable to type 'KnowledgeStateName'.
+src/lib/coach/coach.test.ts(284,11): error TS2322: Type '"ELEVADO"' is not assignable to type 'RiskLevel'.
+src/lib/coach/coach.test.ts(289,11): error TS2322: Type '"FRAGIL"' is not assignable to type 'KnowledgeStateName'.
+src/lib/coach/context-builder.ts(106,14): error TS2339: Property 'state' does not exist on type 'DiagnosisWithMeta'.
+src/lib/coach/context-builder.ts(106,39): error TS2339: Property 'priority' does not exist on type 'DiagnosisWithMeta'.
+src/lib/coach/context-builder.ts(109,14): error TS2339: Property 'state' does not exist on type 'DiagnosisWithMeta'.
+src/lib/coach/context-builder.ts(109,41): error TS2339: Property 'priority' does not exist on type 'DiagnosisWithMeta'.
+src/lib/coach/context-builder.ts(120,16): error TS2339: Property 'state' does not exist on type 'DiagnosisWithMeta'.
+src/lib/coach/context-builder.ts(121,19): error TS2339: Property 'priority' does not exist on type 'DiagnosisWithMeta'.
+src/lib/coach/context-builder.ts(122,23): error TS2339: Property 'recommendedIntervention' does not exist on type 'DiagnosisWithMeta'.
+src/lib/coach/context-builder.ts(123,36): error TS2339: Property 'scores' does not exist on type 'DiagnosisWithMeta'.
+src/lib/coach/context-builder.ts(124,39): error TS2339: Property 'scores' does not exist on type 'DiagnosisWithMeta'.
+src/lib/coach/context-builder.ts(126,11): error TS2339: Property 'scores' does not exist on type 'DiagnosisWithMeta'.
+src/lib/coach/context-builder.ts(126,51): error TS2339: Property 'scores' does not exist on type 'DiagnosisWithMeta'.
+src/lib/coach/context-builder.ts(128,11): error TS2339: Property 'scores' does not exist on type 'DiagnosisWithMeta'.
+src/lib/coach/context-builder.ts(128,54): error TS2339: Property 'scores' does not exist on type 'DiagnosisWithMeta'.
+src/lib/coach/context-builder.ts(144,14): error TS2339: Property 'urgencyCategory' does not exist on type 'TopicReviewDecisionResult'.
+src/lib/coach/context-builder.ts(144,49): error TS2339: Property 'urgencyCategory' does not exist on type 'TopicReviewDecisionResult'.
+src/lib/coach/context-builder.ts(185,26): error TS2339: Property 'urgencyCategory' does not exist on type 'TopicReviewDecisionResult'.
+src/lib/coach/context-builder.ts(196,69): error TS2339: Property 'unresolvedCount' does not exist on type 'TopicErrorSummaryWithMeta'.
+src/lib/coach/context-builder.ts(199,22): error TS2339: Property 'unresolvedCount' does not exist on type 'TopicErrorSummaryWithMeta'.
+src/lib/coach/context-builder.ts(204,26): error TS2339: Property 'unresolvedCount' does not exist on type 'TopicErrorSummaryWithMeta'.
+src/lib/coach/context-builder.ts(210,64): error TS2339: Property 'unresolvedCount' does not exist on type 'TopicErrorSummaryWithMeta'.
+src/lib/coach/context-builder.ts(261,5): error TS2375: Type '{ name: string; daysUntilExam: number | null; topWeightedTopics: { topicId: string; topicName: string; subjectName: string; weight: number; incidenceScore: number; relevanceScore: number; inEdital: boolean; }[] | undefined; }' is not assignable to type '{ name: string; daysUntilExam?: number | null; topWeightedTopics?: ContestTopicWeightSummary[]; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'topWeightedTopics' are incompatible.
+    Type '{ topicId: string; topicName: string; subjectName: string; weight: number; incidenceScore: number; relevanceScore: number; inEdital: boolean; }[] | undefined' is not assignable to type 'ContestTopicWeightSummary[]'.
+      Type 'undefined' is not assignable to type 'ContestTopicWeightSummary[]'.
+src/lib/coach/context-builder.ts(312,7): error TS2322: Type '{ topicId: string; topicName: string; subjectName: string; state: any; priority: any; intervention: any; masteryPercent: number; confidencePercent: number; decayRiskPercent: number | undefined; ... 9 more ...; inEdital: boolean | undefined; }[]' is not assignable to type 'CriticalTopicSummary[]'.
+  Type '{ topicId: string; topicName: string; subjectName: string; state: any; priority: any; intervention: any; masteryPercent: number; confidencePercent: number; decayRiskPercent: number | undefined; ... 9 more ...; inEdital: boolean | undefined; }' is not assignable to type 'CriticalTopicSummary' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+    Types of property 'decayRiskPercent' are incompatible.
+      Type 'number | undefined' is not assignable to type 'number'.
+        Type 'undefined' is not assignable to type 'number'.
+src/lib/coach/context-builder.ts(339,7): error TS2322: Type '{ title: string; activityType: string; plannedMinutes: number; status: string; topicName: string | undefined; }[]' is not assignable to type 'ScheduledTaskSummary[]'.
+  Type '{ title: string; activityType: string; plannedMinutes: number; status: string; topicName: string | undefined; }' is not assignable to type 'ScheduledTaskSummary' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+    Types of property 'topicName' are incompatible.
+      Type 'string | undefined' is not assignable to type 'string'.
+        Type 'undefined' is not assignable to type 'string'.
+src/lib/coach/prompts.ts(56,34): error TS4111: Property 'headline' comes from an index signature, so it must be accessed with ['headline'].
+src/lib/coach/prompts.ts(56,65): error TS4111: Property 'headline' comes from an index signature, so it must be accessed with ['headline'].
+src/lib/coach/prompts.ts(57,35): error TS4111: Property 'situation' comes from an index signature, so it must be accessed with ['situation'].
+src/lib/coach/prompts.ts(57,67): error TS4111: Property 'situation' comes from an index signature, so it must be accessed with ['situation'].
+src/lib/coach/prompts.ts(58,39): error TS4111: Property 'priorityTopic' comes from an index signature, so it must be accessed with ['priorityTopic'].
+src/lib/coach/prompts.ts(58,75): error TS4111: Property 'priorityTopic' comes from an index signature, so it must be accessed with ['priorityTopic'].
+src/lib/coach/prompts.ts(59,32): error TS4111: Property 'reason' comes from an index signature, so it must be accessed with ['reason'].
+src/lib/coach/prompts.ts(59,61): error TS4111: Property 'reason' comes from an index signature, so it must be accessed with ['reason'].
+src/lib/coach/prompts.ts(61,19): error TS4111: Property 'recommendedAction' comes from an index signature, so it must be accessed with ['recommendedAction'].
+src/lib/coach/prompts.ts(61,59): error TS4111: Property 'recommendedAction' comes from an index signature, so it must be accessed with ['recommendedAction'].
+src/lib/coach/prompts.ts(63,19): error TS4111: Property 'secondaryAction' comes from an index signature, so it must be accessed with ['secondaryAction'].
+src/lib/coach/prompts.ts(63,57): error TS4111: Property 'secondaryAction' comes from an index signature, so it must be accessed with ['secondaryAction'].
+src/lib/coach/prompts.ts(64,31): error TS4111: Property 'avoid' comes from an index signature, so it must be accessed with ['avoid'].
+src/lib/coach/prompts.ts(64,59): error TS4111: Property 'avoid' comes from an index signature, so it must be accessed with ['avoid'].
+src/lib/coach/prompts.ts(65,34): error TS4111: Property 'nextStep' comes from an index signature, so it must be accessed with ['nextStep'].
+src/lib/coach/prompts.ts(65,65): error TS4111: Property 'nextStep' comes from an index signature, so it must be accessed with ['nextStep'].
+src/lib/coach/prompts.ts(67,39): error TS4111: Property 'confidenceScore' comes from an index signature, so it must be accessed with ['confidenceScore'].
+src/lib/coach/prompts.ts(93,3): error TS2375: Type '{ headline: string; situation: string; priorityTopic: string; reason: string; recommendedAction: string; secondaryAction: string | undefined; avoid: string; nextStep: string; confidenceScore: number; generatedAt: string; }' is not assignable to type 'CoachGuidance' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'secondaryAction' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/lib/coach/service.ts(47,9): error TS2345: Argument of type '"status"' is not assignable to parameter of type '"id" | "contest_id" | "created_at" | "updated_at" | "user_id" | "name" | "settings" | "end_date" | "is_active" | "start_date"'.
+src/lib/coach/service.ts(147,58): error TS2304: Cannot find name 'CoachContext'.
+src/lib/coach/service.ts(147,73): error TS2304: Cannot find name 'CoachGuidance'.
+src/lib/coach/service.ts(313,42): error TS2379: Argument of type '{ type: string; tier: "inteligente"; inputRef: Record<string, unknown>; promptVersion: string; systemPrompt: string; userPrompt: string; forceRefresh: boolean | undefined; }' is not assignable to parameter of type 'AiTask' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'forceRefresh' are incompatible.
+    Type 'boolean | undefined' is not assignable to type 'boolean'.
+      Type 'undefined' is not assignable to type 'boolean'.
+src/lib/coach/service.ts(325,11): error TS2375: Type '{ guidance: CoachGuidance; cached: boolean; status: "processado"; errorMessage: string; hasEnoughData: true; model: string | undefined; durationMs: number | undefined; }' is not assignable to type 'CoachGuidanceResult' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'model' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/lib/coach/service.ts(341,11): error TS2375: Type '{ guidance: CoachGuidance; cached: boolean; status: "processado"; hasEnoughData: true; model: string | undefined; durationMs: number | undefined; }' is not assignable to type 'CoachGuidanceResult' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'model' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/lib/coach/service.ts(351,11): error TS2375: Type '{ guidance: CoachGuidance; cached: boolean; status: "processado"; hasEnoughData: true; model: string | undefined; durationMs: number | undefined; }' is not assignable to type 'CoachGuidanceResult' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'model' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/lib/concursos/fiscalSyncService.ts(64,23): error TS2532: Object is possibly 'undefined'.
+src/lib/concursos/fiscalSyncService.ts(178,32): error TS18048: 'topicDef' is possibly 'undefined'.
+src/lib/concursos/fiscalSyncService.ts(186,19): error TS18048: 'topicDef' is possibly 'undefined'.
+src/lib/concursos/fiscalSyncService.ts(320,38): error TS18048: 'match' is possibly 'undefined'.
+src/lib/concursos/fiscalSyncService.ts(353,39): error TS2532: Object is possibly 'undefined'.
+src/lib/concursos/fiscalSyncService.ts(354,12): error TS2532: Object is possibly 'undefined'.
+src/lib/discursive/discursive.test.ts(23,12): error TS2532: Object is possibly 'undefined'.
+src/lib/discursive/discursive.test.ts(61,19): error TS18048: 'question' is possibly 'undefined'.
+src/lib/discursive/discursive.test.ts(74,12): error TS2532: Object is possibly 'undefined'.
+src/lib/error-central/service.test.ts(60,11): error TS4111: Property 'then' comes from an index signature, so it must be accessed with ['then'].
+src/lib/error-central/service.test.ts(65,11): error TS4111: Property 'maybeSingle' comes from an index signature, so it must be accessed with ['maybeSingle'].
+src/lib/error-central/service.test.ts(71,11): error TS4111: Property 'single' comes from an index signature, so it must be accessed with ['single'].
+src/lib/error-central/service.test.ts(79,32): error TS4111: Property 'then' comes from an index signature, so it must be accessed with ['then'].
+src/lib/error-central/service.ts(528,9): error TS2322: Type 'string' is not assignable to type '"conhecimento" | "esquecimento" | "interpretacao" | "calculo" | "atencao" | "estrategia" | "velocidade" | "outros" | null | undefined'.
+src/lib/error-central/service.ts(542,5): error TS2375: Type '{ success: true; id: string | undefined; }' is not assignable to type '{ success: boolean; id?: string; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'id' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/lib/evidence/practice-integration.test.ts(355,7): error TS2554: Expected 4 arguments, but got 5.
+src/lib/evidence/review-integration.test.ts(408,7): error TS2322: Type '"reading"' is not assignable to type 'CognitiveEvidenceSource'.
+src/lib/evidence/review-integration.test.ts(414,7): error TS2322: Type '"question_session"' is not assignable to type 'CognitiveEvidenceSource'.
+src/lib/evidence/review-integration.test.ts(421,7): error TS2322: Type '"flashcards"' is not assignable to type 'CognitiveEvidenceSource'.
+src/lib/evidence/review-integration.test.ts(432,21): error TS2339: Property 'evidence' does not exist on type 'EvidenceNormalizationResult'.
+  Property 'evidence' does not exist on type '{ success: false; errors: string[]; }'.
+src/lib/evidence/review-integration.test.ts(433,21): error TS2339: Property 'evidence' does not exist on type 'EvidenceNormalizationResult'.
+  Property 'evidence' does not exist on type '{ success: false; errors: string[]; }'.
+src/lib/evidence/review-integration.test.ts(435,21): error TS2339: Property 'evidence' does not exist on type 'EvidenceNormalizationResult'.
+  Property 'evidence' does not exist on type '{ success: false; errors: string[]; }'.
+src/lib/evidence/review-integration.test.ts(436,21): error TS2339: Property 'evidence' does not exist on type 'EvidenceNormalizationResult'.
+  Property 'evidence' does not exist on type '{ success: false; errors: string[]; }'.
+src/lib/evidence/review-integration.test.ts(438,19): error TS2339: Property 'evidence' does not exist on type 'EvidenceNormalizationResult'.
+  Property 'evidence' does not exist on type '{ success: false; errors: string[]; }'.
+src/lib/evidence/review-integration.test.ts(439,19): error TS2339: Property 'evidence' does not exist on type 'EvidenceNormalizationResult'.
+  Property 'evidence' does not exist on type '{ success: false; errors: string[]; }'.
+src/lib/evidence/review-integration.test.ts(441,19): error TS2339: Property 'evidence' does not exist on type 'EvidenceNormalizationResult'.
+  Property 'evidence' does not exist on type '{ success: false; errors: string[]; }'.
+src/lib/evidence/review-integration.test.ts(442,19): error TS2339: Property 'evidence' does not exist on type 'EvidenceNormalizationResult'.
+  Property 'evidence' does not exist on type '{ success: false; errors: string[]; }'.
+src/lib/evidence/theory-integration.test.ts(201,7): error TS2322: Type '0.9' is not assignable to type 'DeclaredConfidence | null'.
+src/lib/flashcards/service.ts(188,9): error TS2375: Type '{ id: string; frontContent: string; backContent: string; subject: string; lawTagId: string | undefined; questionId: string | undefined; errorEntryId: string | undefined; interval: number; ... 4 more ...; updatedAt: string; }' is not assignable to type 'Flashcard' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'lawTagId' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/lib/flashcards/service.ts(219,26): error TS2379: Argument of type '{ frontContent: string; backContent: string; subject: string; errorEntryId: string; questionId: string | undefined; }' is not assignable to parameter of type '{ frontContent: string; backContent: string; subject: string; lawTagId?: string; questionId?: string; errorEntryId?: string; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'questionId' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/lib/knowledge/service.ts(204,9): error TS2322: Type 'string | null' is not assignable to type 'never'.
+  Type 'null' is not assignable to type 'never'.
+src/lib/knowledge/service.ts(205,9): error TS2322: Type 'string | null' is not assignable to type 'never'.
+  Type 'null' is not assignable to type 'never'.
+src/lib/legal/service.ts(203,61): error TS2379: Argument of type '{ type: string; tier: "inteligente"; inputRef: Record<string, unknown>; promptVersion: string; systemPrompt: string; userPrompt: string; forceRefresh: boolean | undefined; }' is not assignable to parameter of type 'AiTask' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'forceRefresh' are incompatible.
+    Type 'boolean | undefined' is not assignable to type 'boolean'.
+      Type 'undefined' is not assignable to type 'boolean'.

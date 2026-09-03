@@ -200,16 +200,15 @@ export function filterQuestions(
 
     if (filter.organization != null && filter.organization !== "") {
       const targetOrg = filter.organization.trim().toLowerCase();
-      const qOrg = (q.metadata?.organization as string) || q.contest?.organization || "";
+      const qOrg = (q.metadata?.["organization"] as string | undefined) || "";
       if (qOrg.trim().toLowerCase() !== targetOrg) return false;
     }
 
     if (filter.roleTitle != null && filter.roleTitle !== "") {
       const targetRole = filter.roleTitle.trim().toLowerCase();
       const qRole =
-        (q.metadata?.position as string) ||
-        (q.metadata?.role_title as string) ||
-        q.contest?.roleTitle ||
+        (q.metadata?.["position"] as string | undefined) ||
+        (q.metadata?.["role_title"] as string | undefined) ||
         "";
       if (qRole.trim().toLowerCase() !== targetRole) return false;
     }

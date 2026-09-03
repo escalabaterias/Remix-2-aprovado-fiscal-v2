@@ -227,10 +227,10 @@ export async function extractAndCreateQuestions(
         contestId = await resolveContest(
           {
             name: trimmedContest,
-            organization: eq.contestMetadata.organization,
-            roleTitle: eq.contestMetadata.position,
-            examBoard: eq.contestMetadata.examBoard,
-            year: eq.contestMetadata.year,
+            organization: eq.contestMetadata?.organization ?? null,
+            roleTitle: eq.contestMetadata?.position ?? null,
+            examBoard: eq.contestMetadata?.examBoard ?? null,
+            year: eq.contestMetadata?.year ?? null,
           },
           clientToUse,
         );
@@ -287,8 +287,8 @@ export async function extractAndCreateQuestions(
       const errObj = error as Record<string, unknown> | null;
 
       const message =
-        errObj && typeof errObj['message'] === "string"
-          ? errObj['message']
+        errObj && typeof errObj["message"] === "string"
+          ? errObj["message"]
           : error instanceof Error
             ? error.message
             : "Erro desconhecido ao criar questão.";
@@ -299,14 +299,14 @@ export async function extractAndCreateQuestions(
       };
 
       // Attach Supabase-specific fields when present
-      if (errObj && typeof errObj['code'] === "string") {
-        creationError.code = errObj['code'];
+      if (errObj && typeof errObj["code"] === "string") {
+        creationError.code = errObj["code"];
       }
-      if (errObj && typeof errObj['details'] === "string") {
-        creationError.details = errObj['details'];
+      if (errObj && typeof errObj["details"] === "string") {
+        creationError.details = errObj["details"];
       }
-      if (errObj && typeof errObj['hint'] === "string") {
-        creationError.hint = errObj['hint'];
+      if (errObj && typeof errObj["hint"] === "string") {
+        creationError.hint = errObj["hint"];
       }
 
       creationErrors.push(creationError);
@@ -339,37 +339,37 @@ export function mapExtractedToCreateInput(
 ): CreateQuestionInput {
   const metadata: Record<string, unknown> = {};
 
-  if (eq.contestMetadata?.['position']) {
-    metadata['position'] = eq.contestMetadata['position'];
+  if (eq.contestMetadata?.["position"]) {
+    metadata["position"] = eq.contestMetadata["position"];
   }
-  if (eq.contestMetadata?.['organization']) {
-    metadata['organization'] = eq.contestMetadata['organization'];
+  if (eq.contestMetadata?.["organization"]) {
+    metadata["organization"] = eq.contestMetadata["organization"];
   }
-  if (eq.contestMetadata?.['examName']) {
-    metadata['exam_name'] = eq.contestMetadata['examName'];
+  if (eq.contestMetadata?.["examName"]) {
+    metadata["exam_name"] = eq.contestMetadata["examName"];
   }
   if (
-    eq.contestMetadata?.['questionNumber'] !== undefined &&
-    eq.contestMetadata?.['questionNumber'] !== null
+    eq.contestMetadata?.["questionNumber"] !== undefined &&
+    eq.contestMetadata?.["questionNumber"] !== null
   ) {
-    metadata['question_number'] = eq.contestMetadata['questionNumber'];
+    metadata["question_number"] = eq.contestMetadata["questionNumber"];
   }
-  if (eq.contestMetadata?.['sourceTitle']) {
-    metadata['source_title'] = eq.contestMetadata['sourceTitle'];
+  if (eq.contestMetadata?.["sourceTitle"]) {
+    metadata["source_title"] = eq.contestMetadata["sourceTitle"];
   }
-  if (eq.contestMetadata?.['sourceUrl']) {
-    metadata['source_url'] = eq.contestMetadata['sourceUrl'];
+  if (eq.contestMetadata?.["sourceUrl"]) {
+    metadata["source_url"] = eq.contestMetadata["sourceUrl"];
   }
-  if (eq.contestMetadata?.['externalId']) {
-    metadata['external_id'] = eq.contestMetadata['externalId'];
+  if (eq.contestMetadata?.["externalId"]) {
+    metadata["external_id"] = eq.contestMetadata["externalId"];
   }
 
   // Gera hash de conteúdo determinístico
   const contentHash = computeQuestionContentHash(eq.statement, eq.alternatives ?? []);
-  metadata['content_hash'] = contentHash;
+  metadata["content_hash"] = contentHash;
 
   // Normalização padronizada de banca
-  const normalizedExamBoard = normalizeExamBoard(eq.contestMetadata?.['examBoard']);
+  const normalizedExamBoard = normalizeExamBoard(eq.contestMetadata?.["examBoard"]);
 
   return {
     statement: eq.statement,

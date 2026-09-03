@@ -149,11 +149,11 @@ export type ExtractedQuestionData = {
   /** Identificador externo */
   externalId?: string | null;
   /** Dificuldade estimada (1-5) */
-  difficulty?: number | null;
+  difficulty?: number | null | undefined;
   /** Tags extraídas */
-  tags?: string[];
+  tags?: string[] | undefined;
   /** Confiança da extração desta questão (0..1) */
-  confidence?: number | null;
+  confidence?: number | null | undefined;
 };
 
 /**
@@ -440,34 +440,57 @@ export function convertProviderResult(
     }
 
     const reqMetadata = request?.contestMetadata;
-    const reqAny = request as Record<string, unknown> | undefined;
+    const reqRecord = request as Record<string, unknown> | undefined;
 
     const examBoard =
-      reqMetadata?.examBoard || (reqAny?.examBoard as string) || raw.examBoard || null;
+      reqMetadata?.examBoard ||
+      (reqRecord?.["examBoard"] as string | undefined) ||
+      raw.examBoard ||
+      null;
     const contestName =
-      reqMetadata?.contestName || (reqAny?.contestName as string) || raw.contestName || null;
-    const year = reqMetadata?.year ?? (reqAny?.year as number) ?? raw.year ?? null;
+      reqMetadata?.contestName ||
+      (reqRecord?.["contestName"] as string | undefined) ||
+      raw.contestName ||
+      null;
+    const year =
+      reqMetadata?.year ?? (reqRecord?.["year"] as number | undefined) ?? raw.year ?? null;
     const position =
       reqMetadata?.position ||
-      (reqAny?.position as string) ||
-      (reqAny?.roleTitle as string) ||
+      (reqRecord?.["position"] as string | undefined) ||
+      (reqRecord?.["roleTitle"] as string | undefined) ||
       raw.position ||
       raw.roleTitle ||
       null;
     const organization =
-      reqMetadata?.organization || (reqAny?.organization as string) || raw.organization || null;
-    const examName = reqMetadata?.examName || (reqAny?.examName as string) || raw.examName || null;
+      reqMetadata?.organization ||
+      (reqRecord?.["organization"] as string | undefined) ||
+      raw.organization ||
+      null;
+    const examName =
+      reqMetadata?.examName ||
+      (reqRecord?.["examName"] as string | undefined) ||
+      raw.examName ||
+      null;
     const questionNumber =
       reqMetadata?.questionNumber ??
-      (reqAny?.questionNumber as number) ??
+      (reqRecord?.["questionNumber"] as number | undefined) ??
       raw.questionNumber ??
       null;
     const sourceTitle =
-      reqMetadata?.sourceTitle || (reqAny?.sourceTitle as string) || raw.sourceTitle || null;
+      reqMetadata?.sourceTitle ||
+      (reqRecord?.["sourceTitle"] as string | undefined) ||
+      raw.sourceTitle ||
+      null;
     const sourceUrl =
-      reqMetadata?.sourceUrl || (reqAny?.sourceUrl as string) || raw.sourceUrl || null;
+      reqMetadata?.sourceUrl ||
+      (reqRecord?.["sourceUrl"] as string | undefined) ||
+      raw.sourceUrl ||
+      null;
     const externalId =
-      reqMetadata?.externalId || (reqAny?.externalId as string) || raw.externalId || null;
+      reqMetadata?.externalId ||
+      (reqRecord?.["externalId"] as string | undefined) ||
+      raw.externalId ||
+      null;
 
     const hasAnyMetadata = Boolean(
       examBoard ||
@@ -522,6 +545,11 @@ export function convertProviderResult(
     normalizedResult.overallConfidence,
   );
 
+  const rawProcTime =
+    "processingTimeMs" in normalizedResult && typeof normalizedResult.processingTimeMs === "number"
+      ? normalizedResult.processingTimeMs
+      : null;
+
   return {
     payloadId,
     success: questions.length > 0,
@@ -531,7 +559,7 @@ export function convertProviderResult(
     confidenceLevel: classifyConfidence(overallConfidence),
     errors,
     warnings,
-    processingTimeMs: safeProcessingTime(providerResult.processingTimeMs),
+    processingTimeMs: safeProcessingTime(rawProcTime),
   };
 }
 

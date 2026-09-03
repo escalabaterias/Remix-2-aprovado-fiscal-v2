@@ -183,9 +183,9 @@ describe("extractQuestionsWithGemini", () => {
       });
 
       const q = result.questions[0]!;
-      expect(q.contestMetadata.examBoard).toBe("CESPE");
-      expect(q.contestMetadata.contestName).toBe("TRF 1ª Região");
-      expect(q.contestMetadata.year).toBe(2024);
+      expect(q.contestMetadata?.examBoard).toBe("CESPE");
+      expect(q.contestMetadata?.contestName).toBe("TRF 1ª Região");
+      expect(q.contestMetadata?.year).toBe(2024);
     });
   });
 
@@ -309,7 +309,7 @@ describe("extractQuestionsWithGemini", () => {
 
   describe("resposta vazia do Gemini", () => {
     it("retorna ExtractionResult com success=false e EMPTY_RESPONSE", async () => {
-      process.env['GEMINI_API_KEY'] = "test-key-123";
+      process.env["GEMINI_API_KEY"] = "test-key-123";
       const body = makeGeminiApiResponse([], 0);
       const mockFetch = makeMockFetch(body);
 
@@ -332,7 +332,7 @@ describe("extractQuestionsWithGemini", () => {
 
   describe("parse failure do Gemini", () => {
     it("retorna ExtractionResult com erro de parse", async () => {
-      process.env['GEMINI_API_KEY'] = "test-key-123";
+      process.env["GEMINI_API_KEY"] = "test-key-123";
       const mockFetch = makeMockFetch({ data: "sem candidates" });
 
       const result = await extractQuestionsWithGemini(makeRequest(), {
@@ -399,7 +399,7 @@ describe("extractQuestionsWithGemini", () => {
     });
 
     it("chama fetch com a API key do ambiente na URL", async () => {
-      process.env['GEMINI_API_KEY'] = "my-secret-key-abc";
+      process.env["GEMINI_API_KEY"] = "my-secret-key-abc";
       const mockFetch = makeMockFetch(makeGeminiApiResponse());
 
       await extractQuestionsWithGemini(makeRequest(), {

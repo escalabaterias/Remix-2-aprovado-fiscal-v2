@@ -441,7 +441,7 @@ export async function emitSocraticCognitiveEvidence(
   }
 
   // 3. Orquestração com a Central de Erros quando há sucesso na remediação
-  const errorContext = socraticContext.contextMetadata?.['errorContext'] as
+  const errorContext = socraticContext.contextMetadata?.["errorContext"] as
     { errorEntryId?: string } | undefined;
 
   if (errorContext?.errorEntryId && isSuccess) {

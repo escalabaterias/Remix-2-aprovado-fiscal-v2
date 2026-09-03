@@ -164,7 +164,7 @@ describe("Socratic Engine Core — Fase 7.3.1", () => {
       };
 
       const compacted = compactSessionContext(ctx);
-      const historyArr = compacted['history'] as unknown[];
+      const historyArr = compacted["history"] as unknown[];
       expect(historyArr.length).toBe(3);
     });
 
@@ -184,12 +184,12 @@ describe("Socratic Engine Core — Fase 7.3.1", () => {
         "É feito pelo próprio contribuinte.",
       );
 
-      expect(payloadAnswerA['studentAnswerText']).not.toBe(payloadAnswerB['studentAnswerText']);
+      expect(payloadAnswerA["studentAnswerText"]).not.toBe(payloadAnswerB["studentAnswerText"]);
 
       const payloadHint0 = calculateSocraticCachePayload({ ...ctx, hintLevel: 0 });
       const payloadHint1 = calculateSocraticCachePayload({ ...ctx, hintLevel: 1 });
 
-      expect(payloadHint0['hintLevel']).not.toBe(payloadHint1['hintLevel']);
+      expect(payloadHint0["hintLevel"]).not.toBe(payloadHint1["hintLevel"]);
     });
   });
 

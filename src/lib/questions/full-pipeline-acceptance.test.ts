@@ -71,8 +71,8 @@ function createInMemorySupabase() {
             filter: vi.fn((col: string, _op: string, val: unknown) => {
               if (col === "metadata->>content_hash") {
                 currentRows = currentRows.filter((r) => {
-                  const meta = r.metadata as Record<string, unknown> | undefined;
-                  return meta && meta.content_hash === val;
+                  const meta = r["metadata"] as Record<string, unknown> | undefined;
+                  return meta && meta["content_hash"] === val;
                 });
               } else {
                 currentRows = currentRows.filter((r) => r[col] === val);
@@ -111,7 +111,7 @@ function createInMemorySupabase() {
 
           for (const item of items) {
             const row = {
-              id: item.id ?? nextId(table.slice(0, 3)),
+              id: (item["id"] as string | undefined) ?? nextId(table.slice(0, 3)),
               created_at: new Date().toISOString(),
               ...item,
             };
@@ -146,7 +146,7 @@ function createInMemorySupabase() {
             Object.assign(row, payload);
           } else {
             row = {
-              id: payload.id ?? nextId(table.slice(0, 3)),
+              id: (payload["id"] as string | undefined) ?? nextId(table.slice(0, 3)),
               created_at: new Date().toISOString(),
               ...payload,
             };
@@ -287,32 +287,38 @@ describe("ETAPA 6.8 — Teste de Aceitação do Fluxo Integrado", () => {
 
     // Metadados estruturados JSONB retornados e visíveis
     expect(createdQuestion.metadata).toBeDefined();
-    expect(createdQuestion.metadata?.position).toBe("Analista Judiciário - Área Judiciária");
-    expect(createdQuestion.metadata?.organization).toBe("Tribunal Regional Federal da 5ª Região");
-    expect(createdQuestion.metadata?.question_number).toBe(14);
-    expect(createdQuestion.metadata?.source_title).toBe(
+    expect(createdQuestion.metadata?.["position"]).toBe("Analista Judiciário - Área Judiciária");
+    expect(createdQuestion.metadata?.["organization"]).toBe(
+      "Tribunal Regional Federal da 5ª Região",
+    );
+    expect(createdQuestion.metadata?.["question_number"]).toBe(14);
+    expect(createdQuestion.metadata?.["source_title"]).toBe(
       "Caderno de Questões TRF5 - Caderno Branco",
     );
-    expect(createdQuestion.metadata?.content_hash).toBeDefined();
+    expect(createdQuestion.metadata?.["content_hash"]).toBeDefined();
 
     // Verificação de persistência no banco Supabase em todas as entidades relacionadas
-    expect(mockDb.store.subjects).toHaveLength(1);
-    expect(mockDb.store.subjects[0]!.name).toBe("Direito Constitucional");
-    expect(createdQuestion.subjectId).toBe(mockDb.store.subjects[0]!.id);
+    expect(mockDb.store["subjects"]).toHaveLength(1);
+    expect(mockDb.store["subjects"]?.[0]?.["name"]).toBe("Direito Constitucional");
+    expect(createdQuestion.subjectId).toBe(mockDb.store["subjects"]?.[0]?.["id"]);
 
-    expect(mockDb.store.topics).toHaveLength(1);
-    expect(mockDb.store.topics[0]!.name).toBe("Direitos e Deveres Individuais e Coletivos");
-    expect(createdQuestion.topicId).toBe(mockDb.store.topics[0]!.id);
+    expect(mockDb.store["topics"]).toHaveLength(1);
+    expect(mockDb.store["topics"]?.[0]?.["name"]).toBe(
+      "Direitos e Deveres Individuais e Coletivos",
+    );
+    expect(createdQuestion.topicId).toBe(mockDb.store["topics"]?.[0]?.["id"]);
 
-    expect(mockDb.store.contests).toHaveLength(1);
-    expect(mockDb.store.contests[0]!.name).toBe("Concurso Público TRF5");
-    expect(createdQuestion.contestId).toBe(mockDb.store.contests[0]!.id);
+    expect(mockDb.store["contests"]).toHaveLength(1);
+    expect(mockDb.store["contests"]?.[0]?.["name"]).toBe("Concurso Público TRF5");
+    expect(createdQuestion.contestId).toBe(mockDb.store["contests"]?.[0]?.["id"]);
 
-    expect(mockDb.store.sources).toHaveLength(1);
-    expect(mockDb.store.sources[0]!.title).toBe("Caderno de Questões TRF5 - Caderno Branco");
+    expect(mockDb.store["sources"]).toHaveLength(1);
+    expect(mockDb.store["sources"]?.[0]?.["title"]).toBe(
+      "Caderno de Questões TRF5 - Caderno Branco",
+    );
 
-    expect(mockDb.store.questions).toHaveLength(1);
-    expect(mockDb.store.questions[0]!.id).toBe(createdQuestion.questionId);
+    expect(mockDb.store["questions"]).toHaveLength(1);
+    expect(mockDb.store["questions"]?.[0]?.["id"]).toBe(createdQuestion.questionId);
 
     // 2. Simulação de Resolução da Questão na UI (Aluno acerta a questão)
     const attemptResult = await submitAnswer({
@@ -320,7 +326,7 @@ describe("ETAPA 6.8 — Teste de Aceitação do Fluxo Integrado", () => {
       chosenAnswer: "B",
       isCorrect: true,
       timeSpentSeconds: 45,
-      mode: "pratica",
+      mode: "estudo",
       declaredConfidence: 4,
       notes: "Lembrar da exceção: durante o dia por determinação judicial",
     });
@@ -336,21 +342,23 @@ describe("ETAPA 6.8 — Teste de Aceitação do Fluxo Integrado", () => {
     expect(attemptResult.knowledgeUpdated).toBe(true);
 
     // Verifica que question_attempts e question_stats foram gravados
-    expect(mockDb.store.question_attempts).toHaveLength(1);
-    expect(mockDb.store.question_attempts[0]!.question_id).toBe(createdQuestion.questionId);
-    expect(mockDb.store.question_attempts[0]!.chosen_answer).toBe("B");
-    expect(mockDb.store.question_attempts[0]!.is_correct).toBe(true);
+    expect(mockDb.store["question_attempts"]).toHaveLength(1);
+    expect(mockDb.store["question_attempts"]?.[0]?.["question_id"]).toBe(
+      createdQuestion.questionId,
+    );
+    expect(mockDb.store["question_attempts"]?.[0]?.["chosen_answer"]).toBe("B");
+    expect(mockDb.store["question_attempts"]?.[0]?.["is_correct"]).toBe(true);
 
-    expect(mockDb.store.question_stats).toHaveLength(1);
-    expect(mockDb.store.question_stats[0]!.total_attempts).toBe(1);
-    expect(mockDb.store.question_stats[0]!.correct_count).toBe(1);
-    expect(mockDb.store.question_stats[0]!.streak_correct).toBe(1);
+    expect(mockDb.store["question_stats"]).toHaveLength(1);
+    expect(mockDb.store["question_stats"]?.[0]?.["total_attempts"]).toBe(1);
+    expect(mockDb.store["question_stats"]?.[0]?.["correct_count"]).toBe(1);
+    expect(mockDb.store["question_stats"]?.[0]?.["streak_correct"]).toBe(1);
 
     // Verifica que o tópico teve seu domínio (mastery/confidence) atualizado
-    expect(mockDb.store.user_topic_knowledge).toHaveLength(1);
-    expect(mockDb.store.user_topic_knowledge[0]!.topic_id).toBe(createdQuestion.topicId);
-    expect(Number(mockDb.store.user_topic_knowledge[0]!.mastery)).toBeGreaterThan(0);
-    expect(Number(mockDb.store.user_topic_knowledge[0]!.confidence)).toBeGreaterThan(0);
+    expect(mockDb.store["user_topic_knowledge"]).toHaveLength(1);
+    expect(mockDb.store["user_topic_knowledge"]?.[0]?.["topic_id"]).toBe(createdQuestion.topicId);
+    expect(Number(mockDb.store["user_topic_knowledge"]?.[0]?.["mastery"])).toBeGreaterThan(0);
+    expect(Number(mockDb.store["user_topic_knowledge"]?.[0]?.["confidence"])).toBeGreaterThan(0);
   });
 
   it("Deduplica questão com mesmo content_hash e não duplica matérias/tópicos/concursos já existentes", async () => {
@@ -409,10 +417,10 @@ describe("ETAPA 6.8 — Teste de Aceitação do Fluxo Integrado", () => {
 
     expect(res1.created).toHaveLength(1);
     const q1Id = res1.created[0]!.questionId;
-    expect(mockDb.store.questions).toHaveLength(1);
-    expect(mockDb.store.subjects).toHaveLength(1);
-    expect(mockDb.store.topics).toHaveLength(1);
-    expect(mockDb.store.contests).toHaveLength(1);
+    expect(mockDb.store["questions"]).toHaveLength(1);
+    expect(mockDb.store["subjects"]).toHaveLength(1);
+    expect(mockDb.store["topics"]).toHaveLength(1);
+    expect(mockDb.store["contests"]).toHaveLength(1);
 
     // 2. Cria uma segunda questão DIFERENTE na MESMA matéria, tópico e concurso
     const statement2 =
@@ -448,10 +456,10 @@ describe("ETAPA 6.8 — Teste de Aceitação do Fluxo Integrado", () => {
     );
 
     expect(res2.created).toHaveLength(1);
-    expect(mockDb.store.questions).toHaveLength(2); // Nova questão criada
-    expect(mockDb.store.subjects).toHaveLength(1); // Matéria reutilizada (0 duplicatas!)
-    expect(mockDb.store.topics).toHaveLength(1); // Tópico reutilizado (0 duplicatas!)
-    expect(mockDb.store.contests).toHaveLength(1); // Concurso reutilizado (0 duplicatas!)
+    expect(mockDb.store["questions"]).toHaveLength(2); // Nova questão criada
+    expect(mockDb.store["subjects"]).toHaveLength(1); // Matéria reutilizada (0 duplicatas!)
+    expect(mockDb.store["topics"]).toHaveLength(1); // Tópico reutilizado (0 duplicatas!)
+    expect(mockDb.store["contests"]).toHaveLength(1); // Concurso reutilizado (0 duplicatas!)
 
     // 3. Tenta reinserir a PRIMEIRA questão (mesmo enunciado e alternativas = mesmo content_hash)
     const res3 = await extractAndCreateQuestions(
@@ -468,7 +476,7 @@ describe("ETAPA 6.8 — Teste de Aceitação do Fluxo Integrado", () => {
     expect(res3.created).toHaveLength(1);
     // Deduplicação ativa: retorna o mesmo questionId da primeira ingestão sem novo registro na tabela questions
     expect(res3.created[0]!.questionId).toBe(q1Id);
-    expect(mockDb.store.questions).toHaveLength(2); // Continua 2 questões, nenhuma duplicata!
+    expect(mockDb.store["questions"]).toHaveLength(2); // Continua 2 questões, nenhuma duplicata!
   });
 
   it("Trata resolução com erro: alimenta Central de Erros e penaliza mastery conforme dificuldade", async () => {
@@ -533,7 +541,7 @@ describe("ETAPA 6.8 — Teste de Aceitação do Fluxo Integrado", () => {
       chosenAnswer: "A", // Resposta incorreta
       isCorrect: false,
       timeSpentSeconds: 60,
-      mode: "pratica",
+      mode: "estudo",
     });
 
     expect(attemptResult.feedback.isCorrect).toBe(false);
@@ -543,14 +551,14 @@ describe("ETAPA 6.8 — Teste de Aceitação do Fluxo Integrado", () => {
     expect(attemptResult.errorEntryId).toBeDefined();
 
     // Central de Erros recebeu a ocorrência
-    expect(mockDb.store.error_entries).toHaveLength(1);
-    expect(mockDb.store.error_entries[0]!.question_id).toBe(question.questionId);
-    expect(mockDb.store.error_entries[0]!.topic_id).toBe(question.topicId);
+    expect(mockDb.store["error_entries"]).toHaveLength(1);
+    expect(mockDb.store["error_entries"]?.[0]?.["question_id"]).toBe(question.questionId);
+    expect(mockDb.store["error_entries"]?.[0]?.["topic_id"]).toBe(question.topicId);
 
     // Knowledge Engine foi acionado registrando a evolução no histórico
-    expect(mockDb.store.user_topic_knowledge).toHaveLength(1);
-    expect(mockDb.store.knowledge_history).toHaveLength(1);
-    expect(mockDb.store.knowledge_history[0]!.attempt_id).toBe(attemptResult.attemptId);
-    expect(mockDb.store.knowledge_history[0]!.topic_id).toBe(question.topicId);
+    expect(mockDb.store["user_topic_knowledge"]).toHaveLength(1);
+    expect(mockDb.store["knowledge_history"]).toHaveLength(1);
+    expect(mockDb.store["knowledge_history"]?.[0]?.["attempt_id"]).toBe(attemptResult.attemptId);
+    expect(mockDb.store["knowledge_history"]?.[0]?.["topic_id"]).toBe(question.topicId);
   });
 });

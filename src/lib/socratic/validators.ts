@@ -67,33 +67,34 @@ export function validateSocraticResponse(
   const raw = output as Record<string, unknown>;
 
   // 1. Validação de Status
-  const statusStr = String(raw['status'] || "active").toLowerCase();
+  const statusStr = String(raw["status"] || "active").toLowerCase();
   if (!VALID_STATUSES.has(statusStr)) {
-    throw new Error(`Status socrático inválido: '${raw['status']}'.`);
+    throw new Error(`Status socrático inválido: '${raw["status"]}'.`);
   }
   const status = statusStr as SocraticResponse["status"];
 
   // 2. Validação do Modo Pedagogico
-  const modeStr = String(raw['pedagogicalMode'] || context?.pedagogicalMode || "ACTIVE_RECALL");
+  const modeStr = String(raw["pedagogicalMode"] || context?.pedagogicalMode || "ACTIVE_RECALL");
   if (!VALID_MODES.has(modeStr as SocraticPedagogicalMode)) {
-    throw new Error(`Modo pedagógico socrático inválido: '${raw['pedagogicalMode']}'.`);
+    throw new Error(`Modo pedagógico socrático inválido: '${raw["pedagogicalMode"]}'.`);
   }
   const pedagogicalMode = modeStr as SocraticPedagogicalMode;
 
   // 3. Validação da Ação Socrática
-  const actionStr = String(raw['action'] || "ASK").toUpperCase();
+  const actionStr = String(raw["action"] || "ASK").toUpperCase();
   if (!VALID_ACTIONS.has(actionStr as SocraticAction)) {
-    throw new Error(`Ação socrática inválida: '${raw['action']}'.`);
+    throw new Error(`Ação socrática inválida: '${raw["action"]}'.`);
   }
   const action = actionStr as SocraticAction;
 
   // 4. Validação do Nível de Pista
-  const rawHintLevel = Number(raw['hintLevel'] ?? context?.hintLevel ?? 0);
+  const rawHintLevel = Number(raw["hintLevel"] ?? context?.hintLevel ?? 0);
   const hintLevel = isNaN(rawHintLevel) ? 0 : Math.max(0, Math.min(3, rawHintLevel));
 
   // 5. Validação de Conteúdo por Ação (Coerência Estrita)
-  const question = typeof raw['question'] === "string" ? raw['question'].trim() : undefined;
-  const explanation = typeof raw['explanation'] === "string" ? raw['explanation'].trim() : undefined;
+  const question = typeof raw["question"] === "string" ? raw["question"].trim() : undefined;
+  const explanation =
+    typeof raw["explanation"] === "string" ? raw["explanation"].trim() : undefined;
 
   if ((action === "ASK" || action === "HINT" || action === "REFORMULATE") && !question) {
     throw new Error(
@@ -129,37 +130,37 @@ export function validateSocraticResponse(
 
   // 7. Validação do Objeto de Avaliação (se presente)
   let evaluation: StudentResponseEvaluation | undefined = undefined;
-  if (raw['evaluation'] && typeof raw['evaluation'] === "object") {
-    const evRaw = raw['evaluation'] as Record<string, unknown>;
-    const classStr = String(evRaw['classification'] || "NO_RESPONSE").toUpperCase();
+  if (raw["evaluation"] && typeof raw["evaluation"] === "object") {
+    const evRaw = raw["evaluation"] as Record<string, unknown>;
+    const classStr = String(evRaw["classification"] || "NO_RESPONSE").toUpperCase();
     if (!VALID_CLASSIFICATIONS.has(classStr as StudentResponseClassification)) {
-      throw new Error(`Classificação de resposta inválida: '${evRaw['classification']}'.`);
+      throw new Error(`Classificação de resposta inválida: '${evRaw["classification"]}'.`);
     }
 
-    const reasoningStr = String(evRaw['reasoningQuality'] || "ausente").toLowerCase();
+    const reasoningStr = String(evRaw["reasoningQuality"] || "ausente").toLowerCase();
     const reasoningQuality = (
       VALID_REASONINGS.has(reasoningStr as StudentReasoningQuality) ? reasoningStr : "ausente"
     ) as StudentReasoningQuality;
 
-    const confidenceNum = Number(evRaw['confidence'] ?? 0.8);
+    const confidenceNum = Number(evRaw["confidence"] ?? 0.8);
     const confidence = isNaN(confidenceNum) ? 0.8 : Math.max(0, Math.min(1, confidenceNum));
 
     const evResult: any = {
       classification: classStr as StudentResponseClassification,
       confidence,
       reasoningQuality,
-      needsHint: Boolean(evRaw['needsHint']),
+      needsHint: Boolean(evRaw["needsHint"]),
       recommendedNextStep: VALID_ACTIONS.has(
-        String(evRaw['recommendedNextStep']).toUpperCase() as SocraticAction,
+        String(evRaw["recommendedNextStep"]).toUpperCase() as SocraticAction,
       )
-        ? (String(evRaw['recommendedNextStep']).toUpperCase() as SocraticAction)
+        ? (String(evRaw["recommendedNextStep"]).toUpperCase() as SocraticAction)
         : action,
     };
-    if (typeof evRaw['identifiedGap'] === "string" && evRaw['identifiedGap'].trim()) {
-      evResult.identifiedGap = evRaw['identifiedGap'].trim();
+    if (typeof evRaw["identifiedGap"] === "string" && evRaw["identifiedGap"].trim()) {
+      evResult.identifiedGap = evRaw["identifiedGap"].trim();
     }
-    if (typeof evRaw['misconception'] === "string" && evRaw['misconception'].trim()) {
-      evResult.misconception = evRaw['misconception'].trim();
+    if (typeof evRaw["misconception"] === "string" && evRaw["misconception"].trim()) {
+      evResult.misconception = evRaw["misconception"].trim();
     }
     evaluation = evResult;
   }
@@ -179,14 +180,14 @@ export function validateSocraticResponse(
     }
   }
 
-  const confidenceScoreNum = Number(raw['confidenceScore'] ?? 0.9);
+  const confidenceScoreNum = Number(raw["confidenceScore"] ?? 0.9);
   const confidenceScore = isNaN(confidenceScoreNum)
     ? 0.9
     : Math.max(0, Math.min(1, confidenceScoreNum));
 
   const shouldContinue =
-    typeof raw['shouldContinue'] === "boolean"
-      ? raw['shouldContinue']
+    typeof raw["shouldContinue"] === "boolean"
+      ? raw["shouldContinue"]
       : action !== "COMPLETE" && action !== "CONSOLIDATE";
 
   const finalResponse: any = {
@@ -201,11 +202,11 @@ export function validateSocraticResponse(
     generatedAt: new Date().toISOString(),
   };
   if (question) finalResponse.question = question;
-  if (typeof raw['detectedGap'] === "string" && raw['detectedGap'].trim()) {
-    finalResponse.detectedGap = raw['detectedGap'].trim();
+  if (typeof raw["detectedGap"] === "string" && raw["detectedGap"].trim()) {
+    finalResponse.detectedGap = raw["detectedGap"].trim();
   }
-  if (VALID_ACTIONS.has(String(raw['nextAction']).toUpperCase() as SocraticAction)) {
-    finalResponse.nextAction = String(raw['nextAction']).toUpperCase() as SocraticAction;
+  if (VALID_ACTIONS.has(String(raw["nextAction"]).toUpperCase() as SocraticAction)) {
+    finalResponse.nextAction = String(raw["nextAction"]).toUpperCase() as SocraticAction;
   }
 
   return finalResponse as SocraticResponse;

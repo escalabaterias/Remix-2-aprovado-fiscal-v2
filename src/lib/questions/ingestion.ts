@@ -135,7 +135,7 @@ export type ExtractedQuestion = {
   /** Explicação / gabarito comentado (quando disponível) */
   explanation: string | null;
   /** Metadados de concurso */
-  contestMetadata: ContestMetadata;
+  contestMetadata?: ContestMetadata;
   /** Nome ou ID da matéria (texto livre, será mapeado depois) */
   subjectLabel: string | null;
   /** Nome ou ID do tópico (texto livre, será mapeado depois) */
@@ -307,13 +307,13 @@ export function validateExtractedQuestion(question: ExtractedQuestion): Question
       message: "Questão sem tópico definido.",
     });
   }
-  if (!question.contestMetadata.examBoard) {
+  if (!question.contestMetadata?.examBoard) {
     warnings.push({
       field: "contestMetadata.examBoard",
       message: "Questão sem banca examinadora.",
     });
   }
-  if (question.contestMetadata.year === null) {
+  if (!question.contestMetadata || question.contestMetadata.year === null) {
     warnings.push({
       field: "contestMetadata.year",
       message: "Questão sem ano da prova.",
@@ -570,9 +570,9 @@ export function mapExtractedToQuestionBankInput(
     alternatives,
     correctAnswer: question.correctAnswer,
     isTrueFalse: question.isTrueFalse,
-    examBoard: question.contestMetadata.examBoard,
-    contestName: question.contestMetadata.contestName,
-    year: question.contestMetadata.year,
+    examBoard: question.contestMetadata?.examBoard ?? null,
+    contestName: question.contestMetadata?.contestName ?? null,
+    year: question.contestMetadata?.year ?? null,
     difficulty: question.difficulty,
     origin: mapSourceToOrigin(source),
     novelty: "nova" as QuestionNovelty,

@@ -43,6 +43,14 @@ export type AttemptMode = "estudo" | "revisao" | "simulado" | "diagnostico" | "f
 // QUESTION BANK ITEM
 // ─────────────────────────────────────────────────────────────────────────────
 
+/** Alternativa de questão no banco */
+export type QuestionAlternative = {
+  letter: string;
+  text: string;
+  isCorrect?: boolean | null;
+  [key: string]: string | number | boolean | null | undefined;
+};
+
 /**
  * Questão enriquecida com estatísticas e metadados para o banco.
  * Combina dados da tabela questions + question_stats.
@@ -53,7 +61,7 @@ export type QuestionBankItem = {
   /** Enunciado */
   statement: string;
   /** Alternativas (JSON) */
-  alternatives: unknown[];
+  alternatives: QuestionAlternative[];
   /** Resposta correta */
   correctAnswer: string | null;
   /** Se é verdadeiro/falso */
@@ -85,7 +93,7 @@ export type QuestionBankItem = {
   /** Se é pública */
   isPublic: boolean;
   /** Metadados estruturados JSONB (content_hash, cargo, órgão, prova, etc.) */
-  metadata?: Record<string, unknown> | null;
+  metadata?: Record<string, string | number | boolean | null | undefined> | null;
   /** Estatísticas do usuário (null se nunca tentou) */
   stats: QuestionStats | null;
 };

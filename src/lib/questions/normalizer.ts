@@ -291,51 +291,59 @@ function sha256Pure(str: string): string {
   for (i = 0; i < str[lengthProperty]; i++) {
     j = str.charCodeAt(i);
     if (j >> 8) return ""; // non-ASCII
-    words[i >> 2] |= j << (((3 - i) % 4) * 8);
+    const currentWord = words[i >> 2] ?? 0;
+    words[i >> 2] = currentWord | (j << (((3 - i) % 4) * 8));
   }
   words[words[lengthProperty]] = (asciiBitLength / maxWord) | 0;
   words[words[lengthProperty]] = asciiBitLength;
 
   for (j = 0; j < words[lengthProperty];) {
     const w = words.slice(j, (j += 16));
-    const oldHash = hash;
+    const oldHash = [...hash];
     hash = hash.slice(0, 8);
 
     for (i = 0; i < 64; i++) {
-      const w15 = w[i - 15] || 0,
-        w2 = w[i - 2] || 0;
+      const w15 = w[i - 15] ?? 0,
+        w2 = w[i - 2] ?? 0;
 
       const s0 = rightRotate(w15, 7) ^ rightRotate(w15, 18) ^ (w15 >>> 3);
       const s1 = rightRotate(w2, 17) ^ rightRotate(w2, 19) ^ (w2 >>> 10);
-      w[i] = i < 16 ? w[i] : (((w[i - 16] + s0) | 0) + ((w[i - 7] + s1) | 0)) | 0;
+      const w16 = w[i - 16] ?? 0;
+      const w7 = w[i - 7] ?? 0;
+      w[i] = i < 16 ? (w[i] ?? 0) : (((w16 + s0) | 0) + ((w7 + s1) | 0)) | 0;
 
-      const s1h = rightRotate(hash[4] || 0, 6) ^ rightRotate(hash[4] || 0, 11) ^ rightRotate(hash[4] || 0, 25);
-      const ch = (hash[4] || 0 & hash[5] || 0) ^ (~hash[4] || 0 & hash[6] || 0);
-      const temp1 = ((((hash[7] || 0 + s1h) | 0) + ((ch + k[i]) | 0)) | 0) + w[i];
-      const s0h = rightRotate(hash[0] || 0, 2) ^ rightRotate(hash[0] || 0, 13) ^ rightRotate(hash[0] || 0, 22);
-      const maj = (hash[0] || 0 & hash[1] || 0) ^ (hash[0] || 0 & hash[2] || 0) ^ (hash[1] || 0 & hash[2] || 0);
+      const h0 = hash[0] ?? 0;
+      const h1 = hash[1] ?? 0;
+      const h2 = hash[2] ?? 0;
+      const h3 = hash[3] ?? 0;
+      const h4 = hash[4] ?? 0;
+      const h5 = hash[5] ?? 0;
+      const h6 = hash[6] ?? 0;
+      const h7 = hash[7] ?? 0;
+      const ki = k[i] ?? 0;
+      const wi = w[i] ?? 0;
+
+      const s1h = rightRotate(h4, 6) ^ rightRotate(h4, 11) ^ rightRotate(h4, 25);
+      const ch = (h4 & h5) ^ (~h4 & h6);
+      const temp1 = ((((h7 + s1h) | 0) + ((ch + ki) | 0)) | 0) + wi;
+      const s0h = rightRotate(h0, 2) ^ rightRotate(h0, 13) ^ rightRotate(h0, 22);
+      const maj = (h0 & h1) ^ (h0 & h2) ^ (h1 & h2);
       const temp2 = (s0h + maj) | 0;
 
-      hash = [
-        (temp1 + temp2) | 0,
-        hash[0] || 0,
-        hash[1] || 0,
-        hash[2] || 0,
-        (hash[3] || 0 + temp1) | 0,
-        hash[4] || 0,
-        hash[5] || 0,
-        hash[6] || 0,
-      ];
+      hash = [(temp1 + temp2) | 0, h0, h1, h2, (h3 + temp1) | 0, h4, h5, h6];
     }
 
     for (i = 0; i < 8; i++) {
-      hash[i] = (hash[i] + oldHash[i]) | 0;
+      const curr = hash[i] ?? 0;
+      const old = oldHash[i] ?? 0;
+      hash[i] = (curr + old) | 0;
     }
   }
 
   for (i = 0; i < 8; i++) {
-    for (j = 3; j + 1; j--) {
-      const b = (hash[i] >> (j * 8)) & 255;
+    const hVal = hash[i] ?? 0;
+    for (j = 3; j >= 0; j--) {
+      const b = (hVal >> (j * 8)) & 255;
       result += (b < 16 ? "0" : "") + b.toString(16);
     }
   }

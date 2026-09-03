@@ -78,6 +78,8 @@
 import { addDays, availableMinutesOn, daysBetween, type AvailabilityWeek } from "./availability";
 
 import { computeDiagnosticBoost, type IntelligenceInput } from "./intelligence";
+import { computeDeficitBoost, type SubjectDeficitSummary } from "./deficit-engine";
+import { estimateTaskTime, type HistoricalExecutionObservation } from "./time-estimator";
 
 import type { KnowledgeStateName } from "../diagnosis/engine";
 
@@ -139,6 +141,12 @@ export type PlannerOptions = {
   minBlockMinutes?: number;
   /** Dados diagnósticos opcionais, indexados por topicId */
   diagnosticData?: Map<string, DiagnosticData>;
+  /** Resumos de déficit acumulado por matéria/tópico (Fase 7.7.2) */
+  subjectDeficits?: Map<string, SubjectDeficitSummary>;
+  /** Capacidade semanal total em minutos para pacing do déficit */
+  weeklyCapacityMinutes?: number;
+  /** Histórico real de execução para estimativa contextual de tempo (Fase 7.7.1) */
+  timeHistory?: HistoricalExecutionObservation[];
 };
 
 export type ScoredCandidate = PlannerCandidate & {
@@ -237,7 +245,10 @@ export function computeRawScore(
  */
 export function scoreCandidates(
   candidates: PlannerCandidate[],
-  options: Pick<PlannerOptions, "examDate" | "startDate" | "diagnosticData">,
+  options: Pick<
+    PlannerOptions,
+    "examDate" | "startDate" | "diagnosticData" | "subjectDeficits" | "weeklyCapacityMinutes"
+  >,
 ): ScoredCandidate[] {
   const daysToExam = options.examDate ? daysBetween(options.startDate, options.examDate) : null;
 
@@ -325,6 +336,20 @@ export function scoreCandidates(
         diagnosticBoost = boostResult.diagnosticBoost;
         score = boostResult.finalScore;
         reasons.push(boostResult.reason);
+      }
+    }
+
+    // ── [Fase 7.7.2] Integração do Déficit Adaptativo ──────────────────
+    if (options.subjectDeficits && options.subjectDeficits.size > 0) {
+      const defResult = computeDeficitBoost({
+        subjectId: c.subjectId,
+        topicId: c.topicId,
+        subjectDeficits: options.subjectDeficits,
+        weeklyCapacityMinutes: options.weeklyCapacityMinutes ?? 600,
+      });
+      if (defResult.deficitBoost > 0) {
+        score += defResult.deficitBoost;
+        if (defResult.reason) reasons.push(defResult.reason);
       }
     }
 

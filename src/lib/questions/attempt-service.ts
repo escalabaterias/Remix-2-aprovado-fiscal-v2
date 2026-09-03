@@ -455,7 +455,9 @@ export async function submitAnswer(input: SubmitAnswerInput): Promise<SubmitAnsw
         kind: "practice",
         source: mapAttemptModeToEvidenceSource(input.mode),
         timestamp,
-        durationSeconds: input.timeSpentSeconds ?? undefined,
+        ...(input.timeSpentSeconds !== null && input.timeSpentSeconds !== undefined
+          ? { durationSeconds: input.timeSpentSeconds }
+          : {}),
         score: input.isCorrect ? 1.0 : 0.0,
         difficulty: mapDifficultyToKnowledge(questionMeta.difficulty),
         declaredConfidence: validDeclaredConfidence,

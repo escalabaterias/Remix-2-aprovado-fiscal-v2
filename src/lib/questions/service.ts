@@ -32,6 +32,7 @@ import { filterQuestions, rankQuestionsForStudy, computeBankSummary } from "./en
 import { computeQuestionContentHash, normalizeExamBoard } from "./normalizer";
 import type {
   QuestionBankItem,
+  QuestionAlternative,
   QuestionStats,
   QuestionFilter,
   QuestionBankSummary,
@@ -146,7 +147,9 @@ export function toQuestionBankItem(
   row: QuestionRow,
   stats: QuestionStats | null,
 ): QuestionBankItem {
-  const alternatives = Array.isArray(row.alternatives) ? row.alternatives : [];
+  const alternatives = Array.isArray(row.alternatives)
+    ? (row.alternatives as QuestionAlternative[])
+    : [];
   return {
     questionId: row.id,
     statement: row.statement,
@@ -166,7 +169,9 @@ export function toQuestionBankItem(
     tags: Array.isArray(row.tags) ? row.tags : [],
     explanation: row.explanation,
     isPublic: row.is_public,
-    metadata: (row.metadata as Record<string, unknown> | undefined) ?? null,
+    metadata:
+      (row.metadata as Record<string, string | number | boolean | null | undefined> | undefined) ??
+      null,
     stats,
   };
 }
@@ -373,14 +378,22 @@ export async function fetchAvailableFilterOptions(
       yearsSet.add(q.year);
     }
     const meta = q.metadata as Record<string, unknown> | null;
-    if (meta?.['organization'] && typeof meta['organization'] === "string" && meta['organization'].trim()) {
-      orgsSet.add(meta['organization'].trim());
+    if (
+      meta?.["organization"] &&
+      typeof meta["organization"] === "string" &&
+      meta["organization"].trim()
+    ) {
+      orgsSet.add(meta["organization"].trim());
     }
-    if (meta?.['position'] && typeof meta['position'] === "string" && meta['position'].trim()) {
-      rolesSet.add(meta['position'].trim());
+    if (meta?.["position"] && typeof meta["position"] === "string" && meta["position"].trim()) {
+      rolesSet.add(meta["position"].trim());
     }
-    if (meta?.['role_title'] && typeof meta['role_title'] === "string" && meta['role_title'].trim()) {
-      rolesSet.add(meta['role_title'].trim());
+    if (
+      meta?.["role_title"] &&
+      typeof meta["role_title"] === "string" &&
+      meta["role_title"].trim()
+    ) {
+      rolesSet.add(meta["role_title"].trim());
     }
   });
 
@@ -795,7 +808,7 @@ export async function createQuestion(input: CreateQuestionInput): Promise<Questi
   const userId = await requireUser();
 
   const hash =
-    (input.metadata?.['content_hash'] as string) ||
+    (input.metadata?.["content_hash"] as string) ||
     computeQuestionContentHash(
       input.statement,
       (input.alternatives as Array<{
@@ -879,7 +892,7 @@ export async function createQuestionWithClient(
   const userId = await requireUserFromClient(client);
 
   const hash =
-    (input.metadata?.['content_hash'] as string) ||
+    (input.metadata?.["content_hash"] as string) ||
     computeQuestionContentHash(
       input.statement,
       (input.alternatives as Array<{
