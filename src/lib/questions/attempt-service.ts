@@ -504,3 +504,331 @@ export async function submitAnswer(input: SubmitAnswerInput): Promise<SubmitAnsw
     knowledgeUpdated,
   };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SUBMISSÃO DE RESPOSTA EM SIMULADO (ETAPA 8.1 - FASE B)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type SubmitSimulationAnswerInput = {
+  /** ID do item no simulado (question_set_items.id) */
+  setItemId: string;
+  /** Resposta escolhida pelo aluno */
+  chosenAnswer: string;
+  /** Tempo gasto na questão em segundos (opcional) */
+  timeSpentSeconds?: number | null;
+  /** Confiança declarada (1-5, opcional) */
+  declaredConfidence?: number | null;
+  /** Anotações (opcional) */
+  notes?: string | null;
+};
+
+export type SubmitSimulationAnswerResult = {
+  /** ID da tentativa criada ou existente */
+  attemptId: string;
+  /** ID do item do simulado */
+  setItemId: string;
+  /** Se a resposta estava correta (calculado autoritativamente no servidor) */
+  isCorrect: boolean;
+  /** Resposta correta oficial */
+  correctAnswer: string;
+  /** Se é uma ressubmissão/retry idempotente */
+  isIdempotentRetry: boolean;
+  /** Feedback computado pelo engine */
+  feedback: AttemptFeedback;
+  /** Stats atualizadas após esta tentativa */
+  updatedStats: QuestionStats;
+};
+
+/**
+ * Submete a resposta para um item de simulado com autoridade 100% server-side,
+ * verificando o gabarito oficial no banco, prazos de timer e idempotência por UNIQUE(user_id, set_item_id).
+ */
+export async function submitSimulationAnswer(
+  input: SubmitSimulationAnswerInput,
+): Promise<SubmitSimulationAnswerResult> {
+  const userId = await requireUser();
+
+  // 1. Buscar item do simulado + validar existência
+  const { data: setItem, error: itemErr } = await supabase
+    .from("question_set_items")
+    .select("id, set_id, question_id, is_answered, is_correct, chosen_answer, attempt_id")
+    .eq("id", input.setItemId)
+    .maybeSingle();
+
+  if (itemErr) throw itemErr;
+  if (!setItem) {
+    throw new Error("Item do simulado não encontrado.");
+  }
+
+  // 2. Buscar o question_set para validar ownership, tipo e prazo
+  const { data: setRow, error: setErr } = await supabase
+    .from("question_sets")
+    .select("id, user_id, type, is_completed, started_at, time_limit_minutes")
+    .eq("id", setItem.set_id)
+    .maybeSingle();
+
+  if (setErr) throw setErr;
+  if (!setRow) {
+    throw new Error("Simulado vinculado não encontrado.");
+  }
+
+  if (setRow.user_id && setRow.user_id !== userId) {
+    throw new Error("Item do simulado não pertence ao usuário.");
+  }
+
+  if (setRow.is_completed) {
+    throw new Error("Simulado já foi concluído.");
+  }
+
+  // 3. Validação de Timer / Prazo (com margem de tolerância de latência de rede de 30 segundos)
+  if (setRow.started_at && setRow.time_limit_minutes && setRow.time_limit_minutes > 0) {
+    const startTime = new Date(setRow.started_at).getTime();
+    const deadline = startTime + setRow.time_limit_minutes * 60 * 1000 + 30000;
+    if (Date.now() > deadline) {
+      throw new Error("Tempo limite do simulado encerrado.");
+    }
+  }
+
+  // 4. Idempotência / Pre-check: se o item já foi respondido ou já existe tentativa para este user + set_item_id
+  const { data: existingAttempt } = await supabase
+    .from("question_attempts")
+    .select("id, is_correct, attempt_number, created_at, answered_at")
+    .eq("user_id", userId)
+    .eq("set_item_id", input.setItemId)
+    .maybeSingle();
+
+  // Buscar dados da questão para obter gabarito e metadados
+  const { data: question, error: qErr } = await supabase
+    .from("questions")
+    .select("id, correct_answer, difficulty, topic_id, subject_id")
+    .eq("id", setItem.question_id)
+    .single();
+
+  if (qErr || !question) {
+    throw new Error("Questão vinculada não encontrada.");
+  }
+
+  const correctAnswer = question.correct_answer ?? "";
+
+  if (existingAttempt) {
+    // Retorno idempotente sem duplicar tentativa, erros ou knowledge
+    const currentStats = (await fetchCurrentStats(setItem.question_id)) ?? {
+      totalAttempts: 1,
+      correctCount: existingAttempt.is_correct ? 1 : 0,
+      wrongCount: existingAttempt.is_correct ? 0 : 1,
+      streakCorrect: existingAttempt.is_correct ? 1 : 0,
+      streakWrong: existingAttempt.is_correct ? 0 : 1,
+      bestTimeSeconds: null,
+      avgTimeSeconds: null,
+      lastAttemptedAt: existingAttempt.answered_at ?? existingAttempt.created_at ?? null,
+      lastCorrectAt: existingAttempt.is_correct ? existingAttempt.answered_at : null,
+      lastWrongAt: !existingAttempt.is_correct ? existingAttempt.answered_at : null,
+      accuracy: existingAttempt.is_correct ? 1 : 0,
+    };
+
+    const feedback = computeAttemptFeedback({
+      questionId: setItem.question_id,
+      isCorrect: existingAttempt.is_correct ?? false,
+      difficulty: question.difficulty,
+      topicId: question.topic_id,
+      subjectId: question.subject_id,
+      timestamp: existingAttempt.answered_at ?? new Date().toISOString(),
+      currentStats,
+    });
+
+    return {
+      attemptId: existingAttempt.id,
+      setItemId: input.setItemId,
+      isCorrect: existingAttempt.is_correct ?? false,
+      correctAnswer,
+      isIdempotentRetry: true,
+      feedback,
+      updatedStats: currentStats,
+    };
+  }
+
+  // 5. Correção autoritativa no Servidor
+  const isCorrect = input.chosenAnswer.trim().toUpperCase() === correctAnswer.trim().toUpperCase();
+  const timestamp = new Date().toISOString();
+  const currentStats = await fetchCurrentStats(setItem.question_id);
+  const attemptNumber = await getNextAttemptNumber(userId, setItem.question_id);
+
+  // 6. Tentar inserir em question_attempts (com proteção pela constraint UNIQUE user_id, set_item_id)
+  let attemptId: string;
+  let finalAttemptNumber = attemptNumber;
+
+  const { data: newAttempt, error: insertErr } = await supabase
+    .from("question_attempts")
+    .insert({
+      user_id: userId,
+      question_id: setItem.question_id,
+      set_item_id: input.setItemId,
+      chosen_answer: input.chosenAnswer,
+      is_correct: isCorrect,
+      time_spent_seconds: input.timeSpentSeconds ?? null,
+      mode: "simulado",
+      declared_confidence: input.declaredConfidence ?? null,
+      notes: input.notes ?? null,
+      attempt_number: attemptNumber,
+      answered_at: timestamp,
+    })
+    .select("id, attempt_number")
+    .single();
+
+  if (insertErr) {
+    // Tratamento de concorrência / retry em caso de violação de constraint de unicidade (code 23505)
+    if (
+      insertErr.code === "23505" ||
+      insertErr.message.includes("idx_unique_user_set_item_attempt")
+    ) {
+      const { data: retryAttempt } = await supabase
+        .from("question_attempts")
+        .select("id, is_correct, attempt_number")
+        .eq("user_id", userId)
+        .eq("set_item_id", input.setItemId)
+        .single();
+
+      if (retryAttempt) {
+        attemptId = retryAttempt.id;
+        finalAttemptNumber = retryAttempt.attempt_number;
+      } else {
+        throw insertErr;
+      }
+    } else {
+      throw insertErr;
+    }
+  } else {
+    attemptId = newAttempt.id;
+    finalAttemptNumber = newAttempt.attempt_number;
+  }
+
+  // 7. Atualizar question_set_items
+  await supabase
+    .from("question_set_items")
+    .update({
+      is_answered: true,
+      chosen_answer: input.chosenAnswer,
+      is_correct: isCorrect,
+      time_spent_seconds: input.timeSpentSeconds ?? null,
+      attempt_id: attemptId,
+    })
+    .eq("id", input.setItemId);
+
+  // 8. Executar Integrações para a nova tentativa criada
+  const feedbackInput: AttemptFeedbackInput = {
+    questionId: setItem.question_id,
+    isCorrect,
+    difficulty: question.difficulty,
+    topicId: question.topic_id,
+    subjectId: question.subject_id,
+    timestamp,
+    currentStats,
+  };
+
+  const feedback = computeAttemptFeedback(feedbackInput);
+  const newStatsValues = computeNewStats(
+    currentStats,
+    isCorrect,
+    input.timeSpentSeconds ?? null,
+    timestamp,
+  );
+
+  await upsertStats(userId, setItem.question_id, newStatsValues);
+
+  if (feedback.shouldCreateError) {
+    try {
+      await createErrorFromAttempt({
+        attemptId,
+        feedback,
+      });
+    } catch {
+      // Ignorar falha não impeditiva na Central de Erros
+    }
+  }
+
+  // Evidência cognitiva
+  if (feedback.topicId !== null) {
+    try {
+      await recordCognitiveEvidence({
+        userId,
+        topicId: feedback.topicId,
+        subjectId: feedback.subjectId,
+        kind: "practice",
+        source: "question_bank",
+        timestamp,
+        ...(input.timeSpentSeconds !== null && input.timeSpentSeconds !== undefined
+          ? { durationSeconds: input.timeSpentSeconds }
+          : {}),
+        score: isCorrect ? 1.0 : 0.0,
+        difficulty: mapDifficultyToKnowledge(question.difficulty),
+        referenceId: attemptId,
+      });
+    } catch {
+      // Ignorar falha não impeditiva
+    }
+  }
+
+  // Knowledge Engine
+  if (feedback.topicId !== null) {
+    try {
+      await updateKnowledgeFromAttempt({
+        attemptId,
+        feedback,
+      });
+    } catch {
+      // Ignorar falha não impeditiva
+    }
+  }
+
+  const total = newStatsValues.totalAttempts;
+  const correct = newStatsValues.correctCount;
+  const updatedStats: QuestionStats = {
+    ...newStatsValues,
+    accuracy: total > 0 ? Math.max(0, Math.min(1, correct / total)) : 0,
+  };
+
+  return {
+    attemptId,
+    setItemId: input.setItemId,
+    isCorrect,
+    correctAnswer,
+    isIdempotentRetry: false,
+    feedback,
+    updatedStats,
+  };
+}
+
+export type SubmitSimulationBatchInput = {
+  setId: string;
+  answers: Array<{
+    setItemId: string;
+    chosenAnswer: string;
+    timeSpentSeconds?: number | null;
+  }>;
+};
+
+/**
+ * Submete em lote respostas para um simulado.
+ * Processa apenas itens respondidos (questões UNANSWERED são ignoradas sem gerar tentativas ou erros).
+ */
+export async function submitSimulationBatch(input: SubmitSimulationBatchInput): Promise<{
+  results: SubmitSimulationAnswerResult[];
+}> {
+  await requireUser();
+  const results: SubmitSimulationAnswerResult[] = [];
+
+  for (const ans of input.answers) {
+    // Se não há resposta informada (UNANSWERED), não cria tentativa nem altera Knowledge
+    if (!ans.chosenAnswer || ans.chosenAnswer.trim() === "") {
+      continue;
+    }
+    const result = await submitSimulationAnswer({
+      setItemId: ans.setItemId,
+      chosenAnswer: ans.chosenAnswer,
+      timeSpentSeconds: ans.timeSpentSeconds ?? null,
+    });
+    results.push(result);
+  }
+
+  return { results };
+}

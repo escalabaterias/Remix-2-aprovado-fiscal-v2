@@ -32,6 +32,7 @@ export const NAV_ITEMS: NavItem[] = [
 
   // HUB 3: Treino & Inteligência
   { label: "Sessão de Questões", to: "/questoes", group: "treino_inteligencia" },
+  { label: "Simulados", to: "/simulados", group: "treino_inteligencia" },
   { label: "Caderno de Erros", to: "/central-erros", group: "treino_inteligencia" },
   { label: "Flashcards", to: "/flashcards", group: "treino_inteligencia" },
   { label: "Raio-X de Bancas", to: "/bancas", group: "treino_inteligencia" },

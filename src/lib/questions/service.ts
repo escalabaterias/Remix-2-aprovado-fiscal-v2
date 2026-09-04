@@ -86,6 +86,7 @@ type StatsRow = {
 
 type QuestionSetRow = {
   id: string;
+  user_id?: string;
   name: string;
   description: string | null;
   type: string;
@@ -245,7 +246,7 @@ const STATS_SELECT =
   "question_id, total_attempts, correct_count, wrong_count, streak_correct, streak_wrong, best_time_seconds, avg_time_seconds, last_attempted_at, last_correct_at, last_wrong_at";
 
 const QUESTION_SET_SELECT =
-  "id, name, description, type, contest_id, subject_id, topic_id, time_limit_minutes, is_timed, is_completed, completed_at, total_questions, correct_count, wrong_count, score, tags";
+  "id, user_id, name, description, type, contest_id, subject_id, topic_id, time_limit_minutes, is_timed, started_at, is_completed, completed_at, total_questions, correct_count, wrong_count, score, tags";
 
 const QUESTION_SET_ITEM_SELECT =
   "id, set_id, question_id, position, is_answered, is_correct, chosen_answer, time_spent_seconds, attempt_id, notes";
@@ -506,6 +507,34 @@ export async function fetchQuestions(
   return items;
 }
 
+/**
+ * Busca detalhes das questões por uma lista de IDs em lote (1-2 queries).
+ */
+export async function fetchQuestionsByIds(
+  questionIds: string[],
+): Promise<Map<string, QuestionBankItem>> {
+  if (!questionIds || questionIds.length === 0) return new Map();
+  await requireUser();
+
+  const { data, error } = await supabase
+    .from("questions")
+    .select(QUESTION_SELECT)
+    .in("id", questionIds);
+
+  if (error) throw error;
+  if (!data) return new Map();
+
+  const rows = data as QuestionRow[];
+  const statsMap = await fetchStatsInBatch(questionIds);
+  const map = new Map<string, QuestionBankItem>();
+
+  for (const row of rows) {
+    map.set(row.id, toQuestionBankItem(row, statsMap.get(row.id) ?? null));
+  }
+
+  return map;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 2. fetchRankedQuestions
 // ─────────────────────────────────────────────────────────────────────────────
@@ -750,6 +779,169 @@ export async function updateQuestionSetItem(
   if (error) throw error;
 
   return toQuestionSetItem(data as QuestionSetItemRow);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 8b. startQuestionSet
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Inicia o simulado definindo o timestamp server-side `started_at` de forma atômica e idempotente.
+ *
+ * Regras:
+ *  - Requer usuário autenticado.
+ *  - Apenas o proprietário pode iniciar.
+ *  - O set não pode estar concluído.
+ *  - Se já possui `started_at`, retorna o objeto existente sem alterar o cronômetro.
+ */
+export async function startQuestionSet(setId: string): Promise<QuestionSet> {
+  const userId = await requireUser();
+
+  // 1. Buscar estado atual para validar ownership e is_completed
+  const { data: existing, error: fetchErr } = await supabase
+    .from("question_sets")
+    .select(QUESTION_SET_SELECT)
+    .eq("id", setId)
+    .maybeSingle();
+
+  if (fetchErr) throw fetchErr;
+  if (!existing) {
+    throw new Error("Simulado não encontrado.");
+  }
+
+  const existingRow = existing as QuestionSetRow;
+  if (existingRow.user_id && existingRow.user_id !== userId) {
+    throw new Error("Acesso negado ao simulado.");
+  }
+
+  if (existingRow.is_completed) {
+    throw new Error("Simulado já foi concluído.");
+  }
+
+  // 2. Idempotência: Se já possui started_at, retorna imediatamente
+  if (existingRow.started_at) {
+    return toQuestionSet(existingRow);
+  }
+
+  // 3. Atualização atômica condicional: update com WHERE started_at IS NULL
+  const now = new Date().toISOString();
+  const { data: updatedData, error: updateErr } = await supabase
+    .from("question_sets")
+    .update({ started_at: now })
+    .eq("id", setId)
+    .eq("user_id", userId)
+    .eq("is_completed", false)
+    .is("started_at", null)
+    .select(QUESTION_SET_SELECT)
+    .maybeSingle();
+
+  if (updateErr) throw updateErr;
+
+  if (updatedData) {
+    return toQuestionSet(updatedData as QuestionSetRow);
+  }
+
+  // Se por concorrência outra chamada preencheu started_at simultaneamente:
+  const { data: refetched } = await supabase
+    .from("question_sets")
+    .select(QUESTION_SET_SELECT)
+    .eq("id", setId)
+    .single();
+
+  return toQuestionSet(refetched as QuestionSetRow);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 8c. completeQuestionSet
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Finaliza um question_set e consolida métricas (score, correctCount, wrongCount) server-side.
+ *
+ * Regras:
+ *  - Requer usuário autenticado proprietário do set.
+ *  - Idempotente: se já concluído, retorna o estado persistido sem reprocessar.
+ *  - Consolidação autoritativa baseada estritamente nos itens gravados em question_set_items.
+ *  - Questões UNANSWERED afetam a nota global (score = correct / total), mas não contam como wrong.
+ */
+export async function completeQuestionSet(
+  setId: string,
+): Promise<{ set: QuestionSet; items: QuestionSetItem[] }> {
+  const userId = await requireUser();
+
+  // 1. Buscar o set para validar ownership
+  const { data: setRow, error: setErr } = await supabase
+    .from("question_sets")
+    .select(QUESTION_SET_SELECT)
+    .eq("id", setId)
+    .maybeSingle();
+
+  if (setErr) throw setErr;
+  if (!setRow) {
+    throw new Error("Simulado não encontrado.");
+  }
+
+  const existingSet = setRow as QuestionSetRow;
+  if (existingSet.user_id && existingSet.user_id !== userId) {
+    throw new Error("Acesso negado ao simulado.");
+  }
+
+  // Se já concluído, busca os itens e retorna de forma idempotente
+  if (existingSet.is_completed) {
+    const { data: itemsData } = await supabase
+      .from("question_set_items")
+      .select(QUESTION_SET_ITEM_SELECT)
+      .eq("set_id", setId)
+      .order("position", { ascending: true });
+
+    const items = ((itemsData ?? []) as QuestionSetItemRow[]).map(toQuestionSetItem);
+    return { set: toQuestionSet(existingSet), items };
+  }
+
+  // 2. Buscar todos os itens do simulado
+  const { data: itemsData, error: itemsErr } = await supabase
+    .from("question_set_items")
+    .select(QUESTION_SET_ITEM_SELECT)
+    .eq("set_id", setId)
+    .order("position", { ascending: true });
+
+  if (itemsErr) throw itemsErr;
+
+  const itemsRows = (itemsData ?? []) as QuestionSetItemRow[];
+  const totalQuestions = itemsRows.length;
+  const answeredCount = itemsRows.filter((i) => i.is_answered).length;
+  const correctCount = itemsRows.filter((i) => i.is_answered && i.is_correct === true).length;
+  const wrongCount = itemsRows.filter((i) => i.is_answered && i.is_correct === false).length;
+
+  const score = totalQuestions > 0 ? Number(((correctCount / totalQuestions) * 100).toFixed(2)) : 0;
+  const completedAt = new Date().toISOString();
+
+  // 3. Trava e atualização atômica de finalização (WHERE is_completed = false)
+  const { data: updatedSet, error: updateErr } = await supabase
+    .from("question_sets")
+    .update({
+      is_completed: true,
+      completed_at: completedAt,
+      correct_count: correctCount,
+      wrong_count: wrongCount,
+      score: score,
+    })
+    .eq("id", setId)
+    .eq("user_id", userId)
+    .eq("is_completed", false)
+    .select(QUESTION_SET_SELECT)
+    .maybeSingle();
+
+  if (updateErr) throw updateErr;
+
+  const finalSetRow = updatedSet
+    ? (updatedSet as QuestionSetRow)
+    : ((await supabase.from("question_sets").select(QUESTION_SET_SELECT).eq("id", setId).single())
+        .data as QuestionSetRow);
+
+  const items = itemsRows.map(toQuestionSetItem);
+
+  return { set: toQuestionSet(finalSetRow), items };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
