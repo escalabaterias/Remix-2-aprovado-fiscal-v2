@@ -18,6 +18,7 @@ import {
   Award,
 } from "lucide-react";
 
+import { SimulationReport } from "./SimulationReport";
 import {
   useSimulationController,
   type SimulationStatus,
@@ -75,9 +76,6 @@ export type SimulationRunnerProps = {
 
 export function SimulationRunner({ setId, onClose }: SimulationRunnerProps) {
   const [showConfirmFinish, setShowConfirmFinish] = useState(false);
-  const [reviewFilter, setReviewFilter] = useState<
-    "todos" | "corretas" | "incorretas" | "em_branco"
-  >("todos");
 
   // Controller React de Simulados (Fase C 🟢)
   const controller = useSimulationController({
@@ -224,263 +222,17 @@ export function SimulationRunner({ setId, onClose }: SimulationRunnerProps) {
   if (status === "completed" || status === "timeout") {
     const resSet = completedResult?.set ?? questionSet;
     const resItems = completedResult?.items ?? items;
-    const scoreVal = resSet?.score ?? 0;
-    const isTimeout = status === "timeout";
-
-    const correctCount = resItems.filter((i) => i.isCorrect === true).length;
-    const wrongCount = resItems.filter((i) => i.isCorrect === false).length;
-    const unansweredResCount = resItems.filter(
-      (i) => !i.isAnswered && i.chosenAnswer === null,
-    ).length;
-
-    // Itens filtrados para a revisão
-    const filteredReviewItems = resItems.filter((item) => {
-      if (reviewFilter === "corretas") return item.isCorrect === true;
-      if (reviewFilter === "incorretas") return item.isCorrect === false;
-      if (reviewFilter === "em_branco") return !item.isAnswered && item.chosenAnswer === null;
-      return true;
-    });
 
     return (
-      <div id="simulado-completed-view" className="w-full max-w-5xl mx-auto space-y-6 py-6 px-4">
-        {/* Banner de Resultado */}
-        <Card className="border-border shadow-md overflow-hidden">
-          <div className="bg-gradient-to-r from-primary/10 via-background to-primary/5 p-6 sm:p-8 border-b border-border">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Badge
-                    variant={isTimeout ? "destructive" : "default"}
-                    className="px-2.5 py-0.5 text-xs"
-                  >
-                    {isTimeout ? "Tempo Esgotado" : "Simulado Finalizado"}
-                  </Badge>
-                  <span className="text-xs text-muted-foreground">
-                    {resSet?.completedAt
-                      ? new Date(resSet.completedAt).toLocaleDateString("pt-BR")
-                      : "Hoje"}
-                  </span>
-                </div>
-                <h2 className="text-2xl sm:text-3xl font-display font-bold text-foreground">
-                  {resSet?.name || "Simulado Concluído"}
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  Resultado oficial consolidado no servidor. Métricas de desempenho atualizadas.
-                </p>
-              </div>
-
-              {/* Placa de Nota Final */}
-              <div
-                id="simulado-score-badge"
-                className="flex flex-col items-center justify-center p-4 rounded-xl bg-card border border-border shadow-inner min-w-[140px]"
-              >
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Pontuação
-                </span>
-                <span
-                  className={cn(
-                    "text-3xl font-display font-black tracking-tight mt-0.5",
-                    scoreVal >= 70
-                      ? "text-emerald-600 dark:text-emerald-400"
-                      : scoreVal >= 50
-                        ? "text-amber-600 dark:text-amber-400"
-                        : "text-rose-600 dark:text-rose-400",
-                  )}
-                >
-                  {scoreVal.toFixed(1)}%
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <CardContent className="p-6">
-            {/* Grid de Estatísticas */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div className="p-4 rounded-lg bg-muted/40 border border-border flex flex-col gap-1">
-                <span className="text-xs text-muted-foreground font-medium flex items-center gap-1.5">
-                  <BarChart3 className="w-3.5 h-3.5 text-primary" /> Total
-                </span>
-                <span className="text-2xl font-bold text-foreground">{resItems.length}</span>
-              </div>
-
-              <div className="p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex flex-col gap-1">
-                <span className="text-xs text-emerald-700 dark:text-emerald-400 font-medium flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> Acertos
-                </span>
-                <span className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">
-                  {correctCount}
-                </span>
-              </div>
-
-              <div className="p-4 rounded-lg bg-rose-500/10 border border-rose-500/20 flex flex-col gap-1">
-                <span className="text-xs text-rose-700 dark:text-rose-400 font-medium flex items-center gap-1.5">
-                  <XCircle className="w-3.5 h-3.5" /> Erros
-                </span>
-                <span className="text-2xl font-bold text-rose-700 dark:text-rose-400">
-                  {wrongCount}
-                </span>
-              </div>
-
-              <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20 flex flex-col gap-1">
-                <span className="text-xs text-amber-700 dark:text-amber-400 font-medium flex items-center gap-1.5">
-                  <HelpCircle className="w-3.5 h-3.5" /> Em Branco
-                </span>
-                <span className="text-2xl font-bold text-amber-700 dark:text-amber-400">
-                  {unansweredResCount}
-                </span>
-              </div>
-            </div>
-          </CardContent>
-
-          <CardFooter className="bg-muted/20 border-t border-border p-4 flex justify-between items-center">
-            {onClose && (
-              <Button variant="ghost" onClick={onClose} className="gap-2">
-                <ArrowLeft className="w-4 h-4" /> Voltar aos Simulados
-              </Button>
-            )}
-            <p className="text-xs text-muted-foreground">
-              Questões não respondidas foram preservadas como UNANSWERED sem gerar falsos erros
-              cognitivos.
-            </p>
-          </CardFooter>
-        </Card>
-
-        {/* Gabarito e Revisão de Questões */}
-        <Card className="border-border">
-          <CardHeader className="pb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <CardTitle className="text-lg font-semibold">
-                Gabarito e Detalhamento das Respostas
-              </CardTitle>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Revise cada uma das questões e analise os gabaritos oficiais.
-              </p>
-            </div>
-
-            {/* Filtros de Revisão */}
-            <div className="flex items-center gap-1.5 bg-muted p-1 rounded-lg">
-              <Button
-                variant={reviewFilter === "todos" ? "default" : "ghost"}
-                size="sm"
-                className="text-xs h-7 px-2.5"
-                onClick={() => setReviewFilter("todos")}
-              >
-                Todas ({resItems.length})
-              </Button>
-              <Button
-                variant={reviewFilter === "corretas" ? "default" : "ghost"}
-                size="sm"
-                className="text-xs h-7 px-2.5"
-                onClick={() => setReviewFilter("corretas")}
-              >
-                Acertos ({correctCount})
-              </Button>
-              <Button
-                variant={reviewFilter === "incorretas" ? "default" : "ghost"}
-                size="sm"
-                className="text-xs h-7 px-2.5"
-                onClick={() => setReviewFilter("incorretas")}
-              >
-                Erros ({wrongCount})
-              </Button>
-              <Button
-                variant={reviewFilter === "em_branco" ? "default" : "ghost"}
-                size="sm"
-                className="text-xs h-7 px-2.5"
-                onClick={() => setReviewFilter("em_branco")}
-              >
-                Em Branco ({unansweredResCount})
-              </Button>
-            </div>
-          </CardHeader>
-
-          <CardContent className="p-0">
-            <ScrollArea className="h-[480px]">
-              <div className="divide-y divide-border">
-                {filteredReviewItems.length === 0 ? (
-                  <div className="p-8 text-center text-sm text-muted-foreground">
-                    Nenhuma questão encontrada para este filtro.
-                  </div>
-                ) : (
-                  filteredReviewItems.map((item, idx) => {
-                    const qDetail = questionsMap?.get(item.questionId);
-                    const isCorrect = item.isCorrect === true;
-                    const isUnanswered = !item.isAnswered && item.chosenAnswer === null;
-
-                    return (
-                      <div
-                        key={item.itemId}
-                        className="p-4 sm:p-6 space-y-3 hover:bg-muted/20 transition-colors"
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono text-sm font-bold text-foreground">
-                              #{item.position + 1}
-                            </span>
-                            {isUnanswered ? (
-                              <Badge
-                                variant="outline"
-                                className="text-amber-600 border-amber-300 dark:text-amber-400"
-                              >
-                                Em Branco
-                              </Badge>
-                            ) : isCorrect ? (
-                              <Badge className="bg-emerald-600 text-white hover:bg-emerald-700">
-                                Acertou
-                              </Badge>
-                            ) : (
-                              <Badge variant="destructive">Errou</Badge>
-                            )}
-                            {qDetail?.examBoard && (
-                              <Badge variant="secondary" className="text-[11px]">
-                                {qDetail.examBoard}
-                              </Badge>
-                            )}
-                          </div>
-                          <span className="text-xs text-muted-foreground">
-                            Sua escolha: <strong>{item.chosenAnswer || "Nenhuma"}</strong>
-                            {qDetail?.correctAnswer && (
-                              <>
-                                {" "}
-                                | Gabarito:{" "}
-                                <strong className="text-emerald-600 dark:text-emerald-400">
-                                  {qDetail.correctAnswer}
-                                </strong>
-                              </>
-                            )}
-                          </span>
-                        </div>
-
-                        {qDetail ? (
-                          <p className="text-sm text-foreground/90 leading-relaxed font-normal">
-                            {qDetail.statement}
-                          </p>
-                        ) : (
-                          <p className="text-xs text-muted-foreground italic">
-                            Carregando enunciado da questão #{item.position + 1}...
-                          </p>
-                        )}
-
-                        {qDetail?.explanation && (
-                          <div className="p-3 rounded-md bg-muted/50 border border-border text-xs text-muted-foreground space-y-1">
-                            <span className="font-semibold text-foreground flex items-center gap-1">
-                              <Award className="w-3.5 h-3.5 text-primary" /> Comentário /
-                              Justificativa:
-                            </span>
-                            <p>{qDetail.explanation}</p>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </ScrollArea>
-          </CardContent>
-        </Card>
-      </div>
+      <SimulationReport
+        set={resSet}
+        items={resItems}
+        questionsMap={questionsMap}
+        onClose={onClose}
+      />
     );
   }
+  // ───────────────────────────────────────────────────────────────────────────
 
   // ───────────────────────────────────────────────────────────────────────────
   // ESTADO EXECUTANDO SIMULADO / READY / SUBMITTING / COMPLETING

@@ -339,3 +339,13 @@ export type AttemptFeedback = {
 
 export type { Difficulty } from "../knowledge/engine";
 export type { KnowledgeStateName } from "../diagnosis/engine";
+export type {
+  SimulationPerformanceAnalysis,
+  SimulationOverview,
+  SubjectPerformance,
+  TopicPerformance,
+  SimulationPacing,
+  PerformanceSignal,
+  CognitiveImpactSummary,
+  HistoricalComparison,
+} from "./simulation-analytics";

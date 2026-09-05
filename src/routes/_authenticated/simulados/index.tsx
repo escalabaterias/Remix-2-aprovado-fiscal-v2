@@ -13,6 +13,8 @@ import {
   Sparkles,
   Award,
   Loader2,
+  TrendingUp,
+  History,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -24,6 +26,7 @@ import {
 } from "@/lib/questions/service";
 import type { QuestionSet } from "@/lib/questions/types";
 import { SimulationRunner } from "@/components/simulados/SimulationRunner";
+import { SimulationPerformanceDashboard } from "@/components/simulados/SimulationPerformanceDashboard";
 import { AppShell } from "@/components/layout/AppShell";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -35,7 +38,12 @@ import {
   CardDescription,
   CardFooter,
 } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -58,6 +66,7 @@ import {
 export const Route = createFileRoute("/_authenticated/simulados/")({
   validateSearch: (search: Record<string, unknown>) => ({
     setId: typeof search["setId"] === "string" ? search["setId"] : undefined,
+    tab: typeof search["tab"] === "string" ? search["tab"] : undefined,
   }),
   head: () => ({
     meta: [
@@ -65,7 +74,7 @@ export const Route = createFileRoute("/_authenticated/simulados/")({
       {
         name: "description",
         content:
-          "Execute simulados cronometrados com controle oficial de tempo, estatísticas e diagnóstico.",
+          "Central consolidada de performance dos simulados, evolução histórica, diagnósticos e controle oficial de tempo.",
       },
       { name: "robots", content: "noindex" },
     ],
@@ -85,6 +94,7 @@ function SimuladosPage() {
   const [timeLimitMinutes, setTimeLimitMinutes] = useState<number>(60);
 
   const activeSetId = search.setId;
+  const currentTab = search.tab || "performance";
 
   // Busca simulados do usuário
   const { data: questionSets = [], isLoading: isLoadingSets } = useQuery({
@@ -129,6 +139,7 @@ function SimuladosPage() {
     onSuccess: (newSet) => {
       toast.success("Simulado gerado com sucesso!");
       queryClient.invalidateQueries({ queryKey: ["user-question-sets"] });
+      queryClient.invalidateQueries({ queryKey: ["user-simulation-history"] });
       setIsNewDialogOpen(false);
       navigate({ from: Route.fullPath, search: { setId: newSet.setId } });
     },
@@ -137,7 +148,7 @@ function SimuladosPage() {
     },
   });
 
-  // Se houver um simulado ativo, renderiza o SimulationRunner
+  // Se houver um simulado ativo, renderiza o SimulationRunner (drill-down para o relatório se concluído)
   if (activeSetId) {
     return (
       <AppShell
@@ -164,7 +175,7 @@ function SimuladosPage() {
   return (
     <AppShell
       title="Central de Simulados"
-      description="Simulados cronometrados e monitorados com controle autoritativo do tempo"
+      description="Visão consolidada de performance, evolução histórica e gerenciamento de simulados cronometrados"
       actions={
         <Dialog open={isNewDialogOpen} onOpenChange={setIsNewDialogOpen}>
           <DialogTrigger asChild>
@@ -274,140 +285,156 @@ function SimuladosPage() {
       }
     >
       <div id="simulados-page-content" className="space-y-6">
-        {/* Banner Informativo */}
-        <Card className="border-border bg-gradient-to-r from-primary/10 via-background to-primary/5">
-          <CardContent className="p-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="space-y-1">
-                <Badge variant="secondary" className="text-xs">
-                  Provas & Avaliações
-                </Badge>
-                <h2 className="text-xl font-display font-bold text-foreground">
-                  Ambiente Oficial de Simulados
-                </h2>
-                <p className="text-xs text-muted-foreground max-w-2xl">
-                  Simule o dia da prova com controle rigoroso de tempo server-side. Respostas em
-                  branco são preservadas como UNANSWERED sem gerar falsas evidências de erro.
-                </p>
+        {/* NAVEGAÇÃO DE ABAS DA CENTRAL DE SIMULADOS */}
+        <Tabs
+          value={currentTab}
+          onValueChange={(val) =>
+            navigate({ from: Route.fullPath, search: { ...search, tab: val } })
+          }
+          className="space-y-6"
+        >
+          <div className="flex items-center justify-between border-b border-border pb-3">
+            <TabsList className="bg-muted p-1">
+              <TabsTrigger value="performance" className="gap-2 text-xs font-semibold">
+                <BarChart3 className="w-4 h-4 text-primary" />
+                Performance Consolidada
+              </TabsTrigger>
+              <TabsTrigger value="historico" className="gap-2 text-xs font-semibold">
+                <History className="w-4 h-4 text-primary" />
+                Histórico & Lista ({questionSets.length})
+              </TabsTrigger>
+            </TabsList>
+          </div>
+
+          {/* ABA 1: PERFORMANCE CONSOLIDADA */}
+          <TabsContent value="performance" className="space-y-6 mt-0">
+            <SimulationPerformanceDashboard
+              onSelectSimulationForReport={(setId) =>
+                navigate({ from: Route.fullPath, search: { setId } })
+              }
+            />
+          </TabsContent>
+
+          {/* ABA 2: HISTÓRICO E LISTA DE SIMULADOS */}
+          <TabsContent value="historico" className="space-y-6 mt-0">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-primary" /> Meus Simulados ({questionSets.length})
+                </h3>
               </div>
-            </div>
-          </CardContent>
-        </Card>
 
-        {/* Lista de Simulados */}
-        <div className="space-y-4">
-          <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-            <FileText className="w-4 h-4 text-primary" /> Meus Simulados ({questionSets.length})
-          </h3>
-
-          {isLoadingSets ? (
-            <div className="p-12 text-center text-sm text-muted-foreground space-y-2">
-              <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto" />
-              <p>Carregando seus simulados...</p>
-            </div>
-          ) : questionSets.length === 0 ? (
-            <Card className="border-dashed border-border p-8 text-center space-y-3">
-              <AlertCircle className="w-8 h-8 text-muted-foreground mx-auto" />
-              <div className="space-y-1">
-                <p className="text-sm font-semibold text-foreground">
-                  Nenhum simulado cadastrado até o momento.
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Clique em "Novo Simulado" para montar uma prova personalizada.
-                </p>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsNewDialogOpen(true)}
-                className="gap-2"
-              >
-                <Plus className="w-4 h-4" /> Criar Primeiro Simulado
-              </Button>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {questionSets.map((sim) => {
-                const isCompleted = sim.isCompleted;
-                const isStarted = !!sim.startedAt;
-
-                return (
-                  <Card
-                    key={sim.setId}
-                    className="border-border hover:border-border/80 transition-all flex flex-col justify-between shadow-xs"
+              {isLoadingSets ? (
+                <div className="p-12 text-center text-sm text-muted-foreground space-y-2">
+                  <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto" />
+                  <p>Carregando seus simulados...</p>
+                </div>
+              ) : questionSets.length === 0 ? (
+                <Card className="border-dashed border-border p-8 text-center space-y-3">
+                  <AlertCircle className="w-8 h-8 text-muted-foreground mx-auto" />
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold text-foreground">
+                      Nenhum simulado cadastrado até o momento.
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Clique em "Novo Simulado" para montar uma prova personalizada.
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsNewDialogOpen(true)}
+                    className="gap-2"
                   >
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <Badge
-                          variant={isCompleted ? "default" : isStarted ? "secondary" : "outline"}
-                          className="text-[11px]"
-                        >
-                          {isCompleted ? "Concluído" : isStarted ? "Em Andamento" : "Não Iniciado"}
-                        </Badge>
-                        {sim.timeLimitMinutes && (
-                          <span className="text-xs text-muted-foreground font-mono flex items-center gap-1">
-                            <Clock className="w-3 h-3" /> {sim.timeLimitMinutes} min
-                          </span>
-                        )}
-                      </div>
-                      <CardTitle className="text-base font-bold text-foreground mt-2 line-clamp-2">
-                        {sim.name}
-                      </CardTitle>
-                      {sim.description && (
-                        <CardDescription className="text-xs line-clamp-2">
-                          {sim.description}
-                        </CardDescription>
-                      )}
-                    </CardHeader>
+                    <Plus className="w-4 h-4" /> Criar Primeiro Simulado
+                  </Button>
+                </Card>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {questionSets.map((sim) => {
+                    const isCompleted = sim.isCompleted;
+                    const isStarted = !!sim.startedAt;
 
-                    <CardContent className="pb-3 space-y-3">
-                      <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div className="p-2 rounded-md bg-muted/40">
-                          <span className="text-muted-foreground block text-[10px]">Questões</span>
-                          <span className="font-bold text-foreground">{sim.totalQuestions}</span>
-                        </div>
-                        <div className="p-2 rounded-md bg-muted/40">
-                          <span className="text-muted-foreground block text-[10px]">
-                            Nota Final
-                          </span>
-                          <span className="font-bold text-foreground">
-                            {sim.score !== null ? `${sim.score.toFixed(1)}%` : "—"}
-                          </span>
-                        </div>
-                      </div>
-                    </CardContent>
-
-                    <CardFooter className="pt-2 border-t border-border/60">
-                      <Button
-                        variant={isCompleted ? "outline" : "default"}
-                        size="sm"
-                        className="w-full gap-2 font-semibold text-xs"
-                        onClick={() =>
-                          navigate({ from: Route.fullPath, search: { setId: sim.setId } })
-                        }
+                    return (
+                      <Card
+                        key={sim.setId}
+                        className="border-border hover:border-border/80 transition-all flex flex-col justify-between shadow-xs"
                       >
-                        {isCompleted ? (
-                          <>
-                            <Award className="w-3.5 h-3.5" /> Ver Resultado
-                          </>
-                        ) : isStarted ? (
-                          <>
-                            <Play className="w-3.5 h-3.5" /> Continuar Simulado
-                          </>
-                        ) : (
-                          <>
-                            <Play className="w-3.5 h-3.5" /> Iniciar Simulado
-                          </>
-                        )}
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                );
-              })}
+                        <CardHeader className="pb-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <Badge
+                              variant={isCompleted ? "default" : isStarted ? "secondary" : "outline"}
+                              className="text-[11px]"
+                            >
+                              {isCompleted ? "Concluído" : isStarted ? "Em Andamento" : "Não Iniciado"}
+                            </Badge>
+                            {sim.timeLimitMinutes && (
+                              <span className="text-xs text-muted-foreground font-mono flex items-center gap-1">
+                                <Clock className="w-3 h-3" /> {sim.timeLimitMinutes} min
+                              </span>
+                            )}
+                          </div>
+                          <CardTitle className="text-base font-bold text-foreground mt-2 line-clamp-2">
+                            {sim.name}
+                          </CardTitle>
+                          {sim.description && (
+                            <CardDescription className="text-xs line-clamp-2">
+                              {sim.description}
+                            </CardDescription>
+                          )}
+                        </CardHeader>
+
+                        <CardContent className="pb-3 space-y-3">
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div className="p-2 rounded-md bg-muted/40">
+                              <span className="text-muted-foreground block text-[10px]">Questões</span>
+                              <span className="font-bold text-foreground">{sim.totalQuestions}</span>
+                            </div>
+                            <div className="p-2 rounded-md bg-muted/40">
+                              <span className="text-muted-foreground block text-[10px]">
+                                Nota Final
+                              </span>
+                              <span className="font-bold text-foreground">
+                                {sim.score !== null ? `${sim.score.toFixed(1)}%` : "—"}
+                              </span>
+                            </div>
+                          </div>
+                        </CardContent>
+
+                        <CardFooter className="pt-2 border-t border-border/60">
+                          <Button
+                            variant={isCompleted ? "outline" : "default"}
+                            size="sm"
+                            className="w-full gap-2 font-semibold text-xs"
+                            onClick={() =>
+                              navigate({ from: Route.fullPath, search: { setId: sim.setId } })
+                            }
+                          >
+                            {isCompleted ? (
+                              <>
+                                <Award className="w-3.5 h-3.5" /> Ver Resultado
+                              </>
+                            ) : isStarted ? (
+                              <>
+                                <Play className="w-3.5 h-3.5" /> Continuar Simulado
+                              </>
+                            ) : (
+                              <>
+                                <Play className="w-3.5 h-3.5" /> Iniciar Simulado
+                              </>
+                            )}
+                          </Button>
+                        </CardFooter>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </AppShell>
   );
 }
+

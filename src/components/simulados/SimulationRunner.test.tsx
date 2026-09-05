@@ -209,9 +209,9 @@ describe("SimulationRunner — Componente de UI do Simulador (Fase D)", () => {
 
     render(<SimulationRunner setId="set-1" />);
 
-    expect(screen.getByText("Simulado Finalizado")).toBeDefined();
-    expect(screen.getByText("85.5%")).toBeDefined();
-    expect(screen.getByText("Acertos")).toBeDefined();
+    expect(screen.getByText("Relatório Oficial de Desempenho")).toBeDefined();
+    expect(screen.getAllByText("50.0%").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Acertos").length).toBeGreaterThan(0);
   });
 
   it("8. Exibe alerta de erro de rede recuperável quando status for 'error'", () => {

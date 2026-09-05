@@ -29,6 +29,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { filterQuestions, rankQuestionsForStudy, computeBankSummary } from "./engine";
+import { analyzeSimulationPerformance } from "./simulation-analytics";
+import { integrateSimulationCognitiveResult } from "./simulation-cognitive-integration";
 import { computeQuestionContentHash, normalizeExamBoard } from "./normalizer";
 import type {
   QuestionBankItem,
@@ -729,6 +731,54 @@ export async function getUserQuestionSets(type?: QuestionSetType): Promise<Quest
   return ((data ?? []) as QuestionSetRow[]).map(toQuestionSet);
 }
 
+/**
+ * Busca o histórico de simulados concluídos do usuário atual com seus respectivos itens.
+ * Ordenado estritamente por completed_at ASC.
+ */
+export async function getUserSimulationHistory(): Promise<
+  Array<{ set: QuestionSet; items: QuestionSetItem[] }>
+> {
+  const userId = await requireUser();
+
+  // 1. Buscar simulados concluídos do tipo 'simulado' pertencentes ao usuário
+  const { data: setsData, error: setsErr } = await supabase
+    .from("question_sets")
+    .select(QUESTION_SET_SELECT)
+    .eq("user_id", userId)
+    .eq("type", "simulado")
+    .eq("is_completed", true)
+    .order("completed_at", { ascending: true });
+
+  if (setsErr) throw setsErr;
+  if (!setsData || setsData.length === 0) return [];
+
+  const setRows = setsData as QuestionSetRow[];
+  const setIds = setRows.map((s) => s.id);
+
+  // 2. Buscar itens de todos os simulados retornados em uma única query
+  const { data: itemsData, error: itemsErr } = await supabase
+    .from("question_set_items")
+    .select(QUESTION_SET_ITEM_SELECT)
+    .in("set_id", setIds)
+    .order("position", { ascending: true });
+
+  if (itemsErr) throw itemsErr;
+
+  const itemRows = (itemsData ?? []) as QuestionSetItemRow[];
+  const itemsBySetId = new Map<string, QuestionSetItem[]>();
+
+  for (const row of itemRows) {
+    const list = itemsBySetId.get(row.set_id) ?? [];
+    list.push(toQuestionSetItem(row));
+    itemsBySetId.set(row.set_id, list);
+  }
+
+  return setRows.map((setRow) => ({
+    set: toQuestionSet(setRow),
+    items: itemsBySetId.get(setRow.id) ?? [],
+  }));
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 8. updateQuestionSetItem
 // ─────────────────────────────────────────────────────────────────────────────
@@ -940,8 +990,22 @@ export async function completeQuestionSet(
         .data as QuestionSetRow);
 
   const items = itemsRows.map(toQuestionSetItem);
+  const set = toQuestionSet(finalSetRow);
 
-  return { set: toQuestionSet(finalSetRow), items };
+  // Integração cognitiva sem bloquear o fluxo principal em caso de erro secundário
+  try {
+    const analysis = analyzeSimulationPerformance({ set, items });
+    await integrateSimulationCognitiveResult({
+      set,
+      items,
+      analysis,
+      userId,
+    });
+  } catch {
+    // Ignorar falha secundária de integração para manter resiliência de finalização
+  }
+
+  return { set, items };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
