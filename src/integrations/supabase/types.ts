@@ -1898,6 +1898,42 @@ export type Database = {
           },
         ];
       };
+      user_drive_credentials: {
+        Row: {
+          account_email: string | null;
+          created_at: string;
+          encrypted_refresh_token: string;
+          encryption_version: string;
+          id: string;
+          last_validated_at: string;
+          scope: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          account_email?: string | null;
+          created_at?: string;
+          encrypted_refresh_token: string;
+          encryption_version?: string;
+          id?: string;
+          last_validated_at?: string;
+          scope?: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          account_email?: string | null;
+          created_at?: string;
+          encrypted_refresh_token?: string;
+          encryption_version?: string;
+          id?: string;
+          last_validated_at?: string;
+          scope?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;

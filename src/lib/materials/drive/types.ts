@@ -10,10 +10,10 @@
 
 export type DriveConnectionStatus = {
   connected: boolean;
-  connectedAt?: string;
-  scope?: string;
-  lastValidatedAt?: string;
-  accountEmail?: string;
+  connectedAt?: string | undefined;
+  scope?: string | undefined;
+  lastValidatedAt?: string | undefined;
+  accountEmail?: string | undefined;
 };
 
 export type InitiateDriveOAuthInput = {
@@ -34,7 +34,7 @@ export type StoredDriveCredential = {
   userId: string;
   encryptedRefreshToken: string;
   scope: string;
-  accountEmail?: string;
+  accountEmail?: string | undefined;
   connectedAt: string;
   lastValidatedAt: string;
 };
