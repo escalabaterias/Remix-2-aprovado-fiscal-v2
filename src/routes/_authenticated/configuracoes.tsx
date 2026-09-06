@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/layout/AppShell";
 import { PreferencesPanel } from "@/components/settings/PreferencesPanel";
+import { GoogleDriveConnectButton } from "@/components/materials/GoogleDriveConnectButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -230,7 +231,8 @@ function SettingsPage() {
           </Button>
         </form>
       )}
-      <div className="mt-6">
+      <div className="mt-6 space-y-6">
+        <GoogleDriveConnectButton />
         <PreferencesPanel />
       </div>
     </AppShell>
