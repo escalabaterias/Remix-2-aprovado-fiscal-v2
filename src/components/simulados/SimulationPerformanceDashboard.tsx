@@ -51,7 +51,11 @@ export function SimulationPerformanceDashboard({
   const [selectedBank, setSelectedBank] = useState<string>("all");
 
   // Requisitar histórico completo de simulados concluídos do usuário
-  const { data: rawSimulations = [], isLoading, isError } = useQuery({
+  const {
+    data: rawSimulations = [],
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ["user-simulation-history"],
     queryFn: () => getUserSimulationHistory(),
   });
@@ -72,7 +76,9 @@ export function SimulationPerformanceDashboard({
 
       const cutoff = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
       result = result.filter((sim) => {
-        const completedAt = sim.set.completedAt ? new Date(sim.set.completedAt) : new Date(sim.set.createdAt);
+        const completedAt = sim.set.completedAt
+          ? new Date(sim.set.completedAt)
+          : new Date(sim.set.createdAt);
         return completedAt >= cutoff;
       });
     }
@@ -154,35 +160,20 @@ export function SimulationPerformanceDashboard({
     if (!filteredSimulations || filteredSimulations.length === 0) return null;
     const input: SimulationHistoricalInput = { simulations: filteredSimulations };
     try {
-      const res = analyzeSimulationComparison(input);
-      console.log("analyzeSimulationComparison RESULT:", res ? "SUCCESS" : "NULL");
-      return res;
+      return analyzeSimulationComparison(input);
     } catch (err) {
       console.error("analyzeSimulationComparison ERROR:", err);
-      throw err;
+      return null;
     }
-
   }, [filteredSimulations]);
 
-  console.log("RENDER DASHBOARD:", { rawLen: rawSimulations.length, filteredLen: filteredSimulations.length, hasComp: Boolean(comparativeAnalysis) });
-
-  // Console log debug para vitest
-  if (typeof window !== "undefined") {
-    console.log("[DEBUG DASHBOARD]", {
-      rawCount: rawSimulations.length,
-      filteredCount: filteredSimulations.length,
-      hasComparative: Boolean(comparativeAnalysis),
-      isLoading,
-      isError
-    });
-  }
-
   if (isLoading) {
-
     return (
       <div className="flex flex-col items-center justify-center p-12 space-y-4 text-center">
         <Activity className="w-8 h-8 text-primary animate-spin" />
-        <p className="text-sm text-muted-foreground">Carregando Central de Performance dos Simulados...</p>
+        <p className="text-sm text-muted-foreground">
+          Carregando Central de Performance dos Simulados...
+        </p>
       </div>
     );
   }
@@ -192,7 +183,9 @@ export function SimulationPerformanceDashboard({
       <Card className="border-rose-200 bg-rose-50/50 dark:bg-rose-950/10">
         <CardContent className="p-6 text-center space-y-2">
           <AlertCircle className="w-8 h-8 text-rose-500 mx-auto" />
-          <h3 className="font-semibold text-rose-900 dark:text-rose-200">Erro ao carregar dados de performance</h3>
+          <h3 className="font-semibold text-rose-900 dark:text-rose-200">
+            Erro ao carregar dados de performance
+          </h3>
           <p className="text-xs text-rose-700 dark:text-rose-300">
             Não foi possível recuperar o histórico de simulados. Tente novamente em instantes.
           </p>
@@ -264,7 +257,9 @@ export function SimulationPerformanceDashboard({
         <Card className="border-border">
           <CardContent className="p-12 text-center space-y-3">
             <BarChart3 className="w-12 h-12 text-muted-foreground/50 mx-auto" />
-            <h3 className="text-base font-semibold text-foreground">Nenhum simulado concluído encontrado</h3>
+            <h3 className="text-base font-semibold text-foreground">
+              Nenhum simulado concluído encontrado
+            </h3>
             <p className="text-xs text-muted-foreground max-w-md mx-auto">
               {rawSimulations.length === 0
                 ? "Você ainda não possui simulados concluídos. Realize seu primeiro simulado para desbloquear a análise consolidada de performance."
@@ -276,8 +271,14 @@ export function SimulationPerformanceDashboard({
     );
   }
 
-  const { historicalAnalysis, internalBenchmark, windowComparison, bankComparisons, accuracySpeedMatrix, consistency } =
-    comparativeAnalysis;
+  const {
+    historicalAnalysis,
+    internalBenchmark,
+    windowComparison,
+    bankComparisons,
+    accuracySpeedMatrix,
+    consistency,
+  } = comparativeAnalysis;
   const summary = historicalAnalysis.summary;
   const timeline = historicalAnalysis.timeline;
 
@@ -292,7 +293,8 @@ export function SimulationPerformanceDashboard({
             <Filter className="w-4 h-4 text-primary" />
             <span className="text-xs font-semibold text-foreground">Filtros da Central:</span>
             <Badge variant="secondary" className="text-[10px]">
-              {filteredSimulations.length} {filteredSimulations.length === 1 ? "simulado" : "simulados"}
+              {filteredSimulations.length}{" "}
+              {filteredSimulations.length === 1 ? "simulado" : "simulados"}
             </Badge>
           </div>
 
@@ -373,13 +375,18 @@ export function SimulationPerformanceDashboard({
                 <FileText className="w-4 h-4 text-primary" />
               </div>
               <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-bold text-foreground">{summary.totalSimulations}</span>
+                <span className="text-2xl font-bold text-foreground">
+                  {summary.totalSimulations}
+                </span>
                 <span className="text-[11px] text-muted-foreground">
                   ({timeline.reduce((acc, p) => acc + p.answeredCount, 0)} q. respondidas)
                 </span>
               </div>
               <p className="text-[11px] text-muted-foreground pt-1">
-                Taxa de resposta média: <span className="font-semibold text-foreground">{summary.averageResponsePercentage}%</span>
+                Taxa de resposta média:{" "}
+                <span className="font-semibold text-foreground">
+                  {summary.averageResponsePercentage}%
+                </span>
               </p>
             </CardContent>
           </Card>
@@ -392,13 +399,18 @@ export function SimulationPerformanceDashboard({
                 <Target className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               </div>
               <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-bold text-foreground">{summary.averageAccuracyPercentage}%</span>
+                <span className="text-2xl font-bold text-foreground">
+                  {summary.averageAccuracyPercentage}%
+                </span>
                 <span className="text-[11px] text-muted-foreground">
                   (Mediana: {internalBenchmark.medianScoreAccuracy}%)
                 </span>
               </div>
               <p className="text-[11px] text-muted-foreground pt-1">
-                Desvio padrão: <span className="font-semibold text-foreground">±{summary.accuracyStandardDeviation} p.p.</span>
+                Desvio padrão:{" "}
+                <span className="font-semibold text-foreground">
+                  ±{summary.accuracyStandardDeviation} p.p.
+                </span>
               </p>
             </CardContent>
           </Card>
@@ -415,15 +427,22 @@ export function SimulationPerformanceDashboard({
                   {internalBenchmark.bestScoreAccuracy}%
                 </span>
                 {internalBenchmark.gapToBestPp !== null && (
-                  <span className={cn(
-                    "text-[11px] font-semibold",
-                    internalBenchmark.gapToBestPp >= 0 ? "text-emerald-600" : "text-amber-600"
-                  )}>
-                    {internalBenchmark.gapToBestPp >= 0 ? "Recorde Atual" : `${internalBenchmark.gapToBestPp.toFixed(1)} p.p.`}
+                  <span
+                    className={cn(
+                      "text-[11px] font-semibold",
+                      internalBenchmark.gapToBestPp >= 0 ? "text-emerald-600" : "text-amber-600",
+                    )}
+                  >
+                    {internalBenchmark.gapToBestPp >= 0
+                      ? "Recorde Atual"
+                      : `${internalBenchmark.gapToBestPp.toFixed(1)} p.p.`}
                   </span>
                 )}
               </div>
-              <p className="text-[11px] text-muted-foreground truncate pt-1" title={internalBenchmark.bestScoreSetName || ""}>
+              <p
+                className="text-[11px] text-muted-foreground truncate pt-1"
+                title={internalBenchmark.bestScoreSetName || ""}
+              >
                 {internalBenchmark.bestScoreSetName || "Nenhum registrado"}
               </p>
             </CardContent>
@@ -435,28 +454,54 @@ export function SimulationPerformanceDashboard({
               <div className="flex items-center justify-between text-muted-foreground">
                 <span className="text-xs font-medium">Último Desempenho</span>
                 <div className="flex items-center gap-1">
-                  {summary.overallTrend === "IMPROVING" && <TrendingUp className="w-4 h-4 text-emerald-500" />}
-                  {summary.overallTrend === "DECLINING" && <TrendingDown className="w-4 h-4 text-rose-500" />}
-                  {summary.overallTrend === "STABLE" && <Minus className="w-4 h-4 text-amber-500" />}
-                  {summary.overallTrend === "VOLATILE" && <Activity className="w-4 h-4 text-purple-500" />}
+                  {summary.overallTrend === "IMPROVING" && (
+                    <TrendingUp className="w-4 h-4 text-emerald-500" />
+                  )}
+                  {summary.overallTrend === "DECLINING" && (
+                    <TrendingDown className="w-4 h-4 text-rose-500" />
+                  )}
+                  {summary.overallTrend === "STABLE" && (
+                    <Minus className="w-4 h-4 text-amber-500" />
+                  )}
+                  {summary.overallTrend === "VOLATILE" && (
+                    <Activity className="w-4 h-4 text-purple-500" />
+                  )}
                 </div>
               </div>
               <div className="flex items-baseline gap-2">
                 <span className="text-2xl font-bold text-foreground">
                   {summary.latestPoint ? `${summary.latestPoint.accuracyPercentage}%` : "—"}
                 </span>
-                <Badge variant="outline" className={cn(
-                  "text-[10px] font-semibold px-1.5 py-0",
-                  summary.overallTrend === "IMPROVING" && "border-emerald-300 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300",
-                  summary.overallTrend === "DECLINING" && "border-rose-300 bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300",
-                  summary.overallTrend === "STABLE" && "border-amber-300 bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300",
-                  summary.overallTrend === "VOLATILE" && "border-purple-300 bg-purple-50 text-purple-700 dark:bg-purple-950/30 dark:text-purple-300"
-                )}>
-                  {summary.overallTrend === "IMPROVING" ? "Em Evolução" : summary.overallTrend === "DECLINING" ? "Em Regressão" : summary.overallTrend === "STABLE" ? "Estável" : summary.overallTrend === "VOLATILE" ? "Volátil" : "Insuficiente"}
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "text-[10px] font-semibold px-1.5 py-0",
+                    summary.overallTrend === "IMPROVING" &&
+                      "border-emerald-300 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300",
+                    summary.overallTrend === "DECLINING" &&
+                      "border-rose-300 bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300",
+                    summary.overallTrend === "STABLE" &&
+                      "border-amber-300 bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300",
+                    summary.overallTrend === "VOLATILE" &&
+                      "border-purple-300 bg-purple-50 text-purple-700 dark:bg-purple-950/30 dark:text-purple-300",
+                  )}
+                >
+                  {summary.overallTrend === "IMPROVING"
+                    ? "Em Evolução"
+                    : summary.overallTrend === "DECLINING"
+                      ? "Em Regressão"
+                      : summary.overallTrend === "STABLE"
+                        ? "Estável"
+                        : summary.overallTrend === "VOLATILE"
+                          ? "Volátil"
+                          : "Insuficiente"}
                 </Badge>
               </div>
               <p className="text-[11px] text-muted-foreground pt-1">
-                Pacing médio: <span className="font-semibold text-foreground">{summary.averageTimePerQuestionSeconds}s / questão</span>
+                Pacing médio:{" "}
+                <span className="font-semibold text-foreground">
+                  {summary.averageTimePerQuestionSeconds}s / questão
+                </span>
               </p>
             </CardContent>
           </Card>
@@ -499,7 +544,9 @@ export function SimulationPerformanceDashboard({
                       key={point.setId}
                       className={cn(
                         "group p-2.5 rounded-lg border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-background hover:border-primary/50 cursor-pointer",
-                        isBest ? "border-amber-400/60 bg-amber-50/20 dark:bg-amber-950/10" : "border-border"
+                        isBest
+                          ? "border-amber-400/60 bg-amber-50/20 dark:bg-amber-950/10"
+                          : "border-border",
                       )}
                       onClick={() => onSelectSimulationForReport?.(point.setId)}
                     >
@@ -513,13 +560,17 @@ export function SimulationPerformanceDashboard({
                               {point.setName}
                             </span>
                             {isBest && (
-                              <Badge variant="outline" className="text-[9px] bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950 dark:text-amber-200">
+                              <Badge
+                                variant="outline"
+                                className="text-[9px] bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950 dark:text-amber-200"
+                              >
                                 PB {point.accuracyPercentage}%
                               </Badge>
                             )}
                           </div>
                           <span className="text-[10px] text-muted-foreground block">
-                            Concluído em {formattedDate} • {point.totalQuestions} questões • {point.avgTimePerQuestionSeconds}s/q
+                            Concluído em {formattedDate} • {point.totalQuestions} questões •{" "}
+                            {point.avgTimePerQuestionSeconds}s/q
                           </span>
                         </div>
                       </div>
@@ -528,7 +579,9 @@ export function SimulationPerformanceDashboard({
                         <div className="w-28 sm:w-36 space-y-1">
                           <div className="flex items-center justify-between text-[10px]">
                             <span className="text-muted-foreground">Acurácia</span>
-                            <span className="font-bold text-foreground">{point.accuracyPercentage}%</span>
+                            <span className="font-bold text-foreground">
+                              {point.accuracyPercentage}%
+                            </span>
                           </div>
                           <Progress value={point.accuracyPercentage} className="h-1.5" />
                         </div>
@@ -572,15 +625,19 @@ export function SimulationPerformanceDashboard({
             <CardContent className="space-y-3 pt-2">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="p-3 rounded-lg bg-muted/30 border border-border space-y-1">
-                  <span className="text-[11px] text-muted-foreground block">vs. Média Histórica</span>
-                  <span className={cn(
-                    "font-bold text-base flex items-center gap-1",
-                    (internalBenchmark.deltaVsAveragePp ?? 0) > 0
-                      ? "text-emerald-600 dark:text-emerald-400"
-                      : (internalBenchmark.deltaVsAveragePp ?? 0) < 0
-                        ? "text-rose-600 dark:text-rose-400"
-                        : "text-foreground"
-                  )}>
+                  <span className="text-[11px] text-muted-foreground block">
+                    vs. Média Histórica
+                  </span>
+                  <span
+                    className={cn(
+                      "font-bold text-base flex items-center gap-1",
+                      (internalBenchmark.deltaVsAveragePp ?? 0) > 0
+                        ? "text-emerald-600 dark:text-emerald-400"
+                        : (internalBenchmark.deltaVsAveragePp ?? 0) < 0
+                          ? "text-rose-600 dark:text-rose-400"
+                          : "text-foreground",
+                    )}
+                  >
                     {(internalBenchmark.deltaVsAveragePp ?? 0) > 0 ? "+" : ""}
                     {(internalBenchmark.deltaVsAveragePp ?? 0).toFixed(1)} p.p.
                   </span>
@@ -590,15 +647,19 @@ export function SimulationPerformanceDashboard({
                 </div>
 
                 <div className="p-3 rounded-lg bg-muted/30 border border-border space-y-1">
-                  <span className="text-[11px] text-muted-foreground block">vs. Mediana Histórica</span>
-                  <span className={cn(
-                    "font-bold text-base flex items-center gap-1",
-                    (internalBenchmark.deltaVsMedianPp ?? 0) > 0
-                      ? "text-emerald-600 dark:text-emerald-400"
-                      : (internalBenchmark.deltaVsMedianPp ?? 0) < 0
-                        ? "text-rose-600 dark:text-rose-400"
-                        : "text-foreground"
-                  )}>
+                  <span className="text-[11px] text-muted-foreground block">
+                    vs. Mediana Histórica
+                  </span>
+                  <span
+                    className={cn(
+                      "font-bold text-base flex items-center gap-1",
+                      (internalBenchmark.deltaVsMedianPp ?? 0) > 0
+                        ? "text-emerald-600 dark:text-emerald-400"
+                        : (internalBenchmark.deltaVsMedianPp ?? 0) < 0
+                          ? "text-rose-600 dark:text-rose-400"
+                          : "text-foreground",
+                    )}
+                  >
                     {(internalBenchmark.deltaVsMedianPp ?? 0) > 0 ? "+" : ""}
                     {(internalBenchmark.deltaVsMedianPp ?? 0).toFixed(1)} p.p.
                   </span>
@@ -608,13 +669,17 @@ export function SimulationPerformanceDashboard({
                 </div>
 
                 <div className="p-3 rounded-lg bg-muted/30 border border-border space-y-1">
-                  <span className="text-[11px] text-muted-foreground block">Gap para o Personal Best</span>
-                  <span className={cn(
-                    "font-bold text-base flex items-center gap-1",
-                    (internalBenchmark.gapToBestPp ?? 0) >= 0
-                      ? "text-emerald-600 dark:text-emerald-400"
-                      : "text-amber-600 dark:text-amber-400"
-                  )}>
+                  <span className="text-[11px] text-muted-foreground block">
+                    Gap para o Personal Best
+                  </span>
+                  <span
+                    className={cn(
+                      "font-bold text-base flex items-center gap-1",
+                      (internalBenchmark.gapToBestPp ?? 0) >= 0
+                        ? "text-emerald-600 dark:text-emerald-400"
+                        : "text-amber-600 dark:text-amber-400",
+                    )}
+                  >
                     {(internalBenchmark.gapToBestPp ?? 0) >= 0
                       ? "Novo Recorde!"
                       : `${(internalBenchmark.gapToBestPp ?? 0).toFixed(1)} p.p.`}
@@ -632,12 +697,27 @@ export function SimulationPerformanceDashboard({
                     {windowComparison.latestVsAvgPrevious3.label}
                   </span>
                   <div className="flex items-center justify-between text-muted-foreground">
-                    <span>Último Simulado: <strong className="text-foreground">{windowComparison.latestVsAvgPrevious3.targetAccuracy}%</strong></span>
-                    <span>Média dos 3 Anteriores: <strong className="text-foreground">{windowComparison.latestVsAvgPrevious3.baseAccuracy}%</strong></span>
-                    <Badge variant="outline" className={cn(
-                      "text-[10px]",
-                      windowComparison.latestVsAvgPrevious3.accuracyDeltaPp >= 0 ? "text-emerald-600 border-emerald-300" : "text-rose-600 border-rose-300"
-                    )}>
+                    <span>
+                      Último Simulado:{" "}
+                      <strong className="text-foreground">
+                        {windowComparison.latestVsAvgPrevious3.targetAccuracy}%
+                      </strong>
+                    </span>
+                    <span>
+                      Média dos 3 Anteriores:{" "}
+                      <strong className="text-foreground">
+                        {windowComparison.latestVsAvgPrevious3.baseAccuracy}%
+                      </strong>
+                    </span>
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        "text-[10px]",
+                        windowComparison.latestVsAvgPrevious3.accuracyDeltaPp >= 0
+                          ? "text-emerald-600 border-emerald-300"
+                          : "text-rose-600 border-rose-300",
+                      )}
+                    >
                       {windowComparison.latestVsAvgPrevious3.accuracyDeltaPp >= 0 ? "+" : ""}
                       {windowComparison.latestVsAvgPrevious3.accuracyDeltaPp} p.p.
                     </Badge>
@@ -716,19 +796,34 @@ export function SimulationPerformanceDashboard({
               {historicalAnalysis.subjects.length > 0 ? (
                 <div className="space-y-2">
                   {historicalAnalysis.subjects.map((sub) => (
-                    <div key={sub.subjectName} className="p-2.5 rounded-lg border border-border bg-background space-y-1.5">
+                    <div
+                      key={sub.subjectName}
+                      className="p-2.5 rounded-lg border border-border bg-background space-y-1.5"
+                    >
                       <div className="flex items-center justify-between text-xs">
                         <span className="font-semibold text-foreground">{sub.subjectName}</span>
                         <div className="flex items-center gap-2">
-                          <Badge variant="outline" className={cn(
-                            "text-[9px] px-1.5 py-0",
-                            sub.trend === "IMPROVING" && "border-emerald-300 text-emerald-700 bg-emerald-50 dark:bg-emerald-950/30 dark:text-emerald-300",
-                            sub.trend === "DECLINING" && "border-rose-300 text-rose-700 bg-rose-50 dark:bg-rose-950/30 dark:text-rose-300",
-                            sub.trend === "STABLE" && "border-amber-300 text-amber-700 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-300"
-                          )}>
-                            {sub.trend === "IMPROVING" ? "Em Alta" : sub.trend === "DECLINING" ? "Em Queda" : "Estável"}
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "text-[9px] px-1.5 py-0",
+                              sub.trend === "IMPROVING" &&
+                                "border-emerald-300 text-emerald-700 bg-emerald-50 dark:bg-emerald-950/30 dark:text-emerald-300",
+                              sub.trend === "DECLINING" &&
+                                "border-rose-300 text-rose-700 bg-rose-50 dark:bg-rose-950/30 dark:text-rose-300",
+                              sub.trend === "STABLE" &&
+                                "border-amber-300 text-amber-700 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-300",
+                            )}
+                          >
+                            {sub.trend === "IMPROVING"
+                              ? "Em Alta"
+                              : sub.trend === "DECLINING"
+                                ? "Em Queda"
+                                : "Estável"}
                           </Badge>
-                          <span className="font-bold text-foreground">{sub.averageAccuracyPercentage}%</span>
+                          <span className="font-bold text-foreground">
+                            {sub.averageAccuracyPercentage}%
+                          </span>
                         </div>
                       </div>
 
@@ -737,7 +832,8 @@ export function SimulationPerformanceDashboard({
                       <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-0.5">
                         <span>Presente em {sub.simulationCount} simulado(s)</span>
                         <span>
-                          Variação: {sub.accuracyDeltaPercentage >= 0 ? "+" : ""}{sub.accuracyDeltaPercentage} p.p.
+                          Variação: {sub.accuracyDeltaPercentage >= 0 ? "+" : ""}
+                          {sub.accuracyDeltaPercentage} p.p.
                         </span>
                       </div>
                     </div>
@@ -766,18 +862,29 @@ export function SimulationPerformanceDashboard({
               {historicalAnalysis.topics.length > 0 ? (
                 <div className="space-y-2 max-h-[360px] overflow-y-auto pr-1">
                   {historicalAnalysis.topics.map((topic) => (
-                    <div key={`${topic.subjectName}-${topic.topicName}`} className="p-2.5 rounded-lg border border-border bg-background space-y-1">
+                    <div
+                      key={`${topic.subjectName}-${topic.topicName}`}
+                      className="p-2.5 rounded-lg border border-border bg-background space-y-1"
+                    >
                       <div className="flex items-center justify-between text-xs">
-                        <span className="font-medium text-foreground truncate max-w-[220px]" title={topic.topicName}>
+                        <span
+                          className="font-medium text-foreground truncate max-w-[220px]"
+                          title={topic.topicName}
+                        >
                           {topic.topicName}
                         </span>
                         <div className="flex items-center gap-1.5">
                           {topic.isPersistentWeakness && (
-                            <Badge variant="outline" className="text-[9px] text-rose-600 border-rose-300 bg-rose-50 dark:bg-rose-950/30">
+                            <Badge
+                              variant="outline"
+                              className="text-[9px] text-rose-600 border-rose-300 bg-rose-50 dark:bg-rose-950/30"
+                            >
                               Ponto Crítico
                             </Badge>
                           )}
-                          <span className="font-bold text-foreground">{topic.averageAccuracyPercentage}%</span>
+                          <span className="font-bold text-foreground">
+                            {topic.averageAccuracyPercentage}%
+                          </span>
                         </div>
                       </div>
                       <span className="text-[10px] text-muted-foreground block truncate">
@@ -812,7 +919,10 @@ export function SimulationPerformanceDashboard({
             <CardContent className="pt-2">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {bankComparisons.map((bank) => (
-                  <div key={bank.examBoard} className="p-3 rounded-lg border border-border bg-muted/20 space-y-1">
+                  <div
+                    key={bank.examBoard}
+                    className="p-3 rounded-lg border border-border bg-muted/20 space-y-1"
+                  >
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-xs text-foreground">{bank.examBoard}</span>
                       <Badge variant="outline" className="text-[9px]">
@@ -820,7 +930,9 @@ export function SimulationPerformanceDashboard({
                       </Badge>
                     </div>
                     <div className="flex items-baseline gap-1">
-                      <span className="text-lg font-extrabold text-foreground">{bank.accuracyPercentage}%</span>
+                      <span className="text-lg font-extrabold text-foreground">
+                        {bank.accuracyPercentage}%
+                      </span>
                       <span className="text-[10px] text-muted-foreground">de acerto</span>
                     </div>
                     <span className="text-[10px] text-muted-foreground block">

@@ -38,12 +38,7 @@ import {
   CardDescription,
   CardFooter,
 } from "@/components/ui/card";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -320,7 +315,8 @@ function SimuladosPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-primary" /> Meus Simulados ({questionSets.length})
+                  <FileText className="w-4 h-4 text-primary" /> Meus Simulados (
+                  {questionSets.length})
                 </h3>
               </div>
 
@@ -363,10 +359,16 @@ function SimuladosPage() {
                         <CardHeader className="pb-3">
                           <div className="flex items-start justify-between gap-2">
                             <Badge
-                              variant={isCompleted ? "default" : isStarted ? "secondary" : "outline"}
+                              variant={
+                                isCompleted ? "default" : isStarted ? "secondary" : "outline"
+                              }
                               className="text-[11px]"
                             >
-                              {isCompleted ? "Concluído" : isStarted ? "Em Andamento" : "Não Iniciado"}
+                              {isCompleted
+                                ? "Concluído"
+                                : isStarted
+                                  ? "Em Andamento"
+                                  : "Não Iniciado"}
                             </Badge>
                             {sim.timeLimitMinutes && (
                               <span className="text-xs text-muted-foreground font-mono flex items-center gap-1">
@@ -387,8 +389,12 @@ function SimuladosPage() {
                         <CardContent className="pb-3 space-y-3">
                           <div className="grid grid-cols-2 gap-2 text-xs">
                             <div className="p-2 rounded-md bg-muted/40">
-                              <span className="text-muted-foreground block text-[10px]">Questões</span>
-                              <span className="font-bold text-foreground">{sim.totalQuestions}</span>
+                              <span className="text-muted-foreground block text-[10px]">
+                                Questões
+                              </span>
+                              <span className="font-bold text-foreground">
+                                {sim.totalQuestions}
+                              </span>
                             </div>
                             <div className="p-2 rounded-md bg-muted/40">
                               <span className="text-muted-foreground block text-[10px]">
@@ -437,4 +443,3 @@ function SimuladosPage() {
     </AppShell>
   );
 }
-

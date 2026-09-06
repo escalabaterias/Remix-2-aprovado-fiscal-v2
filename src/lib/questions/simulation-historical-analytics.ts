@@ -783,9 +783,7 @@ export function computeInternalBenchmarks(
 /**
  * Calcula comparações temporais por janelas (3vs3, 5vs5, último vs 3 anteriores).
  */
-export function computeWindowComparisons(
-  timeline: SimulationHistoricalPoint[],
-): WindowComparison {
+export function computeWindowComparisons(timeline: SimulationHistoricalPoint[]): WindowComparison {
   const computeWindow = (
     targetGroup: SimulationHistoricalPoint[],
     baseGroup: SimulationHistoricalPoint[],
@@ -793,8 +791,7 @@ export function computeWindowComparisons(
   ): WindowComparisonWindow => {
     const targetAccAvg =
       targetGroup.reduce((a, b) => a + b.accuracyPercentage, 0) / targetGroup.length;
-    const baseAccAvg =
-      baseGroup.reduce((a, b) => a + b.accuracyPercentage, 0) / baseGroup.length;
+    const baseAccAvg = baseGroup.reduce((a, b) => a + b.accuracyPercentage, 0) / baseGroup.length;
 
     const targetSpeedAvg =
       targetGroup.reduce((a, b) => a + b.avgTimePerQuestionSeconds, 0) / targetGroup.length;
@@ -891,8 +888,7 @@ export function evaluateAccuracySpeedMatrix(
   } else if (isAccuracyUp && isSpeedDown) {
     classification = "ACCURACY_UP_SPEED_DOWN";
     label = "Maior Precisão com Perda de Velocidade";
-    description =
-      "Sua taxa de acerto subiu, porém com investimento de tempo superior por questão.";
+    description = "Sua taxa de acerto subiu, porém com investimento de tempo superior por questão.";
   } else if (isAccuracyDown && isSpeedUp) {
     classification = "SPEED_UP_ACCURACY_DOWN";
     label = "Ganho de Velocidade com Perda de Precisão";
@@ -901,8 +897,7 @@ export function evaluateAccuracySpeedMatrix(
   } else if (isAccuracyDown && isSpeedDown) {
     classification = "DOUBLE_DETERIORATION";
     label = "Deterioração Dupla";
-    description =
-      "Queda simultânea na taxa de acertos e aumento no tempo médio gasto por questão.";
+    description = "Queda simultânea na taxa de acertos e aumento no tempo médio gasto por questão.";
   }
 
   return {

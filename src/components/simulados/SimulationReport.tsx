@@ -247,10 +247,7 @@ export function SimulationReport({
 
   const comparativeAnalysis = useMemo(() => {
     if (!Array.isArray(simulationHistoryData) || simulationHistoryData.length === 0) return null;
-    return analyzeSimulationComparison(
-      { simulations: simulationHistoryData },
-      effectiveSet?.setId
-    );
+    return analyzeSimulationComparison({ simulations: simulationHistoryData }, effectiveSet?.setId);
   }, [simulationHistoryData, effectiveSet?.setId]);
 
   const isLoading = directIsLoading || isFetchingSet || isFetchingQuestions;
@@ -1190,17 +1187,24 @@ export function SimulationReport({
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                     <div className="p-2 rounded bg-background border border-border space-y-0.5">
-                      <span className="text-[10px] text-muted-foreground block">vs. Sua Média Histórica</span>
-                      <span className={cn(
-                        "font-bold text-sm flex items-center gap-1",
-                        (comparativeAnalysis.internalBenchmark.deltaVsAveragePp ?? 0) > 0
-                          ? "text-emerald-600 dark:text-emerald-400"
-                          : (comparativeAnalysis.internalBenchmark.deltaVsAveragePp ?? 0) < 0
-                            ? "text-rose-600 dark:text-rose-400"
-                            : "text-foreground"
-                      )}>
-                        {(comparativeAnalysis.internalBenchmark.deltaVsAveragePp ?? 0) > 0 ? "+" : ""}
-                        {(comparativeAnalysis.internalBenchmark.deltaVsAveragePp ?? 0).toFixed(1)} p.p.
+                      <span className="text-[10px] text-muted-foreground block">
+                        vs. Sua Média Histórica
+                      </span>
+                      <span
+                        className={cn(
+                          "font-bold text-sm flex items-center gap-1",
+                          (comparativeAnalysis.internalBenchmark.deltaVsAveragePp ?? 0) > 0
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : (comparativeAnalysis.internalBenchmark.deltaVsAveragePp ?? 0) < 0
+                              ? "text-rose-600 dark:text-rose-400"
+                              : "text-foreground",
+                        )}
+                      >
+                        {(comparativeAnalysis.internalBenchmark.deltaVsAveragePp ?? 0) > 0
+                          ? "+"
+                          : ""}
+                        {(comparativeAnalysis.internalBenchmark.deltaVsAveragePp ?? 0).toFixed(1)}{" "}
+                        p.p.
                       </span>
                       <span className="text-[10px] text-muted-foreground block">
                         Média: {comparativeAnalysis.internalBenchmark.averageScoreAccuracy}%
@@ -1208,17 +1212,24 @@ export function SimulationReport({
                     </div>
 
                     <div className="p-2 rounded bg-background border border-border space-y-0.5">
-                      <span className="text-[10px] text-muted-foreground block">vs. Sua Mediana</span>
-                      <span className={cn(
-                        "font-bold text-sm flex items-center gap-1",
-                        (comparativeAnalysis.internalBenchmark.deltaVsMedianPp ?? 0) > 0
-                          ? "text-emerald-600 dark:text-emerald-400"
-                          : (comparativeAnalysis.internalBenchmark.deltaVsMedianPp ?? 0) < 0
-                            ? "text-rose-600 dark:text-rose-400"
-                            : "text-foreground"
-                      )}>
-                        {(comparativeAnalysis.internalBenchmark.deltaVsMedianPp ?? 0) > 0 ? "+" : ""}
-                        {(comparativeAnalysis.internalBenchmark.deltaVsMedianPp ?? 0).toFixed(1)} p.p.
+                      <span className="text-[10px] text-muted-foreground block">
+                        vs. Sua Mediana
+                      </span>
+                      <span
+                        className={cn(
+                          "font-bold text-sm flex items-center gap-1",
+                          (comparativeAnalysis.internalBenchmark.deltaVsMedianPp ?? 0) > 0
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : (comparativeAnalysis.internalBenchmark.deltaVsMedianPp ?? 0) < 0
+                              ? "text-rose-600 dark:text-rose-400"
+                              : "text-foreground",
+                        )}
+                      >
+                        {(comparativeAnalysis.internalBenchmark.deltaVsMedianPp ?? 0) > 0
+                          ? "+"
+                          : ""}
+                        {(comparativeAnalysis.internalBenchmark.deltaVsMedianPp ?? 0).toFixed(1)}{" "}
+                        p.p.
                       </span>
                       <span className="text-[10px] text-muted-foreground block">
                         Mediana: {comparativeAnalysis.internalBenchmark.medianScoreAccuracy}%
@@ -1226,13 +1237,17 @@ export function SimulationReport({
                     </div>
 
                     <div className="p-2 rounded bg-background border border-border space-y-0.5">
-                      <span className="text-[10px] text-muted-foreground block">Distância da Melhor Marca</span>
-                      <span className={cn(
-                        "font-bold text-sm flex items-center gap-1",
-                        (comparativeAnalysis.internalBenchmark.gapToBestPp ?? 0) >= 0
-                          ? "text-emerald-600 dark:text-emerald-400"
-                          : "text-amber-600 dark:text-amber-400"
-                      )}>
+                      <span className="text-[10px] text-muted-foreground block">
+                        Distância da Melhor Marca
+                      </span>
+                      <span
+                        className={cn(
+                          "font-bold text-sm flex items-center gap-1",
+                          (comparativeAnalysis.internalBenchmark.gapToBestPp ?? 0) >= 0
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : "text-amber-600 dark:text-amber-400",
+                        )}
+                      >
                         {(comparativeAnalysis.internalBenchmark.gapToBestPp ?? 0) >= 0
                           ? "Recorde Pessoal!"
                           : `${(comparativeAnalysis.internalBenchmark.gapToBestPp ?? 0).toFixed(1)} p.p.`}
@@ -1245,7 +1260,9 @@ export function SimulationReport({
 
                   {comparativeAnalysis.accuracySpeedMatrix && (
                     <p className="text-[11px] text-muted-foreground">
-                      <span className="font-semibold text-foreground">Análise de Ritmo x Precisão: </span>
+                      <span className="font-semibold text-foreground">
+                        Análise de Ritmo x Precisão:{" "}
+                      </span>
                       {comparativeAnalysis.accuracySpeedMatrix.description}
                     </p>
                   )}

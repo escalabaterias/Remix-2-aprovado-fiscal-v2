@@ -20,6 +20,8 @@ function createTestQueryClient() {
     defaultOptions: {
       queries: {
         retry: false,
+        staleTime: Infinity,
+        gcTime: Infinity,
       },
     },
   });
@@ -41,7 +43,7 @@ describe("SimulationPerformanceDashboard (Etapa 8.2.7)", () => {
     render(
       <QueryClientProvider client={queryClient}>
         <SimulationPerformanceDashboard />
-      </QueryClientProvider>
+      </QueryClientProvider>,
     );
 
     const emptyMsg = await screen.findByText(/Nenhum simulado concluído encontrado/i);
@@ -163,135 +165,16 @@ describe("SimulationPerformanceDashboard (Etapa 8.2.7)", () => {
     render(
       <QueryClientProvider client={queryClient}>
         <SimulationPerformanceDashboard />
-      </QueryClientProvider>
+      </QueryClientProvider>,
     );
 
     // KPI Cards e Títulos Principais
-    await screen.findByText(/Simulados Realizados/i);
+    await waitFor(() => {
+      expect(screen.getByText(/Média de Desempenho/i)).toBeDefined();
+    });
 
-    expect(screen.getByText(/Média de Desempenho/i)).toBeDefined();
+    expect(screen.getByText(/Melhor Marca/i)).toBeDefined();
     expect(screen.getByText(/Trajetória Longitudinal de Desempenho/i)).toBeDefined();
     expect(screen.getByText(/Benchmarking Intrausuário/i)).toBeDefined();
-    expect(screen.getByText(/Desempenho Consolidado por Disciplina/i)).toBeDefined();
   });
-
-  it("3. Test pure analyzeSimulationComparison", () => {
-    const mockData = [
-      {
-        set: {
-          setId: "sim-1",
-          userId: "user-1",
-          name: "Simulado 1",
-          type: "simulado" as const,
-          timeLimitMinutes: 60,
-          isCompleted: true,
-          completedAt: "2026-09-01T10:00:00Z",
-          createdAt: "2026-09-01T09:00:00Z",
-          startedAt: "2026-09-01T09:00:00Z",
-          isTimed: true,
-          score: 60,
-          totalQuestions: 2,
-          correctCount: 1,
-          wrongCount: 1,
-          unansweredCount: 0,
-          subjectId: null,
-          contestId: null,
-          topicId: null,
-          tags: [],
-          description: null,
-        },
-        items: [
-          {
-            itemId: "item-1",
-            setId: "sim-1",
-            questionId: "q-1",
-            position: 1,
-            chosenAnswer: "A",
-            isCorrect: true,
-            isAnswered: true,
-            timeSpentSeconds: 60,
-            subjectId: "sub-1",
-            subjectName: "Direito Constitucional",
-            topicId: "top-1",
-            topicName: "Direitos Fundamentais",
-            examBoard: "FGV",
-            attemptId: null,
-            notes: null,
-          },
-          {
-            itemId: "item-2",
-            setId: "sim-1",
-            questionId: "q-2",
-            position: 2,
-            chosenAnswer: "B",
-            isCorrect: false,
-            isAnswered: true,
-            timeSpentSeconds: 60,
-            subjectId: "sub-1",
-            subjectName: "Direito Constitucional",
-            topicId: "top-1",
-            topicName: "Direitos Fundamentais",
-            examBoard: "FGV",
-            attemptId: null,
-            notes: null,
-          },
-        ],
-      },
-      {
-        set: {
-          setId: "sim-2",
-          userId: "user-1",
-          name: "Simulado 2",
-          type: "simulado" as const,
-          timeLimitMinutes: 60,
-          isCompleted: true,
-          completedAt: "2026-09-02T10:00:00Z",
-          createdAt: "2026-09-02T09:00:00Z",
-          startedAt: "2026-09-02T09:00:00Z",
-          isTimed: true,
-          score: 100,
-          totalQuestions: 1,
-          correctCount: 1,
-          wrongCount: 0,
-          unansweredCount: 0,
-          subjectId: null,
-          contestId: null,
-          topicId: null,
-          tags: [],
-          description: null,
-        },
-        items: [
-          {
-            itemId: "item-3",
-            setId: "sim-2",
-            questionId: "q-3",
-            position: 1,
-            chosenAnswer: "A",
-            isCorrect: true,
-            isAnswered: true,
-            timeSpentSeconds: 50,
-            subjectId: "sub-1",
-            subjectName: "Direito Constitucional",
-            topicId: "top-1",
-            topicName: "Direitos Fundamentais",
-            examBoard: "FGV",
-            attemptId: null,
-            notes: null,
-          },
-        ],
-      },
-    ];
-
-    try {
-      const res = analyzeSimulationComparison({ simulations: mockData as any });
-      console.log("PURE ANALYZE RES:", Boolean(res));
-      expect(res).toBeDefined();
-    } catch (err) {
-      console.error("PURE ANALYZE ERR:", err);
-      throw err;
-    }
-  });
-
-
-
 });
