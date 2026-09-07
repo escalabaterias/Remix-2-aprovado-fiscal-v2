@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/layout/AppShell";
 import { PreferencesPanel } from "@/components/settings/PreferencesPanel";
 import { GoogleDriveConnectButton } from "@/components/materials/GoogleDriveConnectButton";
+import { serverHandleDriveOAuthCallback } from "@/lib/materials/drive/drive-server-fn";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -85,6 +86,51 @@ function SettingsPage() {
       coach_autonomy: profile.coach_autonomy,
     });
   }, [profile]);
+
+  // Processa o callback do OAuth do Google Drive ao retornar para a página
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get("code");
+    const state = urlParams.get("state");
+    const errorParam = urlParams.get("error");
+
+    if (!code && !state && !errorParam) return;
+
+    // Limpa os parâmetros sensíveis da URL imediatamente para evitar re-execuções ao atualizar
+    const cleanUrl = window.location.pathname;
+    window.history.replaceState({}, document.title, cleanUrl);
+
+    if (errorParam) {
+      if (errorParam === "access_denied") {
+        toast.error("A autorização do Google Drive foi cancelada pelo usuário.");
+      } else {
+        toast.error(`Falha na autorização do Google Drive: ${errorParam}`);
+      }
+      return;
+    }
+
+    if (code && state) {
+      const redirectUri = `${window.location.origin}/_authenticated/configuracoes`;
+      toast.info("Concluindo conexão com o Google Drive...");
+
+      serverHandleDriveOAuthCallback({
+        data: { code, stateToken: state, redirectUri },
+      })
+        .then((res) => {
+          if (res.connected) {
+            toast.success("Google Drive conectado com sucesso!");
+            queryClient.invalidateQueries({ queryKey: ["google-drive-connection-status"] });
+          } else {
+            toast.error("Não foi possível confirmar a conexão com o Google Drive.");
+          }
+        })
+        .catch((err: any) => {
+          toast.error(err.message || "Erro ao concluir autorização do Google Drive.");
+        });
+    }
+  }, [queryClient]);
 
   const save = useMutation({
     mutationFn: async () => {

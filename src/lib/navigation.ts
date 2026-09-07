@@ -26,6 +26,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "Matérias & Árvore", to: "/materias", group: "ciclo_planner" },
 
   // HUB 2: Edital & Vade Mecum
+  { label: "Hub de Materiais", to: "/materiais", group: "edital_vade" },
   { label: "Edital Verticalizado", to: "/estudo/edital", group: "edital_vade" },
   { label: "Vade Mecum & Prontidão", to: "/estudo/prontidao", group: "edital_vade" },
   { label: "Discursivas & Peças", to: "/estudo/discursivas", group: "edital_vade" },

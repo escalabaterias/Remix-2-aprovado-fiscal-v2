@@ -27,17 +27,22 @@
 
 ---
 
-## 3. STATUS DA ETAPA P0.1-B (GOOGLE DRIVE + PERSISTÊNCIA SEGURA)
+## 3. STATUS DA ETAPA P0.1-B E P0.2 (GOOGLE DRIVE + MATERIAL HUB + DISCOVERY)
 
-* **Status:** 🟡 **IMPLEMENTAÇÃO CORRIGIDA — AGUARDANDO TESTE REAL DO USUÁRIO**
-* **Implementado & Auditado:**
-  - Tabela `public.user_drive_credentials` no Supabase com AES-256-GCM.
-  - Revogação de acesso direto para `anon` e `authenticated` (Acesso exclusivo via `service_role`).
-  - Isolamento completo de bundle via TanStack Start Server Functions (`src/lib/materials/drive/drive-server-fn.ts`).
-  - Auditoria confirmou **0 ocorrências** de `node:crypto`, `connection-service` ou segredos no bundle do cliente (`.output/public/`).
-  - **1.338/1.338 testes aprovados**.
-* **Bloqueio para Homologação Completa:**
-  - Teste interativo do fluxo OAuth real no navegador (redirecionamento + consentimento do Google + callback) a ser executado pelo usuário.
+* **P0.1-B Google Drive OAuth:** 🟡 **IMPLEMENTAÇÃO CONCLUÍDA — E2E PENDENTE**
+  - Isolamento server-side com AES-256-GCM (`enc_v2`) em `public.user_drive_credentials`.
+  - Zero segredos no bundle do cliente.
+
+* **P0.2 Material Hub & Drive Discovery:** 🟢 **IMPLEMENTADO E TESTADO**
+  - **Rota `/materiais` (Material Hub):** Interface unificada para Uploads Diretos, Google Drive, URLs, YouTube, Legislação e Livros.
+  - **Tabela Oficial `public.sources`:** Entidade única de dados para todos os materiais.
+  - **Discovery Service Layer (`discovery-service.ts`):** Suporte a "Meu Drive", "Compartilhados Comigo", "Shared Drives" e "Atalhos" com deduplicação por `user_id` e `driveFileId`.
+  - **Server Functions (`drive-server-fn.ts`):** `serverDiscoverDriveFiles` e `serverImportDriveFile` isoladas no servidor via TanStack Start.
+  - **Validação de Testes & Build:**
+    - **1.360/1.360 testes aprovados** (63 suítes de teste).
+    - **`npm run lint`** 0 erros.
+    - **`compile_applet`** PASS.
+    - **Auditoria de segurança de bundle** PASS (0 vazamentos).
 
 ---
 

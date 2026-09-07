@@ -17,8 +17,17 @@ import {
   initiateDriveConnection,
   disconnectDrive,
   handleDriveOAuthCallback,
+  refreshDriveAccessToken,
 } from "./connection-service";
+import {
+  discoverDriveFiles,
+  importDriveFileToSources,
+  type DriveDiscoveryFilter,
+  type DriveDiscoveryItem,
+  type DriveDiscoveryResponse,
+} from "./discovery-service";
 import type { DriveConnectionStatus } from "./types";
+import type { MaterialRow } from "../types";
 
 /**
  * Server Function para consultar o status público da conexão do Google Drive.
@@ -67,7 +76,11 @@ export const serverHandleDriveOAuthCallback = createServerFn({
 })
   .middleware([requireSupabaseAuth])
   .validator(
-    (input: { code: string; stateToken: string }): { code: string; stateToken: string } => {
+    (input: {
+      code: string;
+      stateToken: string;
+      redirectUri?: string;
+    }): { code: string; stateToken: string; redirectUri?: string } => {
       if (!input?.code || typeof input.code !== "string") {
         throw new Error("Código OAuth é obrigatório.");
       }
@@ -78,5 +91,70 @@ export const serverHandleDriveOAuthCallback = createServerFn({
     },
   )
   .handler(async ({ data, context }): Promise<DriveConnectionStatus> => {
-    return handleDriveOAuthCallback(context.supabase, context.userId, data.code, data.stateToken);
+    return handleDriveOAuthCallback(
+      context.supabase,
+      context.userId,
+      data.code,
+      data.stateToken,
+      data.redirectUri,
+    );
+  });
+
+/**
+ * Server Function para executar o Discovery de arquivos no Google Drive.
+ */
+export const serverDiscoverDriveFiles = createServerFn({
+  method: "POST",
+})
+  .middleware([requireSupabaseAuth])
+  .validator((input: DriveDiscoveryFilter): DriveDiscoveryFilter => input ?? {})
+  .handler(async ({ data, context }): Promise<DriveDiscoveryResponse> => {
+    try {
+      const { accessToken } = await refreshDriveAccessToken(
+        context.userId,
+        undefined,
+        context.supabase,
+      );
+      return await discoverDriveFiles(accessToken, data);
+    } catch (err: any) {
+      // Retorna resposta limpa em caso de desconexão ou ausência de credenciais
+      return {
+        items: [],
+        nextPageToken: null,
+        totalFound: 0,
+      };
+    }
+  });
+
+/**
+ * Server Function para importar um arquivo do Google Drive para a tabela official `sources`.
+ */
+export const serverImportDriveFile = createServerFn({
+  method: "POST",
+})
+  .middleware([requireSupabaseAuth])
+  .validator(
+    (input: {
+      driveItem: DriveDiscoveryItem;
+      topicId?: string | null;
+      subjectId?: string | null;
+      contestId?: string | null;
+    }): {
+      driveItem: DriveDiscoveryItem;
+      topicId?: string | null;
+      subjectId?: string | null;
+      contestId?: string | null;
+    } => {
+      if (!input?.driveItem || !input.driveItem.id) {
+        throw new Error("driveItem é obrigatório e deve ter id.");
+      }
+      return input;
+    },
+  )
+  .handler(async ({ data, context }): Promise<MaterialRow> => {
+    return importDriveFileToSources(context.supabase, context.userId, data.driveItem, {
+      topicId: data.topicId,
+      subjectId: data.subjectId,
+      contestId: data.contestId,
+    });
   });

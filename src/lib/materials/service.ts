@@ -192,6 +192,47 @@ export async function getMaterialById(
 }
 
 /**
+ * Realiza o upload seguro de um arquivo de estudo para o Supabase Storage.
+ * Retorna o `filePath` e a `publicUrl` (se disponível) para vincular ao `public.sources`.
+ */
+export async function uploadMaterialFile(
+  client: SupabaseClient<Database>,
+  userId: string,
+  file: { name: string; type: string; size?: number; arrayBuffer?: () => Promise<ArrayBuffer> },
+): Promise<{ filePath: string; publicUrl: string | null }> {
+  if (!userId) {
+    throw new Error("Usuário não autenticado.");
+  }
+  if (!file || !file.name) {
+    throw new Error("Arquivo não fornecido.");
+  }
+
+  const cleanFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+  const storagePath = `${userId}/${Date.now()}_${cleanFileName}`;
+
+  let payload: any = file;
+  if (typeof file.arrayBuffer === "function") {
+    payload = await file.arrayBuffer();
+  }
+
+  const { data, error } = await client.storage.from("documentos").upload(storagePath, payload, {
+    cacheControl: "3600",
+    upsert: true,
+    contentType: file.type || "application/pdf",
+  });
+
+  if (error) {
+    throw new Error(`Erro ao realizar upload no Storage (documentos): ${error.message}`);
+  }
+
+  const { data: publicUrlData } = client.storage
+    .from("documentos")
+    .getPublicUrl(data?.path || storagePath);
+
+  return { filePath: data?.path || storagePath, publicUrl: publicUrlData?.publicUrl || null };
+}
+
+/**
  * Cadastra um novo material no banco vinculado ao usuário autenticado.
  */
 export async function createMaterial(

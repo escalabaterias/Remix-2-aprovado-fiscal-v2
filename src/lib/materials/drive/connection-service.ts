@@ -9,7 +9,12 @@
  *   - Persistência em armazenamento seguro do servidor (sobrevive a cold starts, reinicializações e novos deploys).
  *   - O frontend NUNCA recebe tokens ou segredos (nem em responses, nem em logs, nem em profiles, nem em sources).
  *   - As consultas públicas retornam apenas metadados de status (DriveConnectionStatus).
- *   - O escopo solicitado é estritamente `https://www.googleapis.com/auth/drive.metadata.readonly`.
+ *   - O escopo solicitado é `https://www.googleapis.com/auth/drive.metadata.readonly`,
+ *     que concede permissão para ler metadados de arquivos acessíveis à conta autenticada:
+ *       1. Meu Drive (arquivos e pastas do próprio usuário)
+ *       2. Compartilhados comigo (arquivos e pastas compartilhados por professores/colegas)
+ *       3. Shared Drives (Drives compartilhados de equipe/institucional)
+ *       4. Atalhos (Google Drive shortcuts)
  *   - A desconexão revoga a autorização sem remover materiais nem histórico pedagógico em `public.sources`.
  *   - Proteção de State OAuth: nonce criptográfico, TTL de 10 minutos, associação unívoca a userId, consumo único (single-use anti-replay).
  */
@@ -351,13 +356,9 @@ export async function initiateDriveConnection(
 
   const effectiveClientId =
     clientId ||
-    (typeof process !== "undefined" && process.env ? process.env["GOOGLE_CLIENT_ID"] : undefined) ||
-    "MOCK_GOOGLE_CLIENT_ID";
+    (typeof process !== "undefined" && process.env ? process.env["GOOGLE_CLIENT_ID"] : undefined);
 
-  const nodeEnv =
-    typeof process !== "undefined" && process.env ? process.env["NODE_ENV"] : undefined;
-
-  if (!effectiveClientId && nodeEnv === "production") {
+  if (!effectiveClientId) {
     throw new Error(
       "Integração do Google Drive não configurada no servidor (GOOGLE_CLIENT_ID ausente).",
     );
@@ -402,6 +403,7 @@ export async function handleDriveOAuthCallback(
   userId: string,
   code: string,
   stateToken: string,
+  redirectUriOrMock?: string,
   mockRefreshToken?: string,
   storeOverride?: PersistentServerCredentialStore,
 ): Promise<DriveConnectionStatus> {
@@ -437,9 +439,91 @@ export async function handleDriveOAuthCallback(
   // Consumo único do token de estado (Prevenção de replay)
   activeStateTokens.delete(stateToken);
 
-  const refreshToken =
-    mockRefreshToken || `mock_google_refresh_token_for_${effectiveUserId}_${Date.now()}`;
-  const encrypted = await encryptSecret(refreshToken);
+  let redirectUri: string | undefined = undefined;
+  let explicitMockToken: string | undefined = mockRefreshToken;
+
+  if (redirectUriOrMock) {
+    if (redirectUriOrMock.startsWith("http://") || redirectUriOrMock.startsWith("https://")) {
+      redirectUri = redirectUriOrMock;
+    } else if (!explicitMockToken) {
+      explicitMockToken = redirectUriOrMock;
+    }
+  }
+
+  let refreshTokenToStore: string | undefined = explicitMockToken;
+  let accountEmailToStore: string | undefined = "aluno@aprovadofiscal.com.br";
+
+  const clientId =
+    typeof process !== "undefined" && process.env ? process.env["GOOGLE_CLIENT_ID"] : undefined;
+  const clientSecret =
+    typeof process !== "undefined" && process.env ? process.env["GOOGLE_CLIENT_SECRET"] : undefined;
+
+  // Se não temos mock token fornecido nos testes, executa a troca real server-to-server com a API do Google
+  if (!refreshTokenToStore) {
+    if (!clientId || !clientSecret) {
+      throw new Error(
+        "Integração do Google Drive não configurada no servidor (GOOGLE_CLIENT_ID ou GOOGLE_CLIENT_SECRET ausente).",
+      );
+    }
+
+    try {
+      const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          code,
+          client_id: clientId,
+          client_secret: clientSecret,
+          redirect_uri: redirectUri || "",
+          grant_type: "authorization_code",
+        }),
+      });
+
+      if (!tokenRes.ok) {
+        const errText = await tokenRes.text();
+        console.error("[DriveOAuth] Falha na troca do código OAuth com Google:", errText);
+        throw new Error(
+          "A autorização do Google Drive expirou ou é inválida. Tente conectar novamente.",
+        );
+      }
+
+      const tokenJson = await tokenRes.json();
+      refreshTokenToStore = tokenJson.refresh_token;
+
+      if (!refreshTokenToStore) {
+        throw new Error(
+          "O Google não retornou um refresh token. Tente desconectar e solicitar consentimento novamente.",
+        );
+      }
+
+      if (tokenJson.access_token) {
+        try {
+          const userinfoRes = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
+            headers: { Authorization: `Bearer ${tokenJson.access_token}` },
+          });
+          if (userinfoRes.ok) {
+            const userinfo = await userinfoRes.json();
+            if (userinfo?.email) {
+              accountEmailToStore = userinfo.email;
+            }
+          }
+        } catch {
+          // Não-bloqueante
+        }
+      }
+    } catch (err: any) {
+      if (
+        err.message?.includes("Google Drive não configurada") ||
+        err.message?.includes("expirou") ||
+        err.message?.includes("refresh token")
+      ) {
+        throw err;
+      }
+      throw new Error("Não foi possível concluir a conexão com o Google Drive.");
+    }
+  }
+
+  const encrypted = await encryptSecret(refreshTokenToStore);
   const now = new Date().toISOString();
 
   const credential: StoredDriveCredential = {
@@ -448,7 +532,7 @@ export async function handleDriveOAuthCallback(
     scope: DRIVE_METADATA_SCOPE,
     connectedAt: now,
     lastValidatedAt: now,
-    accountEmail: "aluno@aprovadofiscal.com.br",
+    accountEmail: accountEmailToStore,
   };
 
   const store = storeOverride || defaultServerCredentialStore;
@@ -472,7 +556,7 @@ export async function handleDriveOAuthCallback(
       connectedAt: now,
       scope: DRIVE_METADATA_SCOPE,
       lastValidatedAt: now,
-      accountEmail: "aluno@aprovadofiscal.com.br",
+      accountEmail: accountEmailToStore,
     },
   };
 

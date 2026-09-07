@@ -149,9 +149,13 @@ function createMockSupabaseClient(options: MockDatabaseOptions = {}) {
 
 describe("Google Drive Connection Service — P0.1-B (Durable Storage & Strict Security)", () => {
   const originalEnvKey = process.env["DRIVE_CREDENTIAL_KEY"];
+  const originalClientId = process.env["GOOGLE_CLIENT_ID"];
+  const originalClientSecret = process.env["GOOGLE_CLIENT_SECRET"];
 
   beforeEach(async () => {
     process.env["DRIVE_CREDENTIAL_KEY"] = TEST_KEY;
+    process.env["GOOGLE_CLIENT_ID"] = "test-google-client-id";
+    process.env["GOOGLE_CLIENT_SECRET"] = "test-google-client-secret";
     await _clearTestCredentialStore();
   });
 
@@ -161,6 +165,23 @@ describe("Google Drive Connection Service — P0.1-B (Durable Storage & Strict S
     } else {
       delete process.env["DRIVE_CREDENTIAL_KEY"];
     }
+    if (originalClientId) {
+      process.env["GOOGLE_CLIENT_ID"] = originalClientId;
+    } else {
+      delete process.env["GOOGLE_CLIENT_ID"];
+    }
+    if (originalClientSecret) {
+      process.env["GOOGLE_CLIENT_SECRET"] = originalClientSecret;
+    } else {
+      delete process.env["GOOGLE_CLIENT_SECRET"];
+    }
+  });
+
+  it("Erros de configuração: GOOGLE_CLIENT_ID ausente lança erro explícito e impede URL fictícia", async () => {
+    delete process.env["GOOGLE_CLIENT_ID"];
+    await expect(initiateDriveConnection("user_123", "https://app.test/callback")).rejects.toThrow(
+      "Integração do Google Drive não configurada no servidor (GOOGLE_CLIENT_ID ausente).",
+    );
   });
 
   it("Caso 1: Usuário não conectado retorna connected = false", async () => {
