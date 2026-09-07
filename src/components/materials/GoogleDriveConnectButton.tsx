@@ -15,20 +15,19 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { HardDrive, CheckCircle2, AlertCircle, Loader2, LogOut, ExternalLink } from "lucide-react";
 
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  getDriveConnectionStatus,
-  initiateDriveConnection,
-  disconnectDrive,
-} from "@/lib/materials/drive/connection-service";
+  serverGetDriveStatus,
+  serverInitiateDriveOAuth,
+  serverDisconnectDrive,
+} from "@/lib/materials/drive/drive-server-fn";
 
 export function GoogleDriveConnectButton() {
   const queryClient = useQueryClient();
   const [isConnecting, setIsConnecting] = useState(false);
 
-  // Consulta status da conexão
+  // Consulta status da conexão via Server Function
   const {
     data: status,
     isLoading,
@@ -37,24 +36,16 @@ export function GoogleDriveConnectButton() {
   } = useQuery({
     queryKey: ["google-drive-connection-status"],
     queryFn: async () => {
-      const { data: auth } = await supabase.auth.getUser();
-      if (!auth.user) throw new Error("Sessão expirada.");
-      return getDriveConnectionStatus(supabase, auth.user.id);
+      return serverGetDriveStatus();
     },
   });
 
-  // Inicia o fluxo de autorização
+  // Inicia o fluxo de autorização via Server Function
   const handleConnect = async () => {
     try {
       setIsConnecting(true);
-      const { data: auth } = await supabase.auth.getUser();
-      if (!auth.user) {
-        toast.error("Sessão expirada. Faça login novamente.");
-        return;
-      }
-
       const redirectUri = `${window.location.origin}/_authenticated/configuracoes`;
-      const { authUrl } = await initiateDriveConnection(auth.user.id, redirectUri);
+      const { authUrl } = await serverInitiateDriveOAuth({ data: { redirectUri } });
 
       // Informa o usuário e redireciona para a tela oficial de autorização do Google
       toast.info("Redirecionando para autorização do Google Drive...");
@@ -73,12 +64,10 @@ export function GoogleDriveConnectButton() {
     }
   };
 
-  // Desconecta a integração
+  // Desconecta a integração via Server Function
   const disconnect = useMutation({
     mutationFn: async () => {
-      const { data: auth } = await supabase.auth.getUser();
-      if (!auth.user) throw new Error("Sessão expirada.");
-      return disconnectDrive(supabase, auth.user.id);
+      return serverDisconnectDrive();
     },
     onSuccess: () => {
       toast.success("Google Drive desconectado com sucesso.");
