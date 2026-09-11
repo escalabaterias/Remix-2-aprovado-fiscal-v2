@@ -5,8 +5,8 @@
 
 ## 1. POSICIONAMENTO ATUAL
 
-* **Etapa Atual:** P0.1-B Concluída (Aguardando teste real do usuário para homologação final do OAuth)
-* **Próxima Prioridade Transversal:** Sprint Transversal de Utilização Rápida (Experiência Real de Uso e Usabilidade) + Conclusão do P0.1-B / P0.2 Drive Discovery.
+* **Etapa Atual:** BLOCO A.1 Refinamento UX/UI do Dashboard Concluído com Sucesso | P0.2 Implementada & Testada
+* **Próxima Prioridade:** Avanço para P0.3 — Mnemônicos & Fórmulas (Engine de Mnemônicos + Associação a LawTags/Fórmulas) do ROADMAP_MESTRE.md.
 * **Linha de Governança:** Conforme estabelecido na **Governança Permanente do Projeto**, o `ROADMAP_MESTRE.md` permanece inalterado. A estratégia de uso rápido é uma camada de execução transversal para tornar as capacidades existentes imediatamente funcionais e fluidas para o aluno.
 
 ---
@@ -23,7 +23,11 @@
 * **Fase 7.1 — AI Gateway Real & Cache Persistido:** Resiliência de requisições com Gemini via `ai_results`.
 * **Fase 7.2 — Mentor / Coach de IA Proativo:** Diagnósticos proativos e orientações contextuais.
 * **Fase 7.3 — Socratic Engine Core & Grounding Jurídico:** RAG Jurídico e Professor Fiscal.
-* **Fase 7.7 — Adaptive Deficit + Intelligent Time Estimate + Adaptive Delta:** Estimativa bayesiana de tempo, gestão de déficit acumulado e anti-churn.
+* **BLOCO A & BLOCO A.1 — Refinamento UX/UI, Command Center & Layout Operational:**
+  - Design System com paleta `oklch` de alta legibilidade, tipografia hierárquica e componentes premium.
+  - Card Hero "O Que Fazer Agora?" com 4 zonas nítidas (Contexto, Motivo Pedagógico, Material Recomendado com link direto, e CTA dominante).
+  - Unificação do Coach APROVADO FISCAL como mentor único sem banners concorrentes.
+  - Navegação do AppShell simplificada em 5 grupos claros (ESTUDO, EDITAL, TREINO, INTELIGÊNCIA, SISTEMA) e responsividade mobile aprimorada.
 
 ---
 

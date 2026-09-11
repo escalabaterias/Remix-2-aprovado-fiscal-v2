@@ -60,7 +60,7 @@ export function CoachGuidanceCard() {
               <Sparkles className="h-5 w-5 animate-pulse" />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-foreground">PROFESSOR FISCAL</h2>
+              <h2 className="text-base font-semibold text-foreground">COACH APROVADO FISCAL</h2>
               <p className="text-xs text-muted-foreground">
                 Analisando dados pedagógicos em tempo real...
               </p>
@@ -84,7 +84,7 @@ export function CoachGuidanceCard() {
           <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
             <AlertTriangle className="h-5 w-5" />
             <span className="text-sm font-medium">
-              Não foi possível carregar a orientação do Professor Fiscal.
+              Não foi possível carregar a orientação do Coach Aprovado Fiscal.
             </span>
           </div>
           <Button
@@ -111,7 +111,7 @@ export function CoachGuidanceCard() {
             <Brain className="h-6 w-6" />
           </div>
           <div>
-            <h3 className="text-base font-semibold text-foreground">PROFESSOR FISCAL</h3>
+            <h3 className="text-base font-semibold text-foreground">COACH APROVADO FISCAL</h3>
             <p className="text-sm text-muted-foreground">
               Para receber orientação proativa personalizada, inicie sua primeira sessão de estudo
               ou resolva questões de diagnóstico.
@@ -135,7 +135,7 @@ export function CoachGuidanceCard() {
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-base font-bold tracking-tight text-foreground">
-                PROFESSOR FISCAL
+                COACH APROVADO FISCAL
               </h2>
               <Badge variant="outline" className="border-primary/30 text-[10px] text-primary">
                 Proativo

@@ -104,7 +104,9 @@ export function ProfessorFiscalSocraticTutor({
       }
     } catch (err) {
       setErrorMessage(
-        err instanceof Error ? err.message : "Não foi possível obter resposta do Professor Fiscal.",
+        err instanceof Error
+          ? err.message
+          : "Não foi possível obter resposta do Coach Aprovado Fiscal.",
       );
     } finally {
       setIsLoading(false);
@@ -148,7 +150,7 @@ export function ProfessorFiscalSocraticTutor({
           <div>
             <div className="flex items-center gap-2">
               <CardTitle className="text-sm font-bold text-foreground tracking-tight">
-                PROFESSOR FISCAL
+                COACH APROVADO FISCAL
               </CardTitle>
               <Badge variant="outline" className="border-primary/40 text-[10px] text-primary">
                 {stateBadgeLabel(socraticContext.currentState)}
@@ -191,7 +193,7 @@ export function ProfessorFiscalSocraticTutor({
                     <div className="bg-muted/60 border border-border/60 text-foreground rounded-lg px-3 py-2 max-w-[90%] space-y-1">
                       <div className="flex items-center gap-1.5 text-[10px] font-bold text-primary">
                         <Sparkles className="h-3 w-3" />
-                        <span>Professor Fiscal</span>
+                        <span>Coach Aprovado Fiscal</span>
                         {turn.hintLevel > 0 && (
                           <Badge variant="outline" className="text-[9px] px-1 py-0 h-3.5">
                             Pista {turn.hintLevel}
@@ -209,7 +211,7 @@ export function ProfessorFiscalSocraticTutor({
           </div>
         )}
 
-        {/* Mensagem atual do Professor Fiscal se nenhuma resposta no histórico ainda */}
+        {/* Mensagem atual do Coach Aprovado Fiscal se nenhuma resposta no histórico ainda */}
         {socraticContext.turnHistory.length === 0 && !isLoading && (
           <div className="rounded-lg bg-muted/40 p-3.5 border border-border/50 text-xs space-y-1.5">
             <div className="flex items-center gap-1.5 font-semibold text-primary">
@@ -217,7 +219,7 @@ export function ProfessorFiscalSocraticTutor({
               <span>Diálogo Socrático Ativo</span>
             </div>
             <p className="text-muted-foreground leading-relaxed">
-              Olá! Sou o Professor Fiscal. Vamos analisar o raciocínio por trás de{" "}
+              Olá! Sou o seu Coach Aprovado Fiscal. Vamos analisar o raciocínio por trás de{" "}
               <strong className="text-foreground">{topicName}</strong>. Clique em "Pedir Pista" ou
               digite sua dúvida/raciocínio abaixo.
             </p>
@@ -229,7 +231,7 @@ export function ProfessorFiscalSocraticTutor({
           <div className="space-y-2 p-3 rounded-lg border border-border/40 bg-background/50">
             <div className="flex items-center gap-2 text-xs text-primary font-medium">
               <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-              <span>Professor Fiscal analisando fundamentação jurídica...</span>
+              <span>Coach Aprovado Fiscal analisando fundamentação jurídica...</span>
             </div>
             <Skeleton className="h-4 w-3/4" />
             <Skeleton className="h-10 w-full" />

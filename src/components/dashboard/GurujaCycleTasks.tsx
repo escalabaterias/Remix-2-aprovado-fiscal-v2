@@ -14,6 +14,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 import { ACTIVITY_LABELS, TASK_STATUS_LABELS, type TaskStatus } from "@/lib/domain";
 import { estimateQuestionBattery, getMinutesPerQuestion } from "@/lib/questions/timeEstimation";
 
@@ -135,15 +136,18 @@ export function GurujaCycleTasks({
   return (
     <TooltipProvider>
       <section className="panel p-5 space-y-4">
-        {/* Cabeçalho do Bloco Guruja */}
+        {/* Cabeçalho do Bloco do Ciclo Cognitivo */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
           <div>
             <div className="flex items-center gap-2">
               <h3 className="font-display text-lg font-bold text-foreground">
                 Ciclo Cognitivo de Estudo
               </h3>
-              <Badge variant="outline" className="text-xs border-primary/30 text-primary">
-                Estilo Guruja Executivo
+              <Badge
+                variant="outline"
+                className="text-xs border-primary/30 text-primary font-medium"
+              >
+                Aprendizagem Ativa
               </Badge>
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
@@ -209,30 +213,44 @@ export function GurujaCycleTasks({
           </div>
         </div>
 
-        {/* Abas por Categoria do Ciclo Cognitivo (Estilo Guruja) */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+        {/* Abas por Categoria do Ciclo Cognitivo em Sequência Pedagógica */}
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
           <button
             type="button"
             onClick={() => setActiveTab("todas")}
-            className={`flex items-center justify-between rounded-lg border p-2.5 text-xs font-medium transition-all ${
+            className={cn(
+              "flex items-center justify-between rounded-xl border p-3 text-xs font-bold transition-all",
               activeTab === "todas"
-                ? "border-primary bg-primary/10 text-primary font-semibold shadow-xs"
-                : "border-border bg-card text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-            }`}
+                ? "border-primary bg-primary/10 text-primary shadow-2xs"
+                : "border-border/80 bg-card/60 text-muted-foreground hover:bg-accent/60 hover:text-foreground",
+            )}
           >
-            <div className="flex items-center gap-1.5">
-              <Sparkles className="h-3.5 w-3.5" />
-              <span>Todas as Metas</span>
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-primary shrink-0" />
+              <span>Visão Geral</span>
             </div>
-            <Badge variant="secondary" className="text-[10px] px-1.5">
+            <Badge variant="secondary" className="text-[10px] px-2 py-0.5 rounded-full font-mono">
               {tasks.length}
             </Badge>
           </button>
 
-          {(Object.keys(CYCLE_CATEGORY_INFO) as CycleCategory[]).map((catKey) => {
+          {(
+            [
+              { key: "mapeamento", num: "①", shortName: "MAPEAR" },
+              { key: "teoria", num: "②", shortName: "ESTUDAR" },
+              { key: "questoes", num: "③", shortName: "QUESTÕES" },
+              { key: "revisao", num: "④", shortName: "REVISAR" },
+            ] as const
+          ).map((step) => {
+            const catKey = step.key as CycleCategory;
             const cat = CYCLE_CATEGORY_INFO[catKey];
             const Icon = cat.icon;
-            const count = categorizedTasks[catKey].length;
+            const catTasks = categorizedTasks[catKey];
+            const count = catTasks.length;
+            const completedInCat = catTasks.filter(
+              (t) => t.status === "concluida" || t.status === "parcialmente_concluida",
+            ).length;
+            const isAllCompleted = count > 0 && completedInCat === count;
             const isSelected = activeTab === catKey;
 
             return (
@@ -240,22 +258,34 @@ export function GurujaCycleTasks({
                 key={catKey}
                 type="button"
                 onClick={() => setActiveTab(catKey)}
-                className={`flex items-center justify-between rounded-lg border p-2.5 text-xs transition-all ${
+                className={cn(
+                  "flex items-center justify-between rounded-xl border p-3 text-xs font-bold transition-all relative overflow-hidden",
                   isSelected
-                    ? `${cat.colorClass} ${cat.bgLight} font-semibold shadow-xs`
-                    : "border-border bg-card text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                }`}
+                    ? "border-primary bg-primary/10 text-primary shadow-2xs ring-1 ring-primary/30"
+                    : "border-border/80 bg-card/60 text-muted-foreground hover:bg-accent/60 hover:text-foreground",
+                )}
               >
-                <div className="flex items-center gap-1.5 truncate">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="font-mono text-xs font-extrabold text-primary shrink-0">
+                    {step.num}
+                  </span>
                   <Icon className="h-3.5 w-3.5 shrink-0" />
-                  <span className="truncate">{cat.label.split(" ")[0]}</span>
+                  <span className="truncate tracking-tight">{step.shortName}</span>
                 </div>
-                <Badge
-                  variant={count > 0 ? "default" : "outline"}
-                  className="text-[10px] px-1.5 shrink-0"
-                >
-                  {count}
-                </Badge>
+
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {isAllCompleted ? (
+                    <span className="text-emerald-500 font-bold text-xs" title="Etapa concluída">
+                      ✓
+                    </span>
+                  ) : null}
+                  <Badge
+                    variant={count > 0 ? (isSelected ? "default" : "secondary") : "outline"}
+                    className="text-[10px] px-1.5 py-0 font-mono"
+                  >
+                    {count}
+                  </Badge>
+                </div>
               </button>
             );
           })}
