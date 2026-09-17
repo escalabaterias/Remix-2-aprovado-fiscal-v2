@@ -429,36 +429,32 @@ export function WhatToStudyNowCard({
 
   return (
     <div className="space-y-6" id="what-to-study-now-container">
-      {/* ── 1. CARD PRINCIPAL: O QUE ESTUDAR AGORA ────────────────────────────── */}
-      <Card
-        variant="solid"
-        className="panel border-primary/30 bg-gradient-to-br from-card via-card to-primary/5 p-6 sm:p-7 shadow-lg relative overflow-hidden ring-1 ring-primary/20 rounded-2xl"
+      {/* ── 1. BLOCO HERO DOMINANTE: MISSÃO DE ESTUDO (SEM CARDS ENCAIXADOS) ── */}
+      <section
+        className="relative rounded-3xl bg-gradient-to-br from-card via-card to-primary/5 border border-primary/30 p-6 sm:p-8 shadow-sm overflow-hidden"
+        aria-label="Missão de Estudo Principal"
       >
-        {/* Visual Accent Top Bar */}
+        {/* Accent Top Bar */}
         <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-primary via-emerald-500 to-amber-500" />
 
-        <div className="space-y-6">
-          {/* Header */}
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-primary text-primary-foreground shadow-sm">
-                <Target className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="font-mono text-xs font-extrabold text-primary uppercase tracking-widest block">
-                  🎯 O QUE FAZER AGORA
-                </p>
-                <p className="text-xs text-muted-foreground font-medium">
-                  Ação recomendada pelo cérebro pedagógico
-                </p>
-              </div>
+        <div className="space-y-6 pt-1">
+          {/* Top Label & State */}
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/50 pb-4">
+            <div className="flex items-center gap-2.5">
+              <span className="font-mono text-xs font-black text-primary uppercase tracking-widest">
+                🎯 O QUE FAZER AGORA
+              </span>
+              <span className="text-muted-foreground/60">•</span>
+              <span className="text-xs text-muted-foreground font-semibold">
+                Missão guiada pelo cérebro pedagógico
+              </span>
             </div>
 
             <div className="flex items-center gap-2">
               <Badge
                 variant="outline"
                 className={cn(
-                  "px-3 py-1 text-xs rounded-lg font-bold",
+                  "px-3 py-1 text-xs rounded-xl font-bold shadow-2xs",
                   primaryBadgeConfig.className,
                 )}
               >
@@ -466,216 +462,156 @@ export function WhatToStudyNowCard({
                 {primaryBadgeConfig.label}
               </Badge>
               {primary.priorityScore ? (
-                <Badge variant="secondary" className="font-mono text-xs px-2.5 py-1 rounded-lg">
+                <Badge variant="secondary" className="font-mono text-xs px-2.5 py-1 rounded-xl">
                   Score {primary.priorityScore.toFixed(1)}
                 </Badge>
               ) : null}
             </div>
           </div>
 
-          {/* Core Info Grid */}
-          <div className="grid gap-6 md:grid-cols-3 items-start">
-            {/* Zones 1, 2, 3: Subject/Topic, Reason, Material */}
-            <div className="md:col-span-2 space-y-4">
-              {/* Context */}
-              <div>
-                <span className="text-xs font-extrabold text-primary uppercase tracking-wider font-mono bg-primary/10 px-2.5 py-1 rounded-md inline-block mb-1.5">
-                  {primary.subjectName}
-                </span>
-                <h2 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground leading-tight">
-                  {primary.topicName}
-                </h2>
-              </div>
-
-              {/* Pedagogical Reason */}
-              <div className="rounded-xl border border-primary/20 bg-primary/10 p-4 text-xs text-foreground space-y-1.5">
-                <span className="font-bold text-primary flex items-center gap-1.5 uppercase font-mono tracking-wider text-[11px]">
-                  <Sparkles className="h-4 w-4 text-primary shrink-0" />
-                  Por que estudar este tópico agora:
-                </span>
-                <p className="leading-relaxed text-foreground/90 font-medium text-xs sm:text-sm">
-                  {primary.priorityReason ||
-                    `Intervenção pedagógica recomendada (${interventionLabel}) para fortalecer seu desempenho no edital.`}
-                </p>
-              </div>
-
-              {/* Recommended Material */}
-              <div className="rounded-xl border border-border/80 bg-card/80 p-3.5 text-xs flex items-center justify-between gap-3 shadow-2xs">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                    <FileText className="h-4 w-4 shrink-0" />
-                  </div>
-                  <div className="min-w-0">
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase font-mono block">
-                      Material de Apoio
-                    </span>
-                    <p className="font-semibold text-foreground truncate">
-                      {primary.recommendedMaterial?.title ??
-                        "Sugerimos consultar a legislação e PDFs de Teoria."}
-                    </p>
-                  </div>
-                </div>
-                {primary.recommendedMaterial ? (
-                  <Button
-                    asChild
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 text-xs font-bold gap-1 shrink-0 text-primary hover:bg-primary/10"
-                  >
-                    <Link to="/materiais">Abrir Material →</Link>
-                  </Button>
-                ) : (
-                  <Button
-                    asChild
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 text-xs font-bold gap-1 shrink-0 text-muted-foreground"
-                  >
-                    <Link to="/materiais">Buscar PDF</Link>
-                  </Button>
-                )}
-              </div>
+          {/* Unified Core Hero Section */}
+          <div className="space-y-4">
+            {/* Subject & Topic Heading */}
+            <div>
+              <span className="text-xs font-black text-primary uppercase tracking-wider font-mono bg-primary/10 px-3 py-1 rounded-lg inline-block mb-2">
+                {primary.subjectName}
+              </span>
+              <h2 className="font-display text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-foreground leading-tight">
+                {primary.topicName}
+              </h2>
             </div>
 
-            {/* Cognitive Metrics Box */}
-            <div className="rounded-2xl border border-border/80 bg-card p-4 sm:p-5 space-y-4 shadow-2xs">
-              <p className="text-[11px] font-extrabold text-muted-foreground uppercase tracking-wider font-mono flex items-center gap-1.5">
-                <Zap className="h-3.5 w-3.5 text-amber-500" />
-                Diagnóstico de Domínio
+            {/* Pedagogical Reason as integrated accent text */}
+            <div className="border-l-2 border-primary/80 pl-4 py-1 text-xs sm:text-sm text-foreground/90 font-medium leading-relaxed">
+              <p className="text-[11px] font-bold text-primary uppercase font-mono tracking-wider flex items-center gap-1.5 mb-1">
+                <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" />
+                Motivo Pedagógico:
               </p>
-
-              <div className="space-y-3.5 text-xs">
-                <div>
-                  <div className="flex justify-between font-semibold mb-1">
-                    <span className="text-muted-foreground">Domínio Estimado</span>
-                    <span className="text-foreground font-bold font-mono">
-                      {masteryPercent !== null ? `${masteryPercent}%` : "Em análise"}
-                    </span>
-                  </div>
-                  {masteryPercent !== null ? (
-                    <Progress value={masteryPercent} className="h-2 rounded-full" />
-                  ) : (
-                    <div className="h-2 w-full bg-muted rounded-full" />
-                  )}
-                </div>
-
-                <div>
-                  <div className="flex justify-between font-semibold mb-1">
-                    <span className="text-muted-foreground">Nível de Confiança</span>
-                    <span className="text-foreground font-bold font-mono">
-                      {confidencePercent !== null ? `${confidencePercent}%` : "Inicial"}
-                    </span>
-                  </div>
-                  {confidencePercent !== null ? (
-                    <Progress value={confidencePercent} className="h-2 rounded-full" />
-                  ) : (
-                    <div className="h-2 w-full bg-muted rounded-full" />
-                  )}
-                </div>
-
-                <div className="pt-3 border-t border-border/60 space-y-1.5 text-[11px] text-muted-foreground font-mono">
-                  <div className="flex justify-between">
-                    <span>Erros pendentes:</span>
-                    <strong className="text-foreground font-bold">
-                      {primary.diagnostic?.unresolvedErrors ?? 0} questões
-                    </strong>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Recorrência:</span>
-                    <strong className="text-foreground font-bold">
-                      {formatRecency(primary.diagnostic?.daysSinceStudy)}
-                    </strong>
-                  </div>
-                </div>
-              </div>
+              {primary.priorityReason ||
+                `Intervenção pedagógica recomendada (${interventionLabel}) para fortalecer seu desempenho no edital.`}
             </div>
-          </div>
 
-          {/* Action Row */}
-          <div className="pt-4 flex flex-wrap items-center justify-between gap-4 border-t border-border/80">
-            <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-muted-foreground">
-              <div className="flex items-center gap-1.5 bg-background px-3 py-1.5 rounded-lg border border-border/60">
-                <Zap className="h-4 w-4 text-amber-500" />
+            {/* Inline Meta Strip: Material, Time, Activity & Metrics */}
+            <div className="pt-2 flex flex-wrap items-center gap-y-3 gap-x-6 text-xs text-muted-foreground font-medium">
+              <div className="flex items-center gap-2">
+                <Zap className="h-4 w-4 text-amber-500 shrink-0" />
                 <span>
                   Atividade:{" "}
                   <strong className="text-foreground font-bold">{interventionLabel}</strong>
                 </span>
               </div>
-              <div className="flex items-center gap-1.5 bg-background px-3 py-1.5 rounded-lg border border-border/60">
-                <Clock className="h-4 w-4 text-primary" />
+
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-primary shrink-0" />
                 <span>
-                  Sessão:{" "}
+                  Tempo:{" "}
                   <strong className="text-foreground font-mono font-bold">
                     {primary.plannedMinutes} min
                   </strong>
                 </span>
               </div>
+
+              {masteryPercent !== null ? (
+                <div className="flex items-center gap-2">
+                  <Target className="h-4 w-4 text-emerald-500 shrink-0" />
+                  <span>
+                    Domínio:{" "}
+                    <strong className="text-foreground font-mono font-bold">
+                      {masteryPercent}%
+                    </strong>
+                  </span>
+                </div>
+              ) : null}
+
+              <div className="flex items-center gap-2">
+                <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                <span className="truncate max-w-xs">
+                  Material:{" "}
+                  <strong className="text-foreground font-bold">
+                    {primary.recommendedMaterial?.title ?? "Apostila/Legislação do Edital"}
+                  </strong>
+                </span>
+                {primary.recommendedMaterial ? (
+                  <Link
+                    to="/materiais"
+                    className="text-primary font-bold hover:underline ml-1 inline-flex items-center"
+                  >
+                    Abrir →
+                  </Link>
+                ) : null}
+              </div>
             </div>
+          </div>
+
+          {/* Action Row — DOMINANT CTA */}
+          <div className="pt-4 flex flex-wrap items-center justify-between gap-4 border-t border-border/50">
+            <span className="text-xs text-muted-foreground font-semibold">
+              Sessão de estudo guiada e cronometrada
+            </span>
 
             <Button
               size="lg"
-              className="w-full sm:w-auto font-extrabold text-sm px-8 py-6 rounded-xl shadow-md bg-gradient-to-r from-primary to-primary/90 text-primary-foreground hover:opacity-95 transition-all gap-2.5"
+              className="w-full sm:w-auto font-black text-sm px-9 py-6 rounded-2xl shadow-md bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-emerald-500 dark:hover:bg-emerald-600 dark:text-slate-950 transition-all hover:scale-[1.01] gap-3 tracking-wide"
               onClick={() => handleStartActivity(primary)}
               disabled={startMutation.isPending}
             >
               <Play className="h-4 w-4 fill-current" />
-              {startMutation.isPending ? "INICIANDO..." : "COMEÇAR ESTUDO AGORA →"}
+              {startMutation.isPending ? "INICIANDO SESSÃO..." : "COMEÇAR ESTUDO AGORA →"}
             </Button>
           </div>
         </div>
-      </Card>
+      </section>
 
-      {/* ── 2. LISTA: PRÓXIMAS PRIORIDADES ────────────────────────────────────── */}
+      {/* ── 2. LISTA: PRÓXIMAS PRIORIDADES (SEM CARDS ENCAIXADOS) ───────────────── */}
       {nextPriorities.length > 0 ? (
         <section className="space-y-3" id="next-priorities-section">
-          <div className="flex items-center justify-between">
-            <h3 className="font-display text-sm font-bold uppercase tracking-wider text-muted-foreground">
-              Próximas Prioridades Recomendadas ({nextPriorities.length})
+          <div className="flex items-center justify-between px-1">
+            <h3 className="font-display text-xs font-black uppercase tracking-wider text-muted-foreground font-mono">
+              Próximas Prioridades Na Fila ({nextPriorities.length})
             </h3>
-            <span className="text-xs text-muted-foreground">Ordem estrita dos motores</span>
+            <span className="text-[11px] text-muted-foreground font-mono">
+              Sequência dos Motores
+            </span>
           </div>
 
-          <div className="grid gap-3">
+          <div className="space-y-2">
             {nextPriorities.map((item, index) => {
               const itemBadge = getStateBadgeConfig(item.diagnostic?.knowledgeState);
               const ItemIcon = itemBadge.icon;
               const itemIntervention = getInterventionLabel(item.activityType, item.source);
 
               return (
-                <Card
+                <div
                   key={item.id}
-                  variant="outline"
-                  className="p-3 sm:p-4 transition-all hover:border-primary/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-sm"
+                  className="p-3 sm:p-4 rounded-2xl bg-card border border-border/60 hover:border-primary/40 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-sm"
                 >
                   <div className="flex items-start sm:items-center gap-3 min-w-0">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted font-mono text-xs font-bold text-muted-foreground">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-muted font-mono text-xs font-bold text-muted-foreground">
                       #{index + 2}
                     </span>
 
                     <div className="min-w-0 space-y-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-xs font-semibold text-primary">
-                          {item.subjectName}
-                        </span>
-                        <span className="text-muted-foreground">•</span>
-                        <h4 className="font-semibold truncate text-foreground">{item.topicName}</h4>
+                        <span className="text-xs font-bold text-primary">{item.subjectName}</span>
+                        <span className="text-muted-foreground/40">•</span>
+                        <h4 className="font-bold truncate text-foreground">{item.topicName}</h4>
                       </div>
 
-                      <div className="flex flex-wrap items-center gap-2 text-xs">
+                      <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                         <Badge
                           variant="outline"
-                          className={`text-[10px] py-0 px-1.5 ${itemBadge.className}`}
+                          className={`text-[10px] py-0 px-1.5 rounded-lg ${itemBadge.className}`}
                         >
                           <ItemIcon className="mr-1 h-3 w-3" />
                           {itemBadge.label}
                         </Badge>
-                        <span className="text-muted-foreground">
+                        <span>
                           Intervenção:{" "}
-                          <strong className="text-foreground">{itemIntervention}</strong>
+                          <strong className="text-foreground font-bold">{itemIntervention}</strong>
                         </span>
-                        <span className="text-muted-foreground">
+                        <span>
                           Duração:{" "}
-                          <strong className="text-foreground">
+                          <strong className="text-foreground font-mono font-bold">
                             {itemPlannedMinutesFormat(item.plannedMinutes)}
                           </strong>
                         </span>
@@ -686,13 +622,13 @@ export function WhatToStudyNowCard({
                   <Button
                     size="sm"
                     variant="outline"
-                    className="w-full sm:w-auto shrink-0 text-xs"
+                    className="w-full sm:w-auto shrink-0 text-xs font-bold rounded-xl"
                     onClick={() => handleStartActivity(item)}
                   >
                     Iniciar # {index + 2}
                     <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
                   </Button>
-                </Card>
+                </div>
               );
             })}
           </div>

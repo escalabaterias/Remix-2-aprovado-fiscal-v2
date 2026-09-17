@@ -21,39 +21,38 @@ import { cn } from "@/lib/utils";
 import { CoachProvider, useCoachDrawer } from "@/components/coach/CoachContext";
 import { CoachDrawerWidget } from "@/components/coach/CoachDrawerWidget";
 
-const GROUPS: NavGroupKey[] = ["estudo", "edital", "treino", "inteligencia", "sistema"];
+const GROUPS: NavGroupKey[] = ["estudo", "treino", "materiais", "inteligencia", "sistema"];
 
 function Brand({ collapsed = false }: { collapsed?: boolean }) {
   return (
-    <Link to="/dashboard" className="flex items-center gap-2.5 group shrink-0">
-      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary via-primary/90 to-primary/70 text-primary-foreground shadow-sm group-hover:scale-105 transition-transform shrink-0">
+    <Link to="/dashboard" className="flex items-center gap-3 group shrink-0 py-1">
+      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-primary via-emerald-600 to-teal-500 text-white shadow-sm group-hover:scale-105 transition-all duration-200 shrink-0">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          strokeWidth="2.2"
+          strokeWidth="2.4"
           strokeLinecap="round"
           strokeLinejoin="round"
           className="h-5 w-5"
         >
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
           <circle cx="12" cy="11" r="3" />
-          <path d="M12 8v1M12 13v1M9.5 11h1M13.5 11h1" />
         </svg>
       </div>
       {!collapsed && (
         <div className="flex flex-col min-w-0">
-          <div className="flex items-baseline gap-1">
-            <span className="font-display text-base font-extrabold tracking-tight text-foreground">
+          <div className="flex items-baseline gap-1 leading-none">
+            <span className="font-display text-base font-black tracking-tight text-foreground">
               APROVADO
             </span>
-            <span className="font-display text-base font-extrabold tracking-tight text-primary">
+            <span className="font-display text-base font-black tracking-tight text-primary">
               FISCAL
             </span>
           </div>
-          <span className="text-[9px] font-mono font-bold tracking-widest text-muted-foreground uppercase -mt-1">
-            Inteligência em Concursos
+          <span className="text-[9.5px] font-mono font-bold tracking-widest text-emerald-600 dark:text-emerald-400 uppercase mt-0.5">
+            Plataforma de Estudos
           </span>
         </div>
       )}
@@ -77,13 +76,13 @@ function NavList({
         if (groupItems.length === 0) return null;
 
         return (
-          <div key={group}>
+          <div key={group} className="space-y-1">
             {!collapsed && (
-              <p className="px-3 text-[10px] font-extrabold text-muted-foreground uppercase tracking-widest font-mono mb-1">
+              <p className="px-3 text-[10px] font-black text-muted-foreground/70 uppercase tracking-widest font-mono mb-1.5">
                 {NAV_GROUP_LABELS[group]}
               </p>
             )}
-            <ul className="space-y-0.5">
+            <ul className="space-y-1">
               {groupItems.map((item) => {
                 const Icon = item.icon;
                 const isActive =
@@ -100,8 +99,8 @@ function NavList({
                       className={cn(
                         "group flex items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold transition-all relative",
                         isActive
-                          ? "bg-primary/10 text-primary font-bold shadow-2xs"
-                          : "text-muted-foreground hover:bg-sidebar-accent/70 hover:text-foreground",
+                          ? "bg-primary/15 text-primary font-bold shadow-2xs"
+                          : "text-muted-foreground hover:bg-muted/70 hover:text-foreground",
                       )}
                     >
                       {isActive && (
@@ -119,7 +118,7 @@ function NavList({
                         {!collapsed && <span className="truncate">{item.label}</span>}
                       </div>
                       {!collapsed && isActive && (
-                        <ChevronRight className="h-3.5 w-3.5 text-primary shrink-0 opacity-80" />
+                        <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
                       )}
                     </Link>
                   </li>
@@ -171,7 +170,9 @@ function AppShellInner({
   const { toggleCoach } = useCoachDrawer();
 
   const userDisplayName =
-    user?.user_metadata?.full_name?.split(" ")[0] || user?.email?.split("@")[0] || "Estudante";
+    (user?.user_metadata?.["full_name"] as string | undefined)?.split(" ")[0] ||
+    user?.email?.split("@")[0] ||
+    "Estudante";
 
   return (
     <div

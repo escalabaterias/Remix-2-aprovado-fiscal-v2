@@ -128,7 +128,9 @@ function CommandCenterPage() {
   const [notes, setNotes] = useState("");
 
   const userFirstName =
-    user?.user_metadata?.full_name?.split(" ")[0] || user?.email?.split("@")[0] || "Estudante";
+    (user?.user_metadata?.["full_name"] as string | undefined)?.split(" ")[0] ||
+    user?.email?.split("@")[0] ||
+    "Estudante";
 
   const currentHour = new Date().getHours();
   const greetingTime = currentHour < 12 ? "Bom dia" : currentHour < 18 ? "Boa tarde" : "Boa noite";
@@ -392,367 +394,322 @@ function CommandCenterPage() {
     : 0;
 
   return (
-    <AppShell
-      title=""
-      actions={
-        <div className="flex flex-wrap items-center gap-2">
-          <Button asChild variant="outline" size="sm" className="h-9 font-bold text-xs rounded-xl">
-            <Link to="/disponibilidade">
-              <Calendar className="mr-1.5 h-3.5 w-3.5" />
-              Disponibilidade
-            </Link>
-          </Button>
-          <Button asChild variant="outline" size="sm" className="h-9 font-bold text-xs rounded-xl">
-            <Link to="/estudo">
-              <Play className="mr-1.5 h-3.5 w-3.5" />
-              Sessão Guiada
-            </Link>
-          </Button>
-          <Button asChild size="sm" className="h-9 font-bold text-xs rounded-xl">
-            <Link to="/plano">
-              <BookOpen className="mr-1.5 h-3.5 w-3.5" />
-              Plano de Estudos
-            </Link>
-          </Button>
-        </div>
-      }
-    >
-      <div className="space-y-6 -mt-4 sm:-mt-6">
-        {/* ── 1. SAUDAÇÃO + CONTEXTO ALVO (HUMAN GREETING HEADER) ──────────────── */}
-        <div className="flex flex-wrap items-center justify-between gap-4 p-5 sm:p-6 rounded-2xl bg-card border border-border/80 shadow-2xs">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2.5">
-              <h2 className="text-xl sm:text-2xl font-extrabold text-foreground font-display">
-                {greetingTime}, {userFirstName} 👋
-              </h2>
-              <Badge
-                variant="outline"
-                className="border-emerald-500/30 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 font-bold text-xs px-2.5 py-0.5 rounded-full"
-              >
-                Ciclo Ativo
-              </Badge>
-            </div>
-            <p className="text-xs sm:text-sm text-muted-foreground font-medium">
-              Vamos avançar mais um passo rumo à aprovação.
-            </p>
-          </div>
-
-          {data.activeContest ? (
-            <div className="flex items-center gap-3 bg-primary/10 border border-primary/20 px-4 py-2.5 rounded-xl">
-              <div className="p-2 rounded-lg bg-primary text-primary-foreground">
-                <Target className="h-4 w-4" />
-              </div>
-              <div>
-                <p className="text-[10px] font-extrabold text-primary uppercase font-mono tracking-wider">
-                  Concurso Alvo Ativo
-                </p>
-                <p className="text-xs font-bold text-foreground">
-                  {data.activeContest.name}
-                  {data.activeContest.role_title ? ` — ${data.activeContest.role_title}` : ""}
-                </p>
-              </div>
-            </div>
-          ) : (
-            <Button asChild size="sm" variant="default" className="text-xs font-bold rounded-xl">
-              <Link to="/concursos">
-                <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-                Definir Concurso Alvo
-              </Link>
-            </Button>
-          )}
-        </div>
-
-        {/* ── ALERTA DE TAREFAS ATRASADAS / REPLANEJAMENTO ─────────────────────── */}
-        {data.overdueTasks.length > 0 && data.activePlan ? (
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-amber-800 dark:text-amber-200">
-            <div className="flex items-center gap-3">
-              <AlertTriangle className="h-5 w-5 shrink-0 text-amber-500" />
-              <div>
-                <p className="text-sm font-bold">
-                  {data.overdueTasks.length} tarefa(s) pendente(s) de dias anteriores
-                </p>
-                <p className="text-xs font-medium opacity-90">
-                  O planejamento adaptativo redistribui os blocos pendentes na sua disponibilidade
-                  futura sem sobrecarregar seu dia.
-                </p>
-              </div>
-            </div>
-            <Button
-              size="sm"
-              variant="outline"
-              className="border-amber-500/40 text-amber-900 dark:text-amber-100 hover:bg-amber-500/20 rounded-xl font-bold text-xs"
-              disabled={replanMutation.isPending}
-              onClick={() => replanMutation.mutate(data.activePlan!.id)}
-            >
-              <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-              {replanMutation.isPending ? "Replanejando…" : "Replanejar pendências"}
-            </Button>
-          </div>
-        ) : null}
-
-        {/* ── 2. CARD HERO: PRÓXIMA AÇÃO (O QUE FAZER AGORA?) ──────────────────── */}
-        <WhatToStudyNowCard
-          activePlanId={data.activePlan?.id || null}
-          contestId={data.activeContest?.id || null}
-          onStartTask={(taskId) => startTaskMutation.mutate(taskId)}
-        />
-
-        {/* ── 3. PROGRESSO SEMANAL & MÉTRICAS DE DESEMPENHO REAL ──────────────── */}
-        <TooltipProvider>
-          <section className="space-y-4">
-            {/* Meta Semanal Progress Banner */}
-            <div className="panel p-5 sm:p-6 space-y-4 rounded-2xl">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  <h3 className="text-xs font-extrabold text-foreground uppercase tracking-wider font-mono">
-                    Progresso Semanal de Estudos ({formatDateShort(weekStart)} a Dom)
-                  </h3>
-                  <p className="text-xs text-muted-foreground font-medium mt-0.5">
-                    Meta de horas x Horas líquidas reais contabilizadas nesta semana
-                  </p>
-                </div>
+    <AppShell title="">
+      <div className="space-y-8 -mt-4 sm:-mt-6">
+        {/* ── 1. REGION 1: MISSÃO DE ESTUDO (HERO DOMINANTE: O QUE FAZER AGORA?) ── */}
+        <section className="space-y-4" aria-label="Missão de Estudo Hero">
+          {/* Top Context Header */}
+          <div className="flex flex-wrap items-center justify-between gap-4 p-5 sm:p-6 rounded-3xl bg-card border border-border/80 shadow-2xs">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2.5">
+                <h1 className="text-xl sm:text-2xl font-black text-foreground font-display tracking-tight">
+                  {greetingTime}, {userFirstName}.
+                </h1>
                 <Badge
                   variant="outline"
-                  className="text-xs font-mono font-bold border-primary/30 text-primary px-3 py-1 rounded-lg"
+                  className="border-emerald-500/30 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 font-bold text-xs px-3 py-1 rounded-full"
                 >
-                  {weeklyProgressPercent}% Concluído
+                  Ciclo Ativo
                 </Badge>
               </div>
-
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs font-bold">
-                  <span className="text-foreground">
-                    {formatHours(data.weeklyRealizedMinutes)} líquidas
-                  </span>
-                  <span className="text-muted-foreground font-mono">
-                    Meta: {formatHours(weeklyTargetMinutes)}
-                  </span>
-                </div>
-                <Progress value={weeklyProgressPercent} className="h-3 rounded-full" />
-              </div>
+              <p className="text-xs sm:text-sm text-muted-foreground font-semibold">
+                Vamos avançar mais um passo na sua aprovação fiscal.
+              </p>
             </div>
+          </div>
 
-            {/* Grid com os 5 Indicadores Reais Acumulados */}
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-              {[
-                {
-                  label: "Horas líquidas totais",
-                  value: data.netHoursTotal ? `${data.netHoursTotal.toFixed(1)}h` : "0h",
-                  tooltipTitle: "Memória de Cálculo: Horas Líquidas Totais",
-                  tooltipText:
-                    "Soma de todos os tempos líquidos (net_seconds) registrados em sessões de estudo concluídas no sistema, convertidos em horas (÷ 3600).",
-                },
-                {
-                  label: "Questões resolvidas",
-                  value: String(data.questionsTotal),
-                  tooltipTitle: "Memória de Cálculo: Questões Resolvidas",
-                  tooltipText: `Soma das tentativas de questões individuais gravadas (${data.questionsTotal}) + contagem de baterias informadas nas sessões de estudo diárias.`,
-                },
-                {
-                  label: "Taxa de acerto",
-                  value: data.accuracy === null ? "—" : `${data.accuracy.toFixed(0)}%`,
-                  tooltipTitle: "Memória de Cálculo: Taxa Global de Acertos",
-                  tooltipText:
-                    data.accuracy === null
-                      ? "Sem questões registradas ainda para cálculo de porcentagem."
-                      : `${data.accuracy.toFixed(1)}% = Resultado de (Acertos Totais / Questões Resolvidas) × 100 com base no histórico real acumulado.`,
-                },
-                {
-                  label: "Revisões concluídas",
-                  value: String(data.reviewsCompleted),
-                  tooltipTitle: "Memória de Cálculo: Repetição Espaçada",
-                  tooltipText: `Total de ${data.reviewsCompleted} eventos de revisão concluídos pelo algoritmo de repetição espaçada no histórico.`,
-                },
-                {
-                  label: "Erros pendentes",
-                  value: String(data.unresolvedErrors),
-                  tooltipTitle: "Memória de Cálculo: Central de Erros",
-                  tooltipText: `Contagem exata de ${data.unresolvedErrors} questões/tópicos pendentes de saneamento e reteste na Central de Erros.`,
-                },
-              ].map((metric) => (
-                <Tooltip key={metric.label}>
-                  <TooltipTrigger asChild>
-                    <div className="panel px-4 py-4 cursor-help hover:border-primary/40 transition-all rounded-2xl">
-                      <p className="text-xs font-semibold text-muted-foreground flex items-center justify-between">
-                        <span>{metric.label}</span>
-                        <HelpCircle className="h-3 w-3 text-muted-foreground/60" />
-                      </p>
-                      <p className="mt-1 font-display text-xl font-bold text-foreground">
-                        {metric.value}
+          {/* Alerta de Pendências Atrasadas / Replanejamento */}
+          {data.overdueTasks.length > 0 && data.activePlan ? (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-amber-800 dark:text-amber-200">
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="h-5 w-5 shrink-0 text-amber-500" />
+                <div>
+                  <p className="text-sm font-bold">
+                    {data.overdueTasks.length} tarefa(s) pendente(s) de dias anteriores
+                  </p>
+                  <p className="text-xs font-medium opacity-90">
+                    O planejamento adaptativo redistribui os blocos pendentes na sua disponibilidade
+                    futura sem sobrecarregar seu dia.
+                  </p>
+                </div>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-amber-500/40 text-amber-900 dark:text-amber-100 hover:bg-amber-500/20 rounded-xl font-bold text-xs"
+                disabled={replanMutation.isPending}
+                onClick={() => replanMutation.mutate(data.activePlan!.id)}
+              >
+                <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                {replanMutation.isPending ? "Replanejando…" : "Replanejar pendências"}
+              </Button>
+            </div>
+          ) : null}
+
+          {/* HERO DECISÓRIO PRINCIPAL */}
+          <WhatToStudyNowCard
+            activePlanId={data.activePlan?.id || null}
+            contestId={data.activeContest?.id || null}
+            onStartTask={(taskId) => startTaskMutation.mutate(taskId)}
+          />
+        </section>
+
+        {/* ── 2. REGION 2: JORNADA DE HOJE (TRILHA VISUAL DE APRENDIZAGEM) ───────── */}
+        <section aria-label="Trilha de Aprendizagem">
+          <GurujaCycleTasks
+            tasks={data.todayTasks}
+            onOpenComplete={(task) => handleOpenComplete(task as unknown as DayTask)}
+            onStartTask={(taskId) => startTaskMutation.mutate(taskId)}
+            completedCount={data.completedTasksToday}
+            totalCount={data.todayTasks.length}
+            realizedMinutes={data.realizedMinutesToday}
+            plannedMinutes={data.plannedMinutesToday}
+          />
+        </section>
+
+        {/* ── 3. REGION 3: EVOLUÇÃO & COACH (MENTORIA E CONSISTÊNCIA INTEGRADA) ─── */}
+        <section className="space-y-6" aria-label="Evolução e Mentoria">
+          <TooltipProvider>
+            <div className="grid gap-6 lg:grid-cols-12 items-start">
+              {/* Mentoria Proativa do Coach (7 colunas) */}
+              <div className="lg:col-span-7">
+                <CoachGuidanceCard />
+              </div>
+
+              {/* Progresso Semanal e Métricas (5 colunas) */}
+              <div className="lg:col-span-5 space-y-4">
+                {/* Meta Semanal Progress Banner */}
+                <div className="p-5 sm:p-6 space-y-4 rounded-3xl bg-card border border-border/80 shadow-2xs">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <h3 className="text-xs font-black text-foreground uppercase tracking-wider font-mono">
+                        Progresso Semanal ({formatDateShort(weekStart)} a Dom)
+                      </h3>
+                      <p className="text-xs text-muted-foreground font-semibold mt-0.5">
+                        Horas líquidas executadas x meta planejada
                       </p>
                     </div>
-                  </TooltipTrigger>
-                  <TooltipContent className="bg-popover border-border text-popover-foreground text-xs max-w-xs p-3">
-                    <p className="font-semibold text-primary mb-1">{metric.tooltipTitle}</p>
-                    <p>{metric.tooltipText}</p>
-                  </TooltipContent>
-                </Tooltip>
-              ))}
+                    <Badge
+                      variant="outline"
+                      className="text-xs font-mono font-bold border-primary/30 text-primary px-3 py-1 rounded-xl"
+                    >
+                      {weeklyProgressPercent}% Concluído
+                    </Badge>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-xs font-bold">
+                      <span className="text-foreground">
+                        {formatHours(data.weeklyRealizedMinutes)} líquidas
+                      </span>
+                      <span className="text-muted-foreground font-mono">
+                        Meta: {formatHours(weeklyTargetMinutes)}
+                      </span>
+                    </div>
+                    <Progress value={weeklyProgressPercent} className="h-3 rounded-full" />
+                  </div>
+                </div>
+
+                {/* Grid com Indicadores Acumulados */}
+                <div className="grid gap-2.5 sm:grid-cols-2">
+                  {[
+                    {
+                      label: "Horas totais",
+                      value: data.netHoursTotal ? `${data.netHoursTotal.toFixed(1)}h` : "0h",
+                      tooltipTitle: "Horas Líquidas Totais",
+                      tooltipText: "Soma do tempo líquido de estudo acumulado.",
+                    },
+                    {
+                      label: "Questões resolvidas",
+                      value: String(data.questionsTotal),
+                      tooltipTitle: "Questões Resolvidas",
+                      tooltipText: `Total de ${data.questionsTotal} questões respondidas.`,
+                    },
+                    {
+                      label: "Taxa de acerto",
+                      value: data.accuracy === null ? "—" : `${data.accuracy.toFixed(0)}%`,
+                      tooltipTitle: "Taxa Global de Acerto",
+                      tooltipText:
+                        data.accuracy === null
+                          ? "Sem dados gravados."
+                          : `${data.accuracy.toFixed(1)}% de acerto nas questões.`,
+                    },
+                    {
+                      label: "Erros pendentes",
+                      value: String(data.unresolvedErrors),
+                      tooltipTitle: "Central de Erros",
+                      tooltipText: `${data.unresolvedErrors} questões a sanar.`,
+                    },
+                  ].map((metric) => (
+                    <Tooltip key={metric.label}>
+                      <TooltipTrigger asChild>
+                        <div className="px-4 py-3 cursor-help hover:border-primary/40 transition-all rounded-2xl bg-card border border-border/80 shadow-2xs">
+                          <p className="text-[11px] font-bold text-muted-foreground flex items-center justify-between">
+                            <span>{metric.label}</span>
+                            <HelpCircle className="h-3 w-3 text-muted-foreground/60" />
+                          </p>
+                          <p className="mt-1 font-display text-lg font-black text-foreground">
+                            {metric.value}
+                          </p>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent className="bg-popover border-border text-popover-foreground text-xs max-w-xs p-2.5">
+                        <p className="font-semibold text-primary mb-1">{metric.tooltipTitle}</p>
+                        <p>{metric.tooltipText}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  ))}
+                </div>
+              </div>
             </div>
-          </section>
-        </TooltipProvider>
+          </TooltipProvider>
+        </section>
 
-        {/* ── 4. CICLO DE ESTUDO (CICLO COGNITIVO EM 4 ETAPAS) ────────────────── */}
-        <GurujaCycleTasks
-          tasks={data.todayTasks}
-          onOpenComplete={(task) => handleOpenComplete(task as unknown as DayTask)}
-          onStartTask={(taskId) => startTaskMutation.mutate(taskId)}
-          completedCount={data.completedTasksToday}
-          totalCount={data.todayTasks.length}
-          realizedMinutes={data.realizedMinutesToday}
-          plannedMinutes={data.plannedMinutesToday}
-        />
+        {/* ── 4. REGION 4: SEU MOMENTO (CONCURSO ALVO E EDITAL) ─────────────────── */}
+        <section aria-label="Seu Momento e Edital">
+          <TooltipProvider>
+            <div className="grid gap-6 lg:grid-cols-2 items-start">
+              {/* Concurso Alvo Ativo */}
+              <div className="p-6 rounded-3xl bg-card border border-border/80 shadow-2xs space-y-4">
+                <div className="flex items-center justify-between gap-2 border-b border-border/60 pb-3">
+                  <p className="text-xs font-black text-muted-foreground uppercase tracking-wider font-mono">
+                    Seu Momento · Concurso Alvo
+                  </p>
+                  <Button
+                    asChild
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 text-xs font-bold text-primary hover:bg-primary/10 rounded-xl"
+                  >
+                    <Link to="/concursos">Gerenciar →</Link>
+                  </Button>
+                </div>
 
-        {/* ── 5. INSIGHTS DO COACH & CONTEXTO DO CONCURSO ALVO (GRID 2 COLS) ────── */}
-        <TooltipProvider>
-          <div className="grid gap-6 lg:grid-cols-2 items-start">
-            {/* Coluna 1: Coach APROVADO FISCAL */}
-            <div>
-              <CoachGuidanceCard />
-            </div>
-
-            {/* Coluna 2: Concurso Alvo + Detalhes do Edital */}
-            <div className="space-y-6">
-              {/* Concurso Alvo */}
-              <section className="panel flex flex-col justify-between p-5 rounded-2xl">
-                <div>
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-xs font-extrabold text-muted-foreground uppercase tracking-wider font-mono">
-                      Concurso Alvo Ativo
+                {!data.activeContest ? (
+                  <div className="space-y-3">
+                    <p className="text-xs text-muted-foreground font-semibold">
+                      Nenhum concurso fiscal selecionado como alvo ativo.
                     </p>
                     <Button
                       asChild
                       size="sm"
-                      variant="ghost"
-                      className="h-7 text-xs font-bold text-primary"
+                      variant="default"
+                      className="text-xs font-bold rounded-xl"
                     >
-                      <Link to="/concursos">Gerenciar →</Link>
+                      <Link to="/concursos">
+                        <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                        Importar Edital Fiscal
+                      </Link>
                     </Button>
                   </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h2 className="font-display text-lg sm:text-xl font-extrabold tracking-tight text-foreground">
+                        {data.activeContest.name}
+                      </h2>
+                      {data.activeContest.role_title ? (
+                        <span className="text-xs font-bold text-primary">
+                          ({data.activeContest.role_title})
+                        </span>
+                      ) : null}
+                    </div>
 
-                  {!data.activeContest ? (
-                    <div className="mt-3 space-y-3">
-                      <p className="text-xs text-muted-foreground font-medium">
-                        Nenhum concurso fiscal selecionado como alvo ativo.
-                      </p>
-                      <Button
-                        asChild
-                        size="sm"
-                        variant="default"
-                        className="text-xs font-bold rounded-xl"
-                      >
-                        <Link to="/concursos">
-                          <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-                          Importar Edital Fiscal
+                    <div className="flex flex-wrap items-center gap-2">
+                      {data.activeContest.exam_board ? (
+                        <Badge
+                          variant="outline"
+                          className="border-border text-xs font-bold rounded-lg"
+                        >
+                          Banca: {data.activeContest.exam_board}
+                        </Badge>
+                      ) : null}
+
+                      {data.activeContest.organization ? (
+                        <Badge variant="secondary" className="text-xs font-bold rounded-lg">
+                          {data.activeContest.organization}
+                        </Badge>
+                      ) : null}
+
+                      {data.activeContest.exam_date ? (
+                        <Badge
+                          variant={
+                            daysToExam !== null && daysToExam > 0 && daysToExam <= 45
+                              ? "destructive"
+                              : "default"
+                          }
+                          className="font-mono text-xs font-bold rounded-lg"
+                        >
+                          Prova em {data.activeContest.exam_date}
+                          {daysToExam !== null
+                            ? daysToExam > 0
+                              ? ` · ${daysToExam}d`
+                              : daysToExam === 0
+                                ? " · Prova HOJE!"
+                                : " · Prova realizada"
+                            : ""}
+                        </Badge>
+                      ) : (
+                        <span className="text-xs text-muted-foreground font-semibold">
+                          Data da prova a definir
+                        </span>
+                      )}
+                    </div>
+
+                    {data.activePlan ? (
+                      <div className="flex items-center justify-between border-t border-border/60 pt-3 text-xs text-muted-foreground font-semibold">
+                        <span>
+                          Plano:{" "}
+                          <strong className="text-foreground font-bold">
+                            {data.activePlan.name}
+                          </strong>
+                        </span>
+                        <Link
+                          to="/plano/$planId"
+                          params={{ planId: data.activePlan.id }}
+                          className="inline-flex items-center text-primary font-bold hover:underline"
+                        >
+                          Ver cronograma
+                          <ArrowRight className="ml-1 h-3.5 w-3.5" />
                         </Link>
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="mt-3 space-y-3">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h2 className="font-display text-lg font-extrabold tracking-tight text-foreground">
-                          {data.activeContest.name}
-                        </h2>
-                        {data.activeContest.role_title ? (
-                          <span className="text-xs font-bold text-primary">
-                            ({data.activeContest.role_title})
-                          </span>
-                        ) : null}
                       </div>
-
-                      <div className="flex flex-wrap items-center gap-2">
-                        {data.activeContest.exam_board ? (
-                          <Badge variant="outline" className="border-border text-xs font-semibold">
-                            Banca: {data.activeContest.exam_board}
-                          </Badge>
-                        ) : null}
-
-                        {data.activeContest.organization ? (
-                          <Badge variant="secondary" className="text-xs font-semibold">
-                            {data.activeContest.organization}
-                          </Badge>
-                        ) : null}
-
-                        {data.activeContest.exam_date ? (
-                          <Badge
-                            variant={
-                              daysToExam !== null && daysToExam > 0 && daysToExam <= 45
-                                ? "destructive"
-                                : "default"
-                            }
-                            className="font-mono text-xs font-bold"
-                          >
-                            Prova em {data.activeContest.exam_date}
-                            {daysToExam !== null
-                              ? daysToExam > 0
-                                ? ` · ${daysToExam}d`
-                                : daysToExam === 0
-                                  ? " · Prova HOJE!"
-                                  : " · Prova realizada"
-                              : ""}
-                          </Badge>
-                        ) : (
-                          <span className="text-xs text-muted-foreground font-medium">
-                            Data da prova a definir
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {data.activePlan ? (
-                  <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-xs text-muted-foreground font-medium">
-                    <span>
-                      Plano:{" "}
-                      <strong className="text-foreground font-bold font-sans">
-                        {data.activePlan.name}
-                      </strong>
-                    </span>
-                    <Link
-                      to="/plano/$planId"
-                      params={{ planId: data.activePlan.id }}
-                      className="inline-flex items-center text-primary font-bold hover:underline"
-                    >
-                      Ver cronograma
-                      <ArrowRight className="ml-1 h-3.5 w-3.5" />
-                    </Link>
+                    ) : null}
                   </div>
-                ) : null}
-              </section>
+                )}
+              </div>
 
-              {/* Disciplinas em Destaque */}
+              {/* Disciplinas do Edital */}
               {data.subjects && data.subjects.length > 0 ? (
-                <section className="panel p-5 rounded-2xl space-y-3">
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs font-extrabold text-muted-foreground uppercase tracking-wider font-mono">
-                      Matérias em Estudo
+                <div className="p-6 rounded-3xl bg-card border border-border/80 shadow-2xs space-y-4">
+                  <div className="flex items-center justify-between border-b border-border/60 pb-3">
+                    <p className="text-xs font-black text-muted-foreground uppercase tracking-wider font-mono">
+                      Matérias no Edital Ativo
                     </p>
                     <Link to="/materias" className="text-xs font-bold text-primary hover:underline">
                       Árvore completa →
                     </Link>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-2.5">
                     {data.subjects.slice(0, 6).map((subj: any) => (
                       <div
                         key={subj.id}
-                        className="p-2.5 rounded-xl bg-card border border-border/60 text-xs"
+                        className="p-3 rounded-2xl bg-background border border-border/60 text-xs shadow-2xs"
                       >
                         <span className="font-bold text-foreground truncate block">
                           {subj.name}
                         </span>
-                        <span className="text-[10px] text-muted-foreground font-mono">
-                          Disponível no edital
+                        <span className="text-[10px] text-muted-foreground font-mono font-semibold">
+                          Edital Ativo
                         </span>
                       </div>
                     ))}
                   </div>
-                </section>
+                </div>
               ) : null}
             </div>
-          </div>
-        </TooltipProvider>
+          </TooltipProvider>
+        </section>
 
         {!data.activeContest && !data.hasPlan ? (
           <div className="pt-4">

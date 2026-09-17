@@ -18,7 +18,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-export type NavGroupKey = "estudo" | "edital" | "treino" | "inteligencia" | "sistema";
+export type NavGroupKey = "estudo" | "treino" | "materiais" | "inteligencia" | "sistema";
 
 export type NavItem = {
   label: string;
@@ -29,32 +29,31 @@ export type NavItem = {
 };
 
 export const NAV_GROUP_LABELS: Record<NavGroupKey, string> = {
-  estudo: "ESTUDO",
-  edital: "EDITAL",
-  treino: "TREINO",
+  estudo: "ESTUDAR",
+  treino: "TREINAR",
+  materiais: "MATERIAIS",
   inteligencia: "INTELIGÊNCIA",
-  sistema: "SISTEMA",
+  sistema: "CONFIGURAÇÕES E SISTEMA",
 };
 
 export const NAV_ITEMS: NavItem[] = [
-  // ESTUDO
+  // INÍCIO E ESTUDAR
   { label: "Início", to: "/dashboard", group: "estudo", icon: LayoutDashboard },
-  { label: "Sessão de Estudo", to: "/estudo", group: "estudo", icon: BookOpen },
-  { label: "Plano de Estudos", to: "/plano", group: "estudo", icon: Calendar },
-  { label: "Disponibilidade", to: "/disponibilidade", group: "estudo", icon: Target },
+  { label: "Estudar agora", to: "/estudo", group: "estudo", icon: BookOpen },
+  { label: "Meu plano", to: "/plano", group: "estudo", icon: Calendar },
+  { label: "Revisões", to: "/revisao", group: "estudo", icon: RotateCcw },
 
-  // EDITAL
-  { label: "Materiais", to: "/materiais", group: "edital", icon: FolderOpen },
-  { label: "Edital Verticalizado", to: "/estudo/edital", group: "edital", icon: FileText },
-  { label: "Vade Mecum & Prontidão", to: "/estudo/prontidao", group: "edital", icon: Scale },
-  { label: "Matérias & Árvore", to: "/materias", group: "edital", icon: BookOpen },
-
-  // TREINO
+  // TREINAR
   { label: "Questões", to: "/questoes", group: "treino", icon: HelpCircle },
-  { label: "Revisões", to: "/revisao", group: "treino", icon: RotateCcw },
-  { label: "Caderno de Erros", to: "/central-erros", group: "treino", icon: AlertTriangle },
   { label: "Flashcards", to: "/flashcards", group: "treino", icon: Brain },
+  { label: "Caderno de erros", to: "/central-erros", group: "treino", icon: AlertTriangle },
   { label: "Simulados", to: "/simulados", group: "treino", icon: Award },
+
+  // MATERIAIS
+  { label: "Materiais", to: "/materiais", group: "materiais", icon: FolderOpen },
+  { label: "Edital Verticalizado", to: "/estudo/edital", group: "materiais", icon: FileText },
+  { label: "Vade Mecum & Prontidão", to: "/estudo/prontidao", group: "materiais", icon: Scale },
+  { label: "Matérias & Árvore", to: "/materias", group: "materiais", icon: BookOpen },
 
   // INTELIGÊNCIA
   { label: "Coach Aprovado Fiscal", to: "/coach", group: "inteligencia", icon: Bot },
@@ -64,11 +63,12 @@ export const NAV_ITEMS: NavItem[] = [
     to: null,
     group: "inteligencia",
     icon: Sparkles,
-    badge: "Em preparação",
+    badge: "Em breve",
   },
 
-  // SISTEMA
+  // CONFIGURAÇÕES E SISTEMA
   { label: "Radar de Concursos", to: "/concursos", group: "sistema", icon: Target },
   { label: "Raio-X de Bancas", to: "/bancas", group: "sistema", icon: FileText },
+  { label: "Disponibilidade", to: "/disponibilidade", group: "sistema", icon: Calendar },
   { label: "Configurações", to: "/configuracoes", group: "sistema", icon: Settings },
 ];

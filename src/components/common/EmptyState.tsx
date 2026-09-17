@@ -1,13 +1,18 @@
 import type { ReactNode } from "react";
+import { Button } from "@/components/ui/button";
 
 export function EmptyState({
   title,
   description,
   action,
+  actionLabel,
+  onAction,
 }: {
   title: string;
   description?: string;
   action?: ReactNode;
+  actionLabel?: string;
+  onAction?: () => void;
 }) {
   return (
     <div className="panel flex flex-col items-center justify-center px-6 py-14 text-center">
@@ -15,7 +20,13 @@ export function EmptyState({
       {description ? (
         <p className="mt-2 max-w-md text-sm text-muted-foreground">{description}</p>
       ) : null}
-      {action ? <div className="mt-5">{action}</div> : null}
+      {action ? (
+        <div className="mt-5">{action}</div>
+      ) : actionLabel && onAction ? (
+        <div className="mt-5">
+          <Button onClick={onAction}>{actionLabel}</Button>
+        </div>
+      ) : null}
     </div>
   );
 }

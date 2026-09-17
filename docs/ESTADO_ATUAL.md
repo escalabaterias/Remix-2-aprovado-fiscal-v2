@@ -5,9 +5,9 @@
 
 ## 1. POSICIONAMENTO ATUAL
 
-* **Etapa Atual:** BLOCO A.1 Refinamento UX/UI do Dashboard Concluído com Sucesso | P0.2 Implementada & Testada
-* **Próxima Prioridade:** Avanço para P0.3 — Mnemônicos & Fórmulas (Engine de Mnemônicos + Associação a LawTags/Fórmulas) do ROADMAP_MESTRE.md.
-* **Linha de Governança:** Conforme estabelecido na **Governança Permanente do Projeto**, o `ROADMAP_MESTRE.md` permanece inalterado. A estratégia de uso rápido é uma camada de execução transversal para tornar as capacidades existentes imediatamente funcionais e fluidas para o aluno.
+* **Etapa Atual:** A.1.4 Reconstrução Estrutural da Home (Central de Estudos) Concluída com Sucesso | 1.363 Testes Validados
+* **Próxima Prioridade:** Homologação visual e funcional da Central de Estudos pelo usuário.
+* **Linha de Governança:** Conforme estabelecido na **Governança Permanente do Projeto**, o `ROADMAP_MESTRE.md` permanece inalterado. A reconstrução estrutural da Home preservou 100% da arquitetura de dados, motores determinísticos e serviços existentes.
 
 ---
 
@@ -20,6 +20,11 @@
 * **Etapa 4 — Motor Determinístico de Revisão (Review Engine):** Algoritmo de repetição espaçada (SRS).
 * **Etapa 5 — Unified Scheduler:** Orquestração integrada de fila de tarefas diárias.
 * **Etapa 6 — Banco de Questões, Central de Erros & Evidence Layer:** Resolução, tentativas e registro de sinais cognitivos.
+* **Etapa A.1.4 — Reconstrução Estrutural da Home (Central de Estudos):**
+  - Reorganizações das 6 regiões estruturais: Contexto, O Que Fazer Agora, Jornada de Hoje, Progresso Semanal, Seu Momento e Coach Aprovado Fiscal.
+  - Integração visual com o Design System consolidado em A.1.3 (light first, off-white, cores semânticas OKLCH).
+  - Preservação estrita de dados reais, sem mocks ou dados inventados.
+  - 100% de compatibilidade com os motores pedagógicos determinísticos (Planner, Review, Diagnostic, Evidence, Socratic).
 * **Fase 7.1 — AI Gateway Real & Cache Persistido:** Resiliência de requisições com Gemini via `ai_results`.
 * **Fase 7.2 — Mentor / Coach de IA Proativo:** Diagnósticos proativos e orientações contextuais.
 * **Fase 7.3 — Socratic Engine Core & Grounding Jurídico:** RAG Jurídico e Professor Fiscal.

@@ -62,6 +62,10 @@
   --color-info-foreground: var(--info-foreground);
   --color-info-soft: var(--info-soft);
 
+  --color-intelligence: var(--intelligence);
+  --color-intelligence-foreground: var(--intelligence-foreground);
+  --color-intelligence-soft: var(--intelligence-soft);
+
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -135,6 +139,11 @@
   --info-foreground: oklch(0.99 0 0);
   --info-soft: oklch(0.95 0.04 250);
 
+  /* Lavanda/Roxo Inteligência */
+  --intelligence: oklch(0.58 0.18 290);
+  --intelligence-foreground: oklch(0.99 0 0);
+  --intelligence-soft: oklch(0.95 0.04 290);
+
   --border: oklch(0.91 0.01 240);
   --input: oklch(0.91 0.01 240);
   --ring: oklch(0.60 0.18 215);
@@ -195,6 +204,10 @@
   --info: oklch(0.72 0.16 250);
   --info-foreground: oklch(0.15 0.02 250);
   --info-soft: oklch(0.26 0.04 250);
+
+  --intelligence: oklch(0.72 0.16 290);
+  --intelligence-foreground: oklch(0.15 0.02 250);
+  --intelligence-soft: oklch(0.26 0.04 290);
 
   --border: oklch(0.30 0.02 258);
   --input: oklch(0.31 0.02 258);
