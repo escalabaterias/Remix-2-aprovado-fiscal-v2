@@ -13,10 +13,14 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as NovaSenhaRouteImport } from './routes/nova-senha'
+import { Route as AuthenticatedBancasRouteImport } from './routes/_authenticated/bancas'
+import { Route as AuthenticatedCoachRouteImport } from './routes/_authenticated/coach'
 import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDisponibilidadeRouteImport } from './routes/_authenticated/disponibilidade'
 import { Route as AuthenticatedDominioRouteImport } from './routes/_authenticated/dominio'
+import { Route as AuthenticatedFlashcardsRouteImport } from './routes/_authenticated/flashcards'
+import { Route as AuthenticatedMateriaisRouteImport } from './routes/_authenticated/materiais'
 import { Route as AuthenticatedMateriasRouteImport } from './routes/_authenticated/materias'
 import { Route as AuthenticatedCentralErrosIndexRouteImport } from './routes/_authenticated/central-erros/index'
 import { Route as AuthenticatedCentralErrosErrorIdRouteImport } from './routes/_authenticated/central-erros/$errorId'
@@ -24,9 +28,17 @@ import { Route as AuthenticatedConcursosIndexRouteImport } from './routes/_authe
 import { Route as AuthenticatedConcursosContestIdRouteImport } from './routes/_authenticated/concursos/$contestId'
 import { Route as AuthenticatedDiagnosticoIndexRouteImport } from './routes/_authenticated/diagnostico/index'
 import { Route as AuthenticatedDiagnosticoTopicIdRouteImport } from './routes/_authenticated/diagnostico/$topicId'
+import { Route as AuthenticatedEstudoIndexRouteImport } from './routes/_authenticated/estudo/index'
+import { Route as AuthenticatedEstudoDiscursivasRouteImport } from './routes/_authenticated/estudo/discursivas'
+import { Route as AuthenticatedEstudoEditalRouteImport } from './routes/_authenticated/estudo/edital'
+import { Route as AuthenticatedEstudoProntidaoRouteImport } from './routes/_authenticated/estudo/prontidao'
 import { Route as AuthenticatedPlanoIndexRouteImport } from './routes/_authenticated/plano/index'
 import { Route as AuthenticatedPlanoPlanIdRouteImport } from './routes/_authenticated/plano/$planId'
+import { Route as AuthenticatedQuestoesIndexRouteImport } from './routes/_authenticated/questoes/index'
+import { Route as AuthenticatedQuestoesImportarRouteImport } from './routes/_authenticated/questoes/importar'
 import { Route as AuthenticatedRevisaoIndexRouteImport } from './routes/_authenticated/revisao/index'
+import { Route as AuthenticatedSimuladosIndexRouteImport } from './routes/_authenticated/simulados/index'
+import { Route as AuthenticatedSimuladosSetIdResultadoRouteImport } from './routes/_authenticated/simulados/$setId.resultado'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -46,6 +58,16 @@ const NovaSenhaRoute = NovaSenhaRouteImport.update({
   id: '/nova-senha',
   path: '/nova-senha',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedBancasRoute = AuthenticatedBancasRouteImport.update({
+  id: '/bancas',
+  path: '/bancas',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedCoachRoute = AuthenticatedCoachRouteImport.update({
+  id: '/coach',
+  path: '/coach',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedConfiguracoesRoute =
   AuthenticatedConfiguracoesRouteImport.update({
@@ -67,6 +89,16 @@ const AuthenticatedDisponibilidadeRoute =
 const AuthenticatedDominioRoute = AuthenticatedDominioRouteImport.update({
   id: '/dominio',
   path: '/dominio',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedFlashcardsRoute = AuthenticatedFlashcardsRouteImport.update({
+  id: '/flashcards',
+  path: '/flashcards',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedMateriaisRoute = AuthenticatedMateriaisRouteImport.update({
+  id: '/materiais',
+  path: '/materiais',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedMateriasRoute = AuthenticatedMateriasRouteImport.update({
@@ -110,6 +142,30 @@ const AuthenticatedDiagnosticoTopicIdRoute =
     path: '/diagnostico/$topicId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedEstudoIndexRoute =
+  AuthenticatedEstudoIndexRouteImport.update({
+    id: '/estudo/',
+    path: '/estudo/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedEstudoDiscursivasRoute =
+  AuthenticatedEstudoDiscursivasRouteImport.update({
+    id: '/estudo/discursivas',
+    path: '/estudo/discursivas',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedEstudoEditalRoute =
+  AuthenticatedEstudoEditalRouteImport.update({
+    id: '/estudo/edital',
+    path: '/estudo/edital',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedEstudoProntidaoRoute =
+  AuthenticatedEstudoProntidaoRouteImport.update({
+    id: '/estudo/prontidao',
+    path: '/estudo/prontidao',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedPlanoIndexRoute = AuthenticatedPlanoIndexRouteImport.update({
   id: '/plano/',
   path: '/plano/',
@@ -121,10 +177,34 @@ const AuthenticatedPlanoPlanIdRoute =
     path: '/plano/$planId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedQuestoesIndexRoute =
+  AuthenticatedQuestoesIndexRouteImport.update({
+    id: '/questoes/',
+    path: '/questoes/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedQuestoesImportarRoute =
+  AuthenticatedQuestoesImportarRouteImport.update({
+    id: '/questoes/importar',
+    path: '/questoes/importar',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedRevisaoIndexRoute =
   AuthenticatedRevisaoIndexRouteImport.update({
     id: '/revisao/',
     path: '/revisao/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSimuladosIndexRoute =
+  AuthenticatedSimuladosIndexRouteImport.update({
+    id: '/simulados/',
+    path: '/simulados/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSimuladosSetIdResultadoRoute =
+  AuthenticatedSimuladosSetIdResultadoRouteImport.update({
+    id: '/simulados/$setId/resultado',
+    path: '/simulados/$setId/resultado',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 
@@ -132,39 +212,63 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/nova-senha': typeof NovaSenhaRoute
+  '/bancas': typeof AuthenticatedBancasRoute
+  '/coach': typeof AuthenticatedCoachRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/disponibilidade': typeof AuthenticatedDisponibilidadeRoute
   '/dominio': typeof AuthenticatedDominioRoute
+  '/flashcards': typeof AuthenticatedFlashcardsRoute
+  '/materiais': typeof AuthenticatedMateriaisRoute
   '/materias': typeof AuthenticatedMateriasRoute
   '/central-erros/$errorId': typeof AuthenticatedCentralErrosErrorIdRoute
   '/concursos/$contestId': typeof AuthenticatedConcursosContestIdRoute
   '/diagnostico/$topicId': typeof AuthenticatedDiagnosticoTopicIdRoute
+  '/estudo/discursivas': typeof AuthenticatedEstudoDiscursivasRoute
+  '/estudo/edital': typeof AuthenticatedEstudoEditalRoute
+  '/estudo/prontidao': typeof AuthenticatedEstudoProntidaoRoute
   '/plano/$planId': typeof AuthenticatedPlanoPlanIdRoute
+  '/questoes/importar': typeof AuthenticatedQuestoesImportarRoute
   '/central-erros/': typeof AuthenticatedCentralErrosIndexRoute
   '/concursos/': typeof AuthenticatedConcursosIndexRoute
   '/diagnostico/': typeof AuthenticatedDiagnosticoIndexRoute
+  '/estudo/': typeof AuthenticatedEstudoIndexRoute
   '/plano/': typeof AuthenticatedPlanoIndexRoute
+  '/questoes/': typeof AuthenticatedQuestoesIndexRoute
   '/revisao/': typeof AuthenticatedRevisaoIndexRoute
+  '/simulados/': typeof AuthenticatedSimuladosIndexRoute
+  '/simulados/$setId/resultado': typeof AuthenticatedSimuladosSetIdResultadoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/nova-senha': typeof NovaSenhaRoute
+  '/bancas': typeof AuthenticatedBancasRoute
+  '/coach': typeof AuthenticatedCoachRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/disponibilidade': typeof AuthenticatedDisponibilidadeRoute
   '/dominio': typeof AuthenticatedDominioRoute
+  '/flashcards': typeof AuthenticatedFlashcardsRoute
+  '/materiais': typeof AuthenticatedMateriaisRoute
   '/materias': typeof AuthenticatedMateriasRoute
   '/central-erros/$errorId': typeof AuthenticatedCentralErrosErrorIdRoute
   '/concursos/$contestId': typeof AuthenticatedConcursosContestIdRoute
   '/diagnostico/$topicId': typeof AuthenticatedDiagnosticoTopicIdRoute
+  '/estudo/discursivas': typeof AuthenticatedEstudoDiscursivasRoute
+  '/estudo/edital': typeof AuthenticatedEstudoEditalRoute
+  '/estudo/prontidao': typeof AuthenticatedEstudoProntidaoRoute
   '/plano/$planId': typeof AuthenticatedPlanoPlanIdRoute
+  '/questoes/importar': typeof AuthenticatedQuestoesImportarRoute
   '/central-erros': typeof AuthenticatedCentralErrosIndexRoute
   '/concursos': typeof AuthenticatedConcursosIndexRoute
   '/diagnostico': typeof AuthenticatedDiagnosticoIndexRoute
+  '/estudo': typeof AuthenticatedEstudoIndexRoute
   '/plano': typeof AuthenticatedPlanoIndexRoute
+  '/questoes': typeof AuthenticatedQuestoesIndexRoute
   '/revisao': typeof AuthenticatedRevisaoIndexRoute
+  '/simulados': typeof AuthenticatedSimuladosIndexRoute
+  '/simulados/$setId/resultado': typeof AuthenticatedSimuladosSetIdResultadoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -172,20 +276,32 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/nova-senha': typeof NovaSenhaRoute
+  '/_authenticated/bancas': typeof AuthenticatedBancasRoute
+  '/_authenticated/coach': typeof AuthenticatedCoachRoute
   '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/disponibilidade': typeof AuthenticatedDisponibilidadeRoute
   '/_authenticated/dominio': typeof AuthenticatedDominioRoute
+  '/_authenticated/flashcards': typeof AuthenticatedFlashcardsRoute
+  '/_authenticated/materiais': typeof AuthenticatedMateriaisRoute
   '/_authenticated/materias': typeof AuthenticatedMateriasRoute
   '/_authenticated/central-erros/$errorId': typeof AuthenticatedCentralErrosErrorIdRoute
   '/_authenticated/concursos/$contestId': typeof AuthenticatedConcursosContestIdRoute
   '/_authenticated/diagnostico/$topicId': typeof AuthenticatedDiagnosticoTopicIdRoute
+  '/_authenticated/estudo/discursivas': typeof AuthenticatedEstudoDiscursivasRoute
+  '/_authenticated/estudo/edital': typeof AuthenticatedEstudoEditalRoute
+  '/_authenticated/estudo/prontidao': typeof AuthenticatedEstudoProntidaoRoute
   '/_authenticated/plano/$planId': typeof AuthenticatedPlanoPlanIdRoute
+  '/_authenticated/questoes/importar': typeof AuthenticatedQuestoesImportarRoute
   '/_authenticated/central-erros/': typeof AuthenticatedCentralErrosIndexRoute
   '/_authenticated/concursos/': typeof AuthenticatedConcursosIndexRoute
   '/_authenticated/diagnostico/': typeof AuthenticatedDiagnosticoIndexRoute
+  '/_authenticated/estudo/': typeof AuthenticatedEstudoIndexRoute
   '/_authenticated/plano/': typeof AuthenticatedPlanoIndexRoute
+  '/_authenticated/questoes/': typeof AuthenticatedQuestoesIndexRoute
   '/_authenticated/revisao/': typeof AuthenticatedRevisaoIndexRoute
+  '/_authenticated/simulados/': typeof AuthenticatedSimuladosIndexRoute
+  '/_authenticated/simulados/$setId/resultado': typeof AuthenticatedSimuladosSetIdResultadoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -193,59 +309,95 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/nova-senha'
+    | '/bancas'
+    | '/coach'
     | '/configuracoes'
     | '/dashboard'
     | '/disponibilidade'
     | '/dominio'
+    | '/flashcards'
+    | '/materiais'
     | '/materias'
     | '/central-erros/$errorId'
     | '/concursos/$contestId'
     | '/diagnostico/$topicId'
+    | '/estudo/discursivas'
+    | '/estudo/edital'
+    | '/estudo/prontidao'
     | '/plano/$planId'
+    | '/questoes/importar'
     | '/central-erros/'
     | '/concursos/'
     | '/diagnostico/'
+    | '/estudo/'
     | '/plano/'
+    | '/questoes/'
     | '/revisao/'
+    | '/simulados/'
+    | '/simulados/$setId/resultado'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
     | '/nova-senha'
+    | '/bancas'
+    | '/coach'
     | '/configuracoes'
     | '/dashboard'
     | '/disponibilidade'
     | '/dominio'
+    | '/flashcards'
+    | '/materiais'
     | '/materias'
     | '/central-erros/$errorId'
     | '/concursos/$contestId'
     | '/diagnostico/$topicId'
+    | '/estudo/discursivas'
+    | '/estudo/edital'
+    | '/estudo/prontidao'
     | '/plano/$planId'
+    | '/questoes/importar'
     | '/central-erros'
     | '/concursos'
     | '/diagnostico'
+    | '/estudo'
     | '/plano'
+    | '/questoes'
     | '/revisao'
+    | '/simulados'
+    | '/simulados/$setId/resultado'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
     | '/nova-senha'
+    | '/_authenticated/bancas'
+    | '/_authenticated/coach'
     | '/_authenticated/configuracoes'
     | '/_authenticated/dashboard'
     | '/_authenticated/disponibilidade'
     | '/_authenticated/dominio'
+    | '/_authenticated/flashcards'
+    | '/_authenticated/materiais'
     | '/_authenticated/materias'
     | '/_authenticated/central-erros/$errorId'
     | '/_authenticated/concursos/$contestId'
     | '/_authenticated/diagnostico/$topicId'
+    | '/_authenticated/estudo/discursivas'
+    | '/_authenticated/estudo/edital'
+    | '/_authenticated/estudo/prontidao'
     | '/_authenticated/plano/$planId'
+    | '/_authenticated/questoes/importar'
     | '/_authenticated/central-erros/'
     | '/_authenticated/concursos/'
     | '/_authenticated/diagnostico/'
+    | '/_authenticated/estudo/'
     | '/_authenticated/plano/'
+    | '/_authenticated/questoes/'
     | '/_authenticated/revisao/'
+    | '/_authenticated/simulados/'
+    | '/_authenticated/simulados/$setId/resultado'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -285,6 +437,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NovaSenhaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/bancas': {
+      id: '/_authenticated/bancas'
+      path: '/bancas'
+      fullPath: '/bancas'
+      preLoaderRoute: typeof AuthenticatedBancasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/coach': {
+      id: '/_authenticated/coach'
+      path: '/coach'
+      fullPath: '/coach'
+      preLoaderRoute: typeof AuthenticatedCoachRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/configuracoes': {
       id: '/_authenticated/configuracoes'
       path: '/configuracoes'
@@ -311,6 +477,20 @@ declare module '@tanstack/react-router' {
       path: '/dominio'
       fullPath: '/dominio'
       preLoaderRoute: typeof AuthenticatedDominioRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/flashcards': {
+      id: '/_authenticated/flashcards'
+      path: '/flashcards'
+      fullPath: '/flashcards'
+      preLoaderRoute: typeof AuthenticatedFlashcardsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/materiais': {
+      id: '/_authenticated/materiais'
+      path: '/materiais'
+      fullPath: '/materiais'
+      preLoaderRoute: typeof AuthenticatedMateriaisRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/materias': {
@@ -362,6 +542,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDiagnosticoTopicIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/estudo/': {
+      id: '/_authenticated/estudo/'
+      path: '/estudo'
+      fullPath: '/estudo/'
+      preLoaderRoute: typeof AuthenticatedEstudoIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/estudo/discursivas': {
+      id: '/_authenticated/estudo/discursivas'
+      path: '/estudo/discursivas'
+      fullPath: '/estudo/discursivas'
+      preLoaderRoute: typeof AuthenticatedEstudoDiscursivasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/estudo/edital': {
+      id: '/_authenticated/estudo/edital'
+      path: '/estudo/edital'
+      fullPath: '/estudo/edital'
+      preLoaderRoute: typeof AuthenticatedEstudoEditalRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/estudo/prontidao': {
+      id: '/_authenticated/estudo/prontidao'
+      path: '/estudo/prontidao'
+      fullPath: '/estudo/prontidao'
+      preLoaderRoute: typeof AuthenticatedEstudoProntidaoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/plano/': {
       id: '/_authenticated/plano/'
       path: '/plano'
@@ -376,6 +584,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPlanoPlanIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/questoes/': {
+      id: '/_authenticated/questoes/'
+      path: '/questoes'
+      fullPath: '/questoes/'
+      preLoaderRoute: typeof AuthenticatedQuestoesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/questoes/importar': {
+      id: '/_authenticated/questoes/importar'
+      path: '/questoes/importar'
+      fullPath: '/questoes/importar'
+      preLoaderRoute: typeof AuthenticatedQuestoesImportarRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/revisao/': {
       id: '/_authenticated/revisao/'
       path: '/revisao'
@@ -383,41 +605,80 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRevisaoIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/simulados/': {
+      id: '/_authenticated/simulados/'
+      path: '/simulados'
+      fullPath: '/simulados/'
+      preLoaderRoute: typeof AuthenticatedSimuladosIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/simulados/$setId/resultado': {
+      id: '/_authenticated/simulados/$setId/resultado'
+      path: '/simulados/$setId/resultado'
+      fullPath: '/simulados/$setId/resultado'
+      preLoaderRoute: typeof AuthenticatedSimuladosSetIdResultadoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedBancasRoute: typeof AuthenticatedBancasRoute
+  AuthenticatedCoachRoute: typeof AuthenticatedCoachRoute
   AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDisponibilidadeRoute: typeof AuthenticatedDisponibilidadeRoute
   AuthenticatedDominioRoute: typeof AuthenticatedDominioRoute
+  AuthenticatedFlashcardsRoute: typeof AuthenticatedFlashcardsRoute
+  AuthenticatedMateriaisRoute: typeof AuthenticatedMateriaisRoute
   AuthenticatedMateriasRoute: typeof AuthenticatedMateriasRoute
   AuthenticatedCentralErrosErrorIdRoute: typeof AuthenticatedCentralErrosErrorIdRoute
   AuthenticatedConcursosContestIdRoute: typeof AuthenticatedConcursosContestIdRoute
   AuthenticatedDiagnosticoTopicIdRoute: typeof AuthenticatedDiagnosticoTopicIdRoute
+  AuthenticatedEstudoDiscursivasRoute: typeof AuthenticatedEstudoDiscursivasRoute
+  AuthenticatedEstudoEditalRoute: typeof AuthenticatedEstudoEditalRoute
+  AuthenticatedEstudoProntidaoRoute: typeof AuthenticatedEstudoProntidaoRoute
   AuthenticatedPlanoPlanIdRoute: typeof AuthenticatedPlanoPlanIdRoute
+  AuthenticatedQuestoesImportarRoute: typeof AuthenticatedQuestoesImportarRoute
   AuthenticatedCentralErrosIndexRoute: typeof AuthenticatedCentralErrosIndexRoute
   AuthenticatedConcursosIndexRoute: typeof AuthenticatedConcursosIndexRoute
   AuthenticatedDiagnosticoIndexRoute: typeof AuthenticatedDiagnosticoIndexRoute
+  AuthenticatedEstudoIndexRoute: typeof AuthenticatedEstudoIndexRoute
   AuthenticatedPlanoIndexRoute: typeof AuthenticatedPlanoIndexRoute
+  AuthenticatedQuestoesIndexRoute: typeof AuthenticatedQuestoesIndexRoute
   AuthenticatedRevisaoIndexRoute: typeof AuthenticatedRevisaoIndexRoute
+  AuthenticatedSimuladosIndexRoute: typeof AuthenticatedSimuladosIndexRoute
+  AuthenticatedSimuladosSetIdResultadoRoute: typeof AuthenticatedSimuladosSetIdResultadoRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedBancasRoute: AuthenticatedBancasRoute,
+  AuthenticatedCoachRoute: AuthenticatedCoachRoute,
   AuthenticatedConfiguracoesRoute: AuthenticatedConfiguracoesRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDisponibilidadeRoute: AuthenticatedDisponibilidadeRoute,
   AuthenticatedDominioRoute: AuthenticatedDominioRoute,
+  AuthenticatedFlashcardsRoute: AuthenticatedFlashcardsRoute,
+  AuthenticatedMateriaisRoute: AuthenticatedMateriaisRoute,
   AuthenticatedMateriasRoute: AuthenticatedMateriasRoute,
   AuthenticatedCentralErrosErrorIdRoute: AuthenticatedCentralErrosErrorIdRoute,
   AuthenticatedConcursosContestIdRoute: AuthenticatedConcursosContestIdRoute,
   AuthenticatedDiagnosticoTopicIdRoute: AuthenticatedDiagnosticoTopicIdRoute,
+  AuthenticatedEstudoDiscursivasRoute: AuthenticatedEstudoDiscursivasRoute,
+  AuthenticatedEstudoEditalRoute: AuthenticatedEstudoEditalRoute,
+  AuthenticatedEstudoProntidaoRoute: AuthenticatedEstudoProntidaoRoute,
   AuthenticatedPlanoPlanIdRoute: AuthenticatedPlanoPlanIdRoute,
+  AuthenticatedQuestoesImportarRoute: AuthenticatedQuestoesImportarRoute,
   AuthenticatedCentralErrosIndexRoute: AuthenticatedCentralErrosIndexRoute,
   AuthenticatedConcursosIndexRoute: AuthenticatedConcursosIndexRoute,
   AuthenticatedDiagnosticoIndexRoute: AuthenticatedDiagnosticoIndexRoute,
+  AuthenticatedEstudoIndexRoute: AuthenticatedEstudoIndexRoute,
   AuthenticatedPlanoIndexRoute: AuthenticatedPlanoIndexRoute,
+  AuthenticatedQuestoesIndexRoute: AuthenticatedQuestoesIndexRoute,
   AuthenticatedRevisaoIndexRoute: AuthenticatedRevisaoIndexRoute,
+  AuthenticatedSimuladosIndexRoute: AuthenticatedSimuladosIndexRoute,
+  AuthenticatedSimuladosSetIdResultadoRoute:
+    AuthenticatedSimuladosSetIdResultadoRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

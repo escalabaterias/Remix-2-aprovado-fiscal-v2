@@ -5,9 +5,10 @@
 
 ## 1. POSICIONAMENTO ATUAL
 
-* **Etapa Atual:** A.1.4 Reconstrução Estrutural da Home (Central de Estudos) Concluída com Sucesso | 1.363 Testes Validados
-* **Próxima Prioridade:** Homologação visual e funcional da Central de Estudos pelo usuário.
-* **Linha de Governança:** Conforme estabelecido na **Governança Permanente do Projeto**, o `ROADMAP_MESTRE.md` permanece inalterado. A reconstrução estrutural da Home preservou 100% da arquitetura de dados, motores determinísticos e serviços existentes.
+* **Etapa Atual:** Checkpoint de Migração para Lovable Registrado (`/docs/CHECKPOINTS/CP-MIGRACAO-LOVABLE.md`) | 1.363 Testes Validados (63/63 Suítes PASS)
+* **Próxima Prioridade:** Importação do repositório no Lovable e início da Etapa 8 (Simulação + Inteligência de Performance).
+* **Linha de Governança:** Conforme estabelecido na **Governança Permanente do Projeto**, o `ROADMAP_MESTRE.md` permanece inalterado como a Constituição do produto. O repositório no GitHub é a Fonte de Verdade de Código.
+* **Checkpoint de Transição:** Documento oficial criado em `/docs/CHECKPOINTS/CP-MIGRACAO-LOVABLE.md`.
 
 ---
 
